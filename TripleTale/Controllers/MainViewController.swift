@@ -9,7 +9,7 @@ import Vision
 import UIKit
 import AVFoundation
 import Photos
-
+import CoreGraphics
 
 class MainViewController: UIViewController, UINavigationControllerDelegate {
     var dots: [UIView] = []
@@ -51,10 +51,20 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
         
         showImagePicker(sender) { cameraImage, depthImage in
             if cameraImage != nil {
-                self.saveImageToGallery(cameraImage!)
-                self.saveImageToGallery(depthImage!)
+//                self.saveImageToGallery(cameraImage!)
+//                self.saveImageToGallery(depthImage!)
                 
-                self.updateImageView(with: cameraImage!)
+                self.detectFish(in: cameraImage!) { (boundingBox, label, error) in
+                    if let error = error {
+                        print("Error: \(error.localizedDescription)")
+                    } else if let boundingBox = boundingBox, let label = label {
+                        print("Detected \(label) with bounding box: \(boundingBox)")
+                        let imageWithBox = self.drawRectanglesOnImage(image: cameraImage!, boundingBoxes: [boundingBox])
+                        self.updateImageView(with: imageWithBox)
+                    } else {
+                        print("No fish detected with high confidence.")
+                    }
+                }
             } else {
                 print("No image selected.")
             }
@@ -95,9 +105,7 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
         let overlayView = CameraOverlayView(frame: self.view.bounds)
         cameraVC.cameraOverlay = overlayView.guideForCameraOverlay()
 
-        cameraVC.photoCaptureCompletion = { [weak self] capturedImage, depthImage in
-            guard let strongSelf = self else { return }
-
+        cameraVC.photoCaptureCompletion = { capturedImage, depthImage in
             print("Completion called with image: \(capturedImage != nil)")
             print("Depth image available: \(depthImage != nil)")
   
@@ -111,11 +119,11 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
 
 // MARK: fish calculations
 extension MainViewController {
-    func detectFish(in image: UIImage, completion: @escaping (CGRect?, Error?) -> Void) {
+    func detectFish(in image: UIImage, completion: @escaping (CGRect?, String?, Error?) -> Void) {
         // Load the ML model
         guard let modelURL = Bundle.main.url(forResource: "YOLOv3", withExtension: "mlmodelc"),
               let visionModel = try? VNCoreMLModel(for: MLModel(contentsOf: modelURL)) else {
-            completion(nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to load the model"]))
+            completion(nil, nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unable to load the model"]))
             return
         }
         
@@ -123,27 +131,29 @@ extension MainViewController {
         let request = VNCoreMLRequest(model: visionModel) { (request, error) in
             DispatchQueue.main.async {
                 if let error = error {
-                    completion(nil, error)
+                    completion(nil, nil, error)
                     return
                 }
                 
                 guard let results = request.results as? [VNRecognizedObjectObservation] else {
-                    completion(nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No results"]))
+                    completion(nil, nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No results"]))
                     return
                 }
                 
                 // Find the object with the highest confidence
                 if let bestObservation = results.max(by: { a, b in a.confidence < b.confidence }) {
-                    completion(bestObservation.boundingBox, nil)
+                    // Get the label of the highest confidence
+                    let bestLabel = bestObservation.labels.first?.identifier ?? "Unknown"
+                    completion(bestObservation.boundingBox, bestLabel, nil)
                 } else {
-                    completion(nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No high-confidence results"]))
+                    completion(nil, nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "No high-confidence results"]))
                 }
             }
         }
         
         // Create a handler and perform the request
         guard let ciImage = CIImage(image: image) else {
-            completion(nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid image"]))
+            completion(nil, nil, NSError(domain: "com.example.VisionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid image"]))
             return
         }
         
@@ -151,10 +161,9 @@ extension MainViewController {
         do {
             try handler.perform([request])
         } catch {
-            completion(nil, error)
+            completion(nil, nil, error)
         }
     }
-
     
     func fishCalculations() {
         var calculator = DotsCalculator(userDots: dots)
@@ -235,7 +244,7 @@ extension MainViewController {
         
         let context = UIGraphicsGetCurrentContext()!
         context.setStrokeColor(UIColor.green.cgColor)
-        context.setLineWidth(2.0)
+        context.setLineWidth(5.0)
         
         for rect in boundingBoxes {
             let transformedRect = CGRect(x: rect.origin.x * image.size.width,
