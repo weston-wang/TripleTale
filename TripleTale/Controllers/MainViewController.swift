@@ -65,8 +65,20 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
                         let croppedCameraImage = self.cropImage(cameraImage!, withNormalizedRect: boundingBox)
                         let croppedDepthImage = self.cropImage(depthImage!, withNormalizedRect: boundingBox)
                         
-//                        self.saveImageToGallery(croppedCameraImage!)
-//                        self.saveImageToGallery(croppedDepthImage!)
+                        guard let depthMap = CIImage(image: croppedDepthImage!) else { return }
+                        let context = CIContext()
+                        if let cleanDepths = self.cleanDepthData(depthMap, context: context) {
+                            let diameter = self.estimateDiameter(depthValues: cleanDepths)
+                            print("Estimated Diameter: \(diameter) cm")
+                            
+                            self.lengthText.text = "\(diameter) cm"
+                            self.lengthText.isHidden = false
+
+                        }
+
+                        self.saveImageToGallery(cameraImage!)
+                        self.saveImageToGallery(depthImage!)
+                        
                     } else {
                         print("No fish detected with high confidence.")
                     }
@@ -210,6 +222,25 @@ extension MainViewController {
         weightText.text = String(format: "%.1f lb", fishWeight)
     }
     
+    func estimateDiameter(depthValues: [CGFloat]) -> CGFloat {
+        let scaleFactor = 100.0 // for LiDAR
+        
+        guard !depthValues.isEmpty else { return 0 }
+        let sortedDepths = depthValues.sorted()
+        let q1 = sortedDepths[Int(Double(sortedDepths.count) * 0.25)]
+        let q3 = sortedDepths[Int(Double(sortedDepths.count) * 0.75)]
+        let iqr = q3 - q1  // Interquartile range
+
+        // Filter out outliers
+        let filteredDepths = depthValues.filter { $0 >= q1 - 1.5 * iqr && $0 <= q3 + 1.5 * iqr }
+        
+        // Assuming football is aligned such that the max depth difference represents the diameter
+        if let minDepth = filteredDepths.min(), let maxDepth = filteredDepths.max() {
+            return (maxDepth - minDepth) * scaleFactor // Convert from pixel to real-world units
+        }
+        return 0
+    }
+
 }
 
 // MARK: utility functions
@@ -268,12 +299,10 @@ extension MainViewController {
     
     func cropImage(_ image: UIImage, withNormalizedRect normalizedRect: CGRect) -> UIImage? {
         // Calculate the actual rect based on image size
-        let rect = CGRect(
-            x: normalizedRect.origin.x * image.size.width,
-            y: normalizedRect.origin.y * image.size.height,
+        let rect = CGRect(x: normalizedRect.origin.x * image.size.width,
+            y: (1 - normalizedRect.origin.y - normalizedRect.size.height) * image.size.height,
             width: normalizedRect.size.width * image.size.width,
-            height: normalizedRect.size.height * image.size.height
-        )
+            height: normalizedRect.size.height * image.size.height)
         
         // Convert UIImage to CGImage to work with Core Graphics
         guard let cgImage = image.cgImage else { return nil }
@@ -283,5 +312,37 @@ extension MainViewController {
         
         // Convert cropped CGImage back to UIImage
         return UIImage(cgImage: croppedCgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+    
+    func extractDepthData(from image: UIImage) -> [Float]? {
+        guard let cgImage = image.cgImage else { return nil }
+        let ciImage = CIImage(cgImage: cgImage)
+        let context = CIContext()
+        let depthDataSize = ciImage.extent.size
+        var depthDataBuffer = [Float](repeating: 0, count: Int(depthDataSize.width * depthDataSize.height))
+
+        // Extract depth data from CIImage
+        context.render(ciImage, toBitmap: &depthDataBuffer, rowBytes: Int(depthDataSize.width) * MemoryLayout<Float>.size, bounds: ciImage.extent, format: .Rf, colorSpace: nil)
+        
+        return depthDataBuffer
+    }
+    
+    func cleanDepthData(_ depthMap: CIImage, context: CIContext) -> [CGFloat]? {
+        // Assuming depthMap is already masked and only contains relevant depth information
+        guard let depthData = context.createCGImage(depthMap, from: depthMap.extent) else { return nil }
+        let width = depthData.width
+        let height = depthData.height
+        let data = depthData.dataProvider!.data
+        let ptr = CFDataGetBytePtr(data)
+
+        var depthValues = [CGFloat]()
+        for y in 0..<height {
+            for x in 0..<width {
+                let pixelInfo = ((width * y) + x) * 4 // Assuming depth data is 32 bit per pixel
+                let depth = CGFloat(ptr![pixelInfo]) // Assuming depth data is normalized to 255
+                depthValues.append(depth)
+            }
+        }
+        return depthValues.filter { $0 < 255 } // Filtering out maximum values which might be background
     }
 }
