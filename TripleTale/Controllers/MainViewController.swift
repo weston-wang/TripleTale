@@ -51,16 +51,22 @@ class MainViewController: UIViewController, UINavigationControllerDelegate {
         
         showImagePicker(sender) { cameraImage, depthImage in
             if cameraImage != nil {
-//                self.saveImageToGallery(cameraImage!)
-//                self.saveImageToGallery(depthImage!)
-                
                 self.detectFish(in: cameraImage!) { (boundingBox, label, error) in
                     if let error = error {
                         print("Error: \(error.localizedDescription)")
                     } else if let boundingBox = boundingBox, let label = label {
                         print("Detected \(label) with bounding box: \(boundingBox)")
                         let imageWithBox = self.drawRectanglesOnImage(image: cameraImage!, boundingBoxes: [boundingBox])
+                        
                         self.updateImageView(with: imageWithBox)
+                        self.resultText.text = label
+                        self.resultText.isHidden = false
+                        
+                        let croppedCameraImage = self.cropImage(cameraImage!, withNormalizedRect: boundingBox)
+                        let croppedDepthImage = self.cropImage(depthImage!, withNormalizedRect: boundingBox)
+                        
+//                        self.saveImageToGallery(croppedCameraImage!)
+//                        self.saveImageToGallery(croppedDepthImage!)
                     } else {
                         print("No fish detected with high confidence.")
                     }
@@ -258,5 +264,24 @@ extension MainViewController {
         UIGraphicsEndImageContext()
         
         return newImage
+    }
+    
+    func cropImage(_ image: UIImage, withNormalizedRect normalizedRect: CGRect) -> UIImage? {
+        // Calculate the actual rect based on image size
+        let rect = CGRect(
+            x: normalizedRect.origin.x * image.size.width,
+            y: normalizedRect.origin.y * image.size.height,
+            width: normalizedRect.size.width * image.size.width,
+            height: normalizedRect.size.height * image.size.height
+        )
+        
+        // Convert UIImage to CGImage to work with Core Graphics
+        guard let cgImage = image.cgImage else { return nil }
+        
+        // Cropping the image with rect
+        guard let croppedCgImage = cgImage.cropping(to: rect) else { return nil }
+        
+        // Convert cropped CGImage back to UIImage
+        return UIImage(cgImage: croppedCgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 }
