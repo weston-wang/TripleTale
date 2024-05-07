@@ -17,6 +17,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     private var lastAnchor: ARAnchor?
 
     private var isFrozen = false
+    private var firstSession = true
 
     /// The ML model to be used for recognition of arbitrary objects.
     private var _inceptionv3Model: Inceptionv3!
@@ -70,7 +71,24 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
             let configuration = ARWorldTrackingConfiguration()
             sceneView.session.run(configuration)
         } else {
-            // Pause the AR session
+            if firstSession {
+                // Pause the AR session
+                let bottomLeft = CGPoint(x: 0, y: sceneView.bounds.maxY - 50)
+                let hitTestResults = sceneView.hitTest(bottomLeft, types: [.featurePoint, .estimatedHorizontalPlane])
+                
+                if let result = hitTestResults.first {
+                    let anchor = ARAnchor(transform: result.worldTransform)
+                    sceneView.session.add(anchor: anchor)
+                    
+                    let position = anchor.transform.columns.3
+                    let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
+                    
+                    anchorLabels[anchor.identifier] = coordinatesString
+                }
+                
+                firstSession = false
+            }
+            
             sceneView.session.pause()
         }
         isFrozen = !isFrozen
@@ -248,7 +266,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     }
     
     // MARK: - AR Session Handling
-    
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
         statusViewController.showTrackingQualityInfo(for: camera.trackingState, autoHide: true)
         
