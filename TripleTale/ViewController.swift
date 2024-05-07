@@ -56,6 +56,14 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         let freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
         freezeButton.backgroundColor = .white
         freezeButton.layer.cornerRadius = 35
+        freezeButton.clipsToBounds = true
+
+        // Set the button images for different states
+        freezeButton.setImage(UIImage(named: "measure"), for: .normal)
+        freezeButton.setImage(UIImage(named: "pressed"), for: .highlighted)
+
+        freezeButton.imageView?.contentMode = .scaleAspectFill
+        
         freezeButton.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
         view.addSubview(freezeButton)
 
@@ -73,7 +81,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         } else {
             if firstSession {
                 // Pause the AR session
-                let bottomLeft = CGPoint(x: 0, y: sceneView.bounds.maxY - 50)
+                let bottomLeft = CGPoint(x: 0, y: sceneView.bounds.maxY - 30)
                 let hitTestResults = sceneView.hitTest(bottomLeft, types: [.featurePoint, .estimatedHorizontalPlane])
                 
                 if let result = hitTestResults.first {
