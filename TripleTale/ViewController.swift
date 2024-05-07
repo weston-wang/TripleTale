@@ -16,6 +16,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     
     private var lastAnchor: ARAnchor?
 
+    private var isFrozen = false
+
     /// The ML model to be used for recognition of arbitrary objects.
     private var _inceptionv3Model: Inceptionv3!
     private var inceptionv3Model: Inceptionv3! {
@@ -50,12 +52,30 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         sceneView.presentScene(overlayScene)
         sceneView.session.delegate = self
         
+        let freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
+        freezeButton.backgroundColor = .white
+        freezeButton.layer.cornerRadius = 35
+        freezeButton.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
+        view.addSubview(freezeButton)
+
         // Hook up status view controller callback.
         statusViewController.restartExperienceHandler = { [unowned self] in
             self.restartSession()
         }
     }
     
+    @objc func toggleFreeze() {
+        if isFrozen {
+            // Resume the AR session
+            let configuration = ARWorldTrackingConfiguration()
+            sceneView.session.run(configuration)
+        } else {
+            // Pause the AR session
+            sceneView.session.pause()
+        }
+        isFrozen = !isFrozen
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
