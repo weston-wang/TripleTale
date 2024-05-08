@@ -121,7 +121,9 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                 guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return }
                 let image = UIImage(cgImage: cgImage)
                 
-                saveImageToGallery(image)
+                let imageWithBox = drawRectanglesOnImage(image: image, boundingBoxes: [self.boundingBox!])
+
+                saveImageToGallery(imageWithBox)
                 
                 self.sceneView.session.pause()
             } else {
