@@ -36,6 +36,23 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         }
     }
     
+    /// The ML model to be used for detection of arbitrary objects
+    private var _yolo3Model: YOLOv3!
+    private var yolo3Model: YOLOv3! {
+        get {
+            if let model = _yolo3Model { return model }
+            _yolo3Model = {
+                do {
+                    let configuration = MLModelConfiguration()
+                    return try YOLOv3(configuration: configuration)
+                } catch {
+                    fatalError("Couldn't create Inceptionv3 due to: \(error)")
+                }
+            }()
+            return _yolo3Model
+        }
+    }
+    
     // The view controller that displays the status and "restart experience" UI.
     private lazy var statusViewController: StatusViewController = {
         return children.lazy.compactMap({ $0 as? StatusViewController }).first!
@@ -127,7 +144,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         return simd_distance(position1, position2)
     }
 
-    
     // MARK: - ARSessionDelegate
     
     // Pass camera frames received from ARKit to Vision (when not already processing one)
@@ -141,7 +157,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         
         // Retain the image buffer for Vision processing.
         self.currentBuffer = frame.capturedImage
-        classifyCurrentImage()
+//        classifyCurrentImage()
+        detectCurrentImage()
     }
     
     // MARK: - Vision classification
@@ -158,6 +175,24 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
             
             // Crop input images to square area at center, matching the way the ML model was trained.
             request.imageCropAndScaleOption = .centerCrop
+            
+            // Use CPU for Vision processing to ensure that there are adequate GPU resources for rendering.
+            request.usesCPUOnly = true
+            
+            return request
+        } catch {
+            fatalError("Failed to load Vision ML model: \(error)")
+        }
+    }()
+    
+    /// - Tag: DetectionRequest
+    private lazy var detectionRequest: VNCoreMLRequest = {
+        do {
+            // Instantiate the model from its generated Swift class.
+            let model = try VNCoreMLModel(for: yolo3Model.model)
+            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
+                self?.processDetections(for: request, error: error)
+            })
             
             // Use CPU for Vision processing to ensure that there are adequate GPU resources for rendering.
             request.usesCPUOnly = true
@@ -192,9 +227,26 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         }
     }
     
+    private func detectCurrentImage() {
+        // Most computer vision tasks are not rotation agnostic so it is important to pass in the orientation of the image with respect to device.
+        let orientation = CGImagePropertyOrientation(UIDevice.current.orientation)
+        
+        let requestHandler = VNImageRequestHandler(cvPixelBuffer: currentBuffer!, orientation: orientation)
+        visionQueue.async {
+            do {
+                // Release the pixel buffer when done, allowing the next buffer to be processed.
+                defer { self.currentBuffer = nil }
+                try requestHandler.perform([self.detectionRequest])
+            } catch {
+                print("Error: Vision request failed with error \"\(error)\"")
+            }
+        }
+    }
+    
     // Classification results
     private var identifierString = ""
     private var confidence: VNConfidence = 0.0
+    private var boundingBox: CGRect?
     
     // Handle completion of the Vision request and choose results to display.
     /// - Tag: ProcessClassifications
@@ -211,6 +263,30 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
             let label = bestResult.identifier.split(separator: ",").first {
             identifierString = String(label)
             confidence = bestResult.confidence
+        } else {
+            identifierString = ""
+            confidence = 0
+        }
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.displayClassifierResults()
+        }
+    }
+    
+    func processDetections(for request: VNRequest, error: Error?) {
+        guard let results = request.results else {
+            print("Unable to classify image.\n\(error!.localizedDescription)")
+            return
+        }
+        // The `results` will always be `VNClassificationObservation`s, as specified by the Core ML model in this project.
+        let detections = results as! [VNRecognizedObjectObservation]
+        
+        // Show a label for the highest-confidence result (but only above a minimum confidence threshold).
+        if let bestResult = detections.first(where: { result in result.confidence > 0.5 }),
+           let label = bestResult.labels.first!.identifier.split(separator: ",").first {
+            identifierString = String(label)
+            confidence = bestResult.confidence
+            boundingBox = bestResult.boundingBox
         } else {
             identifierString = ""
             confidence = 0
