@@ -91,11 +91,9 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     }
     
     @objc func toggleFreeze() {
+        isFrozen.toggle()  // Toggle the isFrozen state
+
         if isFrozen {
-            // Resume the AR session
-            let configuration = ARWorldTrackingConfiguration()
-            sceneView.session.run(configuration)
-        } else {
             if firstSession {
                 // Pause the AR session
                 let bottomLeft = CGPoint(x: 0, y: sceneView.bounds.maxY - 30)
@@ -115,8 +113,12 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
             }
             
             sceneView.session.pause()
+            
+        } else {
+            // Resume the AR session
+            let configuration = ARWorldTrackingConfiguration()
+            sceneView.session.run(configuration)
         }
-        isFrozen = !isFrozen
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -149,6 +151,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     // Pass camera frames received from ARKit to Vision (when not already processing one)
     /// - Tag: ConsumeARFrames
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        print("Tracking State: \(frame.camera.trackingState), Frozen: \(isFrozen==true)")
+
         // Do not enqueue other buffers for processing while another Vision task is still running.
         // The camera stream has only a finite amount of buffers available; holding too many buffers for analysis would starve the camera.
         guard currentBuffer == nil, case .normal = frame.camera.trackingState else {
@@ -159,6 +163,15 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         self.currentBuffer = frame.capturedImage
 //        classifyCurrentImage()
         detectCurrentImage()
+
+        if isFrozen {
+            let ciImage = CIImage(cvPixelBuffer: frame.capturedImage)
+            let context = CIContext()
+            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+            let image = UIImage(cgImage: cgImage)
+            
+            saveImageToGallery(image)
+        }
     }
     
     // MARK: - Vision classification
@@ -287,6 +300,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
             identifierString = String(label)
             confidence = bestResult.confidence
             boundingBox = bestResult.boundingBox
+//            print("Detected \(label) with bounding box: \(String(describing: boundingBox))")
+
         } else {
             identifierString = ""
             confidence = 0
