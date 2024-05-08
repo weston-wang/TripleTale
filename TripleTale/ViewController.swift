@@ -89,35 +89,46 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
             self.restartSession()
         }
     }
-    
     @objc func toggleFreeze() {
-        isFrozen.toggle()  // Toggle the isFrozen state
+        DispatchQueue.main.async {
+            self.isFrozen.toggle()  // Toggle the state of isFrozen
 
-        if isFrozen {
-            if firstSession {
-                // Pause the AR session
-                let bottomLeft = CGPoint(x: 0, y: sceneView.bounds.maxY - 30)
-                let hitTestResults = sceneView.hitTest(bottomLeft, types: [.featurePoint, .estimatedHorizontalPlane])
-                
-                if let result = hitTestResults.first {
-                    let anchor = ARAnchor(transform: result.worldTransform)
-                    sceneView.session.add(anchor: anchor)
+            if self.isFrozen {
+                // Actions to perform when freezing
+                if self.firstSession {
+                    // Pause the AR session
+                    let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
+                    let hitTestResults = self.sceneView.hitTest(bottomLeft, types: [.featurePoint, .estimatedHorizontalPlane])
                     
-                    let position = anchor.transform.columns.3
-                    let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
+                    if let result = hitTestResults.first {
+                        let anchor = ARAnchor(transform: result.worldTransform)
+                        self.sceneView.session.add(anchor: anchor)
+                        
+                        let position = anchor.transform.columns.3
+                        let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
+                        
+                        self.anchorLabels[anchor.identifier] = coordinatesString
+                    }
                     
-                    anchorLabels[anchor.identifier] = coordinatesString
+                    self.firstSession = false
                 }
                 
-                firstSession = false
+                let ciImage = CIImage(cvPixelBuffer: self.currentBuffer!)
+                let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
+                let rotatedCIImage = ciImage.transformed(by: rotation)
+
+                let context = CIContext()
+                guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return }
+                let image = UIImage(cgImage: cgImage)
+                
+                saveImageToGallery(image)
+                
+                self.sceneView.session.pause()
+            } else {
+                // Actions to perform when unfreezing
+                let configuration = ARWorldTrackingConfiguration()
+                self.sceneView.session.run(configuration)
             }
-            
-            sceneView.session.pause()
-            
-        } else {
-            // Resume the AR session
-            let configuration = ARWorldTrackingConfiguration()
-            sceneView.session.run(configuration)
         }
     }
 
@@ -163,15 +174,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         self.currentBuffer = frame.capturedImage
 //        classifyCurrentImage()
         detectCurrentImage()
-
-        if isFrozen {
-            let ciImage = CIImage(cvPixelBuffer: frame.capturedImage)
-            let context = CIContext()
-            guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
-            let image = UIImage(cgImage: cgImage)
-            
-            saveImageToGallery(image)
-        }
     }
     
     // MARK: - Vision classification
