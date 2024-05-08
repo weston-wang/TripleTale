@@ -15,6 +15,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     @IBOutlet weak var sceneView: ARSKView!
     
     private var lastAnchor: ARAnchor?
+    private var refAnchor: ARAnchor?
 
     private var isFrozen = false
     private var firstSession = true
@@ -101,30 +102,133 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                     let hitTestResults = self.sceneView.hitTest(bottomLeft, types: [.featurePoint, .estimatedHorizontalPlane])
                     
                     if let result = hitTestResults.first {
-                        let anchor = ARAnchor(transform: result.worldTransform)
-                        self.sceneView.session.add(anchor: anchor)
+                        self.refAnchor = ARAnchor(transform: result.worldTransform)
+                        self.sceneView.session.add(anchor: self.refAnchor!)
                         
-                        let position = anchor.transform.columns.3
+                        let position = self.refAnchor!.transform.columns.3
                         let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
                         
-                        self.anchorLabels[anchor.identifier] = coordinatesString
+                        self.anchorLabels[self.refAnchor!.identifier] = coordinatesString
                     }
                     
                     self.firstSession = false
                 }
                 
-                let ciImage = CIImage(cvPixelBuffer: self.currentBuffer!)
-                let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
-                let rotatedCIImage = ciImage.transformed(by: rotation)
-
-                let context = CIContext()
-                guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return }
-                let image = UIImage(cgImage: cgImage)
+                // saving image
+//                let ciImage = CIImage(cvPixelBuffer: self.currentBuffer!)
+//                let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
+//                let rotatedCIImage = ciImage.transformed(by: rotation)
+//
+//                let context = CIContext()
+//                guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return }
+//                let image = UIImage(cgImage: cgImage)
+//                
+//                let imageWithBox = drawRectanglesOnImage(image: image, boundingBoxes: [self.boundingBox!])
+//                saveImageToGallery(imageWithBox)
                 
-                let imageWithBox = drawRectanglesOnImage(image: image, boundingBoxes: [self.boundingBox!])
+                /// Measure width
+                let leftMiddleNormalized = CGPoint(
+                    x: self.boundingBox!.origin.x,
+                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height / 2
+                )
+                let rightMiddleNormalized = CGPoint(
+                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width,
+                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height / 2
+                )
+                let topMiddleNormalized = CGPoint(
+                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width / 2,
+                    y: self.boundingBox!.origin.y
+                )
+                let bottomMiddleNormalized = CGPoint(
+                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width / 2,
+                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height
+                )
+                let centerNormalized = CGPoint(
+                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width / 2,
+                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height / 2
+                )
 
-                saveImageToGallery(imageWithBox)
+                let leftMiddle = CGPoint(
+                    x: leftMiddleNormalized.x * self.sceneView.bounds.width,
+                    y: (1 - leftMiddleNormalized.y) * self.sceneView.bounds.height  // Adjusting for UIKit's coordinate system
+                )
+                let rightMiddle = CGPoint(
+                    x: rightMiddleNormalized.x * self.sceneView.bounds.width,
+                    y: (1 - rightMiddleNormalized.y) * self.sceneView.bounds.height  // Adjusting for UIKit's coordinate system
+                )
+                let topMiddle = CGPoint(
+                    x: topMiddleNormalized.x * self.sceneView.bounds.width,
+                    y: (1 - topMiddleNormalized.y) * self.sceneView.bounds.height
+                )
+                let bottomMiddle = CGPoint(
+                    x: bottomMiddleNormalized.x * self.sceneView.bounds.width,
+                    y: (1 - bottomMiddleNormalized.y) * self.sceneView.bounds.height
+                )
+                let center = CGPoint(
+                    x: centerNormalized.x * self.sceneView.bounds.width,
+                    y: (1 - centerNormalized.y) * self.sceneView.bounds.height  // Adjust for UIKit's coordinate system with origin at top-left
+                )
+
+                let hitTestLeft = self.sceneView.hitTest(leftMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
+                let hitTestRight = self.sceneView.hitTest(rightMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
+                let hitTestTop = self.sceneView.hitTest(topMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
+                let hitTestBottom = self.sceneView.hitTest(bottomMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
+                let hitTestCenter = self.sceneView.hitTest(center, types: [.featurePoint, .estimatedHorizontalPlane])
+
+                let anchorLeft = ARAnchor(transform: hitTestLeft.first!.worldTransform)
+                let anchorRight = ARAnchor(transform: hitTestRight.first!.worldTransform)
+                let anchorTop = ARAnchor(transform: hitTestTop.first!.worldTransform)
+                let anchorBottom = ARAnchor(transform: hitTestBottom.first!.worldTransform)
+                let anchorCenter = ARAnchor(transform: hitTestCenter.first!.worldTransform)
+
+                // for debugging
+                self.sceneView.session.add(anchor: anchorLeft)
+                self.sceneView.session.add(anchor: anchorRight)
+                self.sceneView.session.add(anchor: anchorTop)
+                self.sceneView.session.add(anchor: anchorBottom)
+                self.sceneView.session.add(anchor: anchorCenter)
+                self.anchorLabels[anchorLeft.identifier] = "left"
+                self.anchorLabels[anchorRight.identifier] = "right"
+                self.anchorLabels[anchorTop.identifier] = "top"
+                self.anchorLabels[anchorBottom.identifier] = "bottom"
+                self.anchorLabels[anchorCenter.identifier] = "center"
+
+                // size calculation
+                let width = self.calculateDistanceBetweenAnchors(anchor1: anchorLeft, anchor2: anchorRight)
+                let length = self.calculateDistanceBetweenAnchors(anchor1: anchorTop, anchor2: anchorBottom)
                 
+                // keep only the center point's height
+                let anchor1Transform = self.refAnchor!.transform
+                let anchor1Position = SIMD3<Float>(anchor1Transform.columns.3.x, anchor1Transform.columns.3.y, anchor1Transform.columns.3.z)
+
+                let anchor2Transform = anchorCenter.transform
+                let anchor2Position = SIMD3<Float>(anchor2Transform.columns.3.x, anchor2Transform.columns.3.y, anchor2Transform.columns.3.z)
+
+                var newTransform = anchor2Transform  // Start with the current transform
+                newTransform.columns.3.x = anchor1Position.x
+                newTransform.columns.3.y = anchor2Position.y
+                newTransform.columns.3.z = anchor1Position.z  // If you want to match Z as well
+                
+                let normCenter = ARAnchor(transform: newTransform)
+                let height = self.calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenter)
+                
+                let circumference = self.ovalCircumference(a: width, b: length, roundness: 0.5)
+                
+                let fishWeight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
+                let formattedWeight = String(format: "%.3f", fishWeight)
+
+                self.anchorLabels[anchorCenter.identifier] = "\(formattedWeight) lb"
+
+                self.sceneView.session.add(anchor: normCenter)
+                self.anchorLabels[normCenter.identifier] = "calc"
+
+                
+                let formattedWidth = String(format: "%.3f", width)
+                let formattedLength = String(format: "%.3f", length)
+                let formattedHeight = String(format: "%.3f", height)
+                print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight)")
+                print("Object weight: circumference \(circumference), ")
+
                 self.sceneView.session.pause()
             } else {
                 // Actions to perform when unfreezing
@@ -158,13 +262,29 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         
         return simd_distance(position1, position2)
     }
+    
+    /// Calculates the circumference of an oval, adjusting for a 'roundness' factor.
+    /// - Parameters:
+    ///   - a: Semi-major axis of the oval.
+    ///   - b: Semi-minor axis of the oval.
+    ///   - roundness: A factor from 0 (least round) to 1 (perfect circle) adjusting the calculation.
+    /// - Returns: The approximate circumference of the oval.
+    func ovalCircumference(a: Float, b: Float, roundness: Float) -> Float {
+        // Calculate the average of the axes as a base calculation
+        let averageAxis = (a + b) / 2.0
+        let baseCircumference = 2 * Float.pi * averageAxis
+
+        // Adjust the circumference based on the roundness
+        let adjustedCircumference = baseCircumference * (1 - roundness) + (2 * Float.pi * min(a, b) * roundness)
+        return adjustedCircumference
+    }
 
     // MARK: - ARSessionDelegate
     
     // Pass camera frames received from ARKit to Vision (when not already processing one)
     /// - Tag: ConsumeARFrames
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        print("Tracking State: \(frame.camera.trackingState), Frozen: \(isFrozen==true)")
+//        print("Tracking State: \(frame.camera.trackingState), Frozen: \(isFrozen==true)")
 
         // Do not enqueue other buffers for processing while another Vision task is still running.
         // The camera stream has only a finite amount of buffers available; holding too many buffers for analysis would starve the camera.
