@@ -187,11 +187,11 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                 self.sceneView.session.add(anchor: anchorTop)
                 self.sceneView.session.add(anchor: anchorBottom)
                 self.sceneView.session.add(anchor: anchorCenter)
-                self.anchorLabels[anchorLeft.identifier] = "left"
-                self.anchorLabels[anchorRight.identifier] = "right"
-                self.anchorLabels[anchorTop.identifier] = "top"
-                self.anchorLabels[anchorBottom.identifier] = "bottom"
-                self.anchorLabels[anchorCenter.identifier] = "center"
+                self.anchorLabels[anchorLeft.identifier] = "l"
+                self.anchorLabels[anchorRight.identifier] = "r"
+                self.anchorLabels[anchorTop.identifier] = "t"
+                self.anchorLabels[anchorBottom.identifier] = "b"
+                self.anchorLabels[anchorCenter.identifier] = "c"
 
                 // size calculation
                 let width = self.calculateDistanceBetweenAnchors(anchor1: anchorLeft, anchor2: anchorRight)
@@ -212,20 +212,22 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                 let normCenter = ARAnchor(transform: newTransform)
                 let height = self.calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenter)
                 
-                let circumference = self.ovalCircumference(a: width, b: length, roundness: 0.5)
+                let circumference = self.ovalCircumference(a: width, b: length, roundness: 1.0)
                 
                 let fishWeight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
                 let formattedWeight = String(format: "%.3f", fishWeight)
 
-                self.anchorLabels[anchorCenter.identifier] = "\(formattedWeight) lb"
-
                 self.sceneView.session.add(anchor: normCenter)
-                self.anchorLabels[normCenter.identifier] = "calc"
+                self.anchorLabels[normCenter.identifier] = "ref"
 
                 
                 let formattedWidth = String(format: "%.3f", width)
                 let formattedLength = String(format: "%.3f", length)
                 let formattedHeight = String(format: "%.3f", height)
+                
+                let lengthIn = String(format: "%.3f", length*39.3701)
+                self.anchorLabels[anchorCenter.identifier] = "\(formattedWeight) lb, \(lengthIn) in "
+
                 print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight)")
                 print("Object weight: circumference \(circumference), ")
 
