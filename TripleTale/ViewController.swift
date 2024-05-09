@@ -177,8 +177,8 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                 self.anchorLabels[anchorCenter.identifier] = "c"
 
                 // size calculation
-                let width = self.calculateDistanceBetweenAnchors(anchor1: anchorLeft, anchor2: anchorRight)
-                let length = self.calculateDistanceBetweenAnchors(anchor1: anchorTop, anchor2: anchorBottom)
+                let width = calculateDistanceBetweenAnchors(anchor1: anchorLeft, anchor2: anchorRight)
+                let length = calculateDistanceBetweenAnchors(anchor1: anchorTop, anchor2: anchorBottom)
                 
                 // keep only the center point's height
                 let anchor1Transform = self.refAnchor!.transform
@@ -193,9 +193,9 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                 newTransform.columns.3.z = anchor1Position.z  // If you want to match Z as well
                 
                 let normCenter = ARAnchor(transform: newTransform)
-                let height = self.calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenter)
+                let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenter)
                 
-                let circumference = self.ovalCircumference(a: width, b: length, roundness: 1.0)
+                let circumference = ovalCircumference(a: width, b: length, roundness: 1.0)
                 
                 let fishWeight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
                 let formattedWeight = String(format: "%.3f", fishWeight)
@@ -239,31 +239,7 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         // Pause the view's session
         sceneView.session.pause()
     }
-    
-    // MARK: - Calculations
-    func calculateDistanceBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
-        let position1 = SIMD3<Float>(anchor1.transform.columns.3.x, anchor1.transform.columns.3.y, anchor1.transform.columns.3.z)
-        let position2 = SIMD3<Float>(anchor2.transform.columns.3.x, anchor2.transform.columns.3.y, anchor2.transform.columns.3.z)
-        
-        return simd_distance(position1, position2)
-    }
-    
-    /// Calculates the circumference of an oval, adjusting for a 'roundness' factor.
-    /// - Parameters:
-    ///   - a: Semi-major axis of the oval.
-    ///   - b: Semi-minor axis of the oval.
-    ///   - roundness: A factor from 0 (least round) to 1 (perfect circle) adjusting the calculation.
-    /// - Returns: The approximate circumference of the oval.
-    func ovalCircumference(a: Float, b: Float, roundness: Float) -> Float {
-        // Calculate the average of the axes as a base calculation
-        let averageAxis = (a + b) / 2.0
-        let baseCircumference = 2 * Float.pi * averageAxis
-
-        // Adjust the circumference based on the roundness
-        let adjustedCircumference = baseCircumference * (1 - roundness) + (2 * Float.pi * min(a, b) * roundness)
-        return adjustedCircumference
-    }
-
+ 
     // MARK: - ARSessionDelegate
     
     // Pass camera frames received from ARKit to Vision (when not already processing one)
@@ -279,7 +255,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         
         // Retain the image buffer for Vision processing.
         self.currentBuffer = frame.capturedImage
-//        classifyCurrentImage()
         detectCurrentImage()
     }
     
