@@ -345,34 +345,6 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
     // Labels for classified objects by ARAnchor UUID
     private var anchorLabels = [UUID: String]()
     
-    // When the user taps, add an anchor associated with the current classification result.
-    /// - Tag: PlaceLabelAtLocation
-    @IBAction func placeLabelAtLocation(sender: UITapGestureRecognizer) {
-        let hitLocationInView = sender.location(in: sceneView)
-        let hitTestResults = sceneView.hitTest(hitLocationInView, types: [.featurePoint, .estimatedHorizontalPlane])
-        if let result = hitTestResults.first {
-            
-            
-            // Add a new anchor at the tap location.
-            let anchor = ARAnchor(transform: result.worldTransform)
-            sceneView.session.add(anchor: anchor)
-            
-            if lastAnchor == nil {
-                // Track anchor ID to associate text with the anchor after ARKit creates a corresponding SKNode.
-                anchorLabels[anchor.identifier] = identifierString
-                
-                lastAnchor = anchor
-            } else {
-                let distance = calculateDistanceBetweenAnchors(anchor1: lastAnchor!, anchor2: anchor)
-                let formattedDistance = String(format: "%.3f", distance)
-
-                anchorLabels[anchor.identifier] = "Distance: \(formattedDistance) meters"
-                
-                lastAnchor = nil
-            }
-        }
-    }
-    
     // When an anchor is added, provide a SpriteKit node for it and set its text to the classification label.
     /// - Tag: UpdateARContent
     func view(_ view: ARSKView, didAdd node: SKNode, for anchor: ARAnchor) {

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14105" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BV1-FR-VrT">
-    <device id="retina4_7" orientation="portrait">
-        <adaptation id="fullscreen"/>
-    </device>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BV1-FR-VrT">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14088"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -13,7 +11,7 @@
         <!--View Controller-->
         <scene sceneID="tXr-a1-R10">
             <objects>
-                <viewController id="BV1-FR-VrT" customClass="ViewController" customModule="ARKitVision" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="BV1-FR-VrT" customClass="ViewController" customModule="TripleTale" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="nvV-1F-zG0">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -21,9 +19,6 @@
                             <arskView contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="9C1-uQ-ecX">
                                 <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                                 <gestureRecognizers/>
-                                <connections>
-                                    <outletCollection property="gestureRecognizers" destination="f0K-i8-Pgm" appends="YES" id="H61-we-Ael"/>
-                                </connections>
                             </arskView>
                             <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="KDf-aN-SqQ">
                                 <rect key="frame" x="0.0" y="20" width="375" height="85"/>
@@ -35,6 +30,7 @@
                                 </connections>
                             </containerView>
                         </subviews>
+                        <viewLayoutGuide key="safeArea" id="B6f-8k-vfK"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="B6f-8k-vfK" firstAttribute="trailing" secondItem="9C1-uQ-ecX" secondAttribute="trailing" id="FRK-rs-yMF"/>
@@ -45,39 +41,33 @@
                             <constraint firstAttribute="top" secondItem="9C1-uQ-ecX" secondAttribute="top" id="wWJ-9r-hSp"/>
                             <constraint firstItem="KDf-aN-SqQ" firstAttribute="top" secondItem="B6f-8k-vfK" secondAttribute="top" id="yPf-a2-fC7"/>
                         </constraints>
-                        <viewLayoutGuide key="safeArea" id="B6f-8k-vfK"/>
                     </view>
                     <connections>
                         <outlet property="sceneView" destination="9C1-uQ-ecX" id="tyF-hd-OH8"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="SZV-WD-TEh" sceneMemberID="firstResponder"/>
-                <tapGestureRecognizer id="f0K-i8-Pgm">
-                    <connections>
-                        <action selector="placeLabelAtLocationWithSender:" destination="BV1-FR-VrT" id="vPA-Z5-obT"/>
-                    </connections>
-                </tapGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="53.600000000000001" y="-985.45727136431788"/>
         </scene>
         <!--Status View Controller-->
         <scene sceneID="nMy-4X-8W1">
             <objects>
-                <viewController id="edC-Sl-R4A" customClass="StatusViewController" customModule="ARKitVision" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="edC-Sl-R4A" customClass="StatusViewController" customModule="TripleTale" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="UgU-S5-mck">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="85"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <visualEffectView hidden="YES" opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="100" translatesAutoresizingMaskIntoConstraints="NO" id="nS7-XY-fhy" userLabel="Message Panel">
-                                <rect key="frame" x="16" y="20" width="125" height="49"/>
+                                <rect key="frame" x="16" y="40" width="125" height="29"/>
                                 <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="iX5-ew-DwE">
-                                    <rect key="frame" x="0.0" y="0.0" width="125" height="49"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="125" height="29"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <visualEffectView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="1Z2-xi-mqm">
-                                            <rect key="frame" x="0.0" y="0.0" width="125" height="33"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="125" height="32"/>
                                             <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="fyy-w0-Moy">
-                                                <rect key="frame" x="0.0" y="0.0" width="125" height="33"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="125" height="32"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="750" verticalCompressionResistancePriority="250" text="Tracking status" lineBreakMode="tailTruncation" numberOfLines="3" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="wim-jg-SVN" userLabel="Messages label">
@@ -114,7 +104,7 @@
                                 </userDefinedRuntimeAttributes>
                             </visualEffectView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="bottom" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="kv7-nP-yf5" userLabel="Restart Experience Button Icon">
-                                <rect key="frame" x="331" y="0.0" width="44" height="59"/>
+                                <rect key="frame" x="331" y="20" width="44" height="59"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="59" id="a9W-yL-zeR"/>
                                     <constraint firstAttribute="width" constant="44" id="jwB-vC-T9c"/>
@@ -128,6 +118,7 @@
                                 </connections>
                             </button>
                         </subviews>
+                        <viewLayoutGuide key="safeArea" id="FBe-Po-j5a"/>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="nS7-XY-fhy" firstAttribute="top" secondItem="kv7-nP-yf5" secondAttribute="top" constant="20" id="2TS-s5-KHk"/>
@@ -137,7 +128,6 @@
                             <constraint firstItem="kv7-nP-yf5" firstAttribute="top" secondItem="FBe-Po-j5a" secondAttribute="top" id="fbD-eK-TDk"/>
                             <constraint firstItem="FBe-Po-j5a" firstAttribute="bottom" secondItem="nS7-XY-fhy" secondAttribute="bottom" constant="16" id="v2E-LY-kmP"/>
                         </constraints>
-                        <viewLayoutGuide key="safeArea" id="FBe-Po-j5a"/>
                     </view>
                     <connections>
                         <outlet property="messageLabel" destination="wim-jg-SVN" id="XAu-5b-XkS"/>
@@ -151,7 +141,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="restart" width="20" height="23"/>
-        <image name="restartPressed" width="20" height="23"/>
+        <image name="restart" width="20" height="20"/>
+        <image name="restartPressed" width="20" height="20"/>
     </resources>
 </document>
