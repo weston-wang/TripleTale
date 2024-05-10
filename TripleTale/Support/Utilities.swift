@@ -122,3 +122,30 @@ func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    
    return newAnchor
 }
+
+func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect) -> [ARAnchor] {
+    var cornerAnchors: [ARAnchor] = []
+    
+    let leftMiddle = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y + boundingBox.size.height / 2)
+    let anchorLeft = addAnchor(currentView, leftMiddle)
+
+    let rightMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width, boundingBox.origin.y + boundingBox.size.height / 2)
+    let anchorRight = addAnchor(currentView, rightMiddle)
+    
+    let topMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y)
+    let anchorTop = addAnchor(currentView, topMiddle)
+    
+    let bottomMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height)
+    let anchorBottom = addAnchor(currentView, bottomMiddle)
+    
+    let center = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height / 2)
+    let anchorCenter = addAnchor(currentView, center)
+    
+    cornerAnchors.append(anchorLeft)
+    cornerAnchors.append(anchorRight)
+    cornerAnchors.append(anchorTop)
+    cornerAnchors.append(anchorBottom)
+    cornerAnchors.append(anchorCenter)
+
+    return cornerAnchors
+}

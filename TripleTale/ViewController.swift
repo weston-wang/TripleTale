@@ -96,43 +96,30 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 // saving image
 //                saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
-                /// Measure width
-                let leftMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
-                let anchorLeft = addAnchor(self.sceneView, leftMiddle)
-
-                let rightMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
-                let anchorRight = addAnchor(self.sceneView, rightMiddle)
-                
-                let topMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y)
-                let anchorTop = addAnchor(self.sceneView, topMiddle)
-                
-                let bottomMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height)
-                let anchorBottom = addAnchor(self.sceneView, bottomMiddle)
-                
-                let center = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
-                let anchorCenter = addAnchor(self.sceneView, center)
+                /// Measurements
+                let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
                 
                 // for debugging
-                self.sceneView.session.add(anchor: anchorLeft)
-                self.sceneView.session.add(anchor: anchorRight)
-                self.sceneView.session.add(anchor: anchorTop)
-                self.sceneView.session.add(anchor: anchorBottom)
-                self.sceneView.session.add(anchor: anchorCenter)
-                self.anchorLabels[anchorLeft.identifier] = "l"
-                self.anchorLabels[anchorRight.identifier] = "r"
-                self.anchorLabels[anchorTop.identifier] = "t"
-                self.anchorLabels[anchorBottom.identifier] = "b"
-                self.anchorLabels[anchorCenter.identifier] = "c"
+                self.sceneView.session.add(anchor: cornerAnchors[0])
+                self.sceneView.session.add(anchor: cornerAnchors[1])
+                self.sceneView.session.add(anchor: cornerAnchors[2])
+                self.sceneView.session.add(anchor: cornerAnchors[3])
+                self.sceneView.session.add(anchor: cornerAnchors[4])
+                self.anchorLabels[cornerAnchors[0].identifier] = "l"
+                self.anchorLabels[cornerAnchors[1].identifier] = "r"
+                self.anchorLabels[cornerAnchors[2].identifier] = "t"
+                self.anchorLabels[cornerAnchors[3].identifier] = "b"
+                self.anchorLabels[cornerAnchors[4].identifier] = "c"
 
                 // size calculation
-                let width = calculateDistanceBetweenAnchors(anchor1: anchorLeft, anchor2: anchorRight)
-                let length = calculateDistanceBetweenAnchors(anchor1: anchorTop, anchor2: anchorBottom)
-                
+                let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
+                let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
+
                 // keep only the center point's height
                 let anchor1Transform = self.refAnchor!.transform
                 let anchor1Position = SIMD3<Float>(anchor1Transform.columns.3.x, anchor1Transform.columns.3.y, anchor1Transform.columns.3.z)
 
-                let anchor2Transform = anchorCenter.transform
+                let anchor2Transform = cornerAnchors[4].transform
                 let anchor2Position = SIMD3<Float>(anchor2Transform.columns.3.x, anchor2Transform.columns.3.y, anchor2Transform.columns.3.z)
 
                 var newTransform = anchor2Transform  // Start with the current transform
@@ -157,7 +144,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let formattedHeight = String(format: "%.3f", height)
                 
                 let lengthIn = String(format: "%.3f", length*39.3701)
-                self.anchorLabels[anchorCenter.identifier] = "\(formattedWeight) lb, \(lengthIn) in "
+                self.anchorLabels[cornerAnchors[4].identifier] = "\(formattedWeight) lb, \(lengthIn) in "
 
                 print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight)")
                 print("Object weight: circumference \(circumference), ")
