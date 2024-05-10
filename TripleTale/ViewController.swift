@@ -10,7 +10,7 @@ import SpriteKit
 import ARKit
 import Vision
 
-class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDelegate, ARSessionDelegate {
+class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     @IBOutlet weak var sceneView: ARSKView!
     
@@ -82,88 +82,36 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
                 if self.firstSession {
                     // Pause the AR session
                     let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
-                    let hitTestResults = self.sceneView.hitTest(bottomLeft, types: [.featurePoint, .estimatedHorizontalPlane])
+                    self.refAnchor = self.addAnchor(self.sceneView, bottomLeft)
                     
-                    if let result = hitTestResults.first {
-                        self.refAnchor = ARAnchor(transform: result.worldTransform)
-                        self.sceneView.session.add(anchor: self.refAnchor!)
-                        
-                        let position = self.refAnchor!.transform.columns.3
-                        let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
-                        
-                        self.anchorLabels[self.refAnchor!.identifier] = coordinatesString
-                    }
+                    let position = self.refAnchor!.transform.columns.3
+                    let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
+                    
+                    self.sceneView.session.add(anchor: self.refAnchor!)
+                    self.anchorLabels[self.refAnchor!.identifier] = coordinatesString
                     
                     self.firstSession = false
                 }
                 
                 // saving image
-//                let ciImage = CIImage(cvPixelBuffer: self.currentBuffer!)
-//                let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
-//                let rotatedCIImage = ciImage.transformed(by: rotation)
-//
-//                let context = CIContext()
-//                guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return }
-//                let image = UIImage(cgImage: cgImage)
-//                
-//                let imageWithBox = drawRectanglesOnImage(image: image, boundingBoxes: [self.boundingBox!])
-//                saveImageToGallery(imageWithBox)
+//                saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
                 /// Measure width
-                let leftMiddleNormalized = CGPoint(
-                    x: self.boundingBox!.origin.x,
-                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height / 2
-                )
-                let rightMiddleNormalized = CGPoint(
-                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width,
-                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height / 2
-                )
-                let topMiddleNormalized = CGPoint(
-                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width / 2,
-                    y: self.boundingBox!.origin.y
-                )
-                let bottomMiddleNormalized = CGPoint(
-                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width / 2,
-                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height
-                )
-                let centerNormalized = CGPoint(
-                    x: self.boundingBox!.origin.x + self.boundingBox!.size.width / 2,
-                    y: self.boundingBox!.origin.y + self.boundingBox!.size.height / 2
-                )
+                let leftMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
+                let anchorLeft = self.addAnchor(self.sceneView, leftMiddle)
 
-                let leftMiddle = CGPoint(
-                    x: leftMiddleNormalized.x * self.sceneView.bounds.width,
-                    y: (1 - leftMiddleNormalized.y) * self.sceneView.bounds.height  // Adjusting for UIKit's coordinate system
-                )
-                let rightMiddle = CGPoint(
-                    x: rightMiddleNormalized.x * self.sceneView.bounds.width,
-                    y: (1 - rightMiddleNormalized.y) * self.sceneView.bounds.height  // Adjusting for UIKit's coordinate system
-                )
-                let topMiddle = CGPoint(
-                    x: topMiddleNormalized.x * self.sceneView.bounds.width,
-                    y: (1 - topMiddleNormalized.y) * self.sceneView.bounds.height
-                )
-                let bottomMiddle = CGPoint(
-                    x: bottomMiddleNormalized.x * self.sceneView.bounds.width,
-                    y: (1 - bottomMiddleNormalized.y) * self.sceneView.bounds.height
-                )
-                let center = CGPoint(
-                    x: centerNormalized.x * self.sceneView.bounds.width,
-                    y: (1 - centerNormalized.y) * self.sceneView.bounds.height  // Adjust for UIKit's coordinate system with origin at top-left
-                )
-
-                let hitTestLeft = self.sceneView.hitTest(leftMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
-                let hitTestRight = self.sceneView.hitTest(rightMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
-                let hitTestTop = self.sceneView.hitTest(topMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
-                let hitTestBottom = self.sceneView.hitTest(bottomMiddle, types: [.featurePoint, .estimatedHorizontalPlane])
-                let hitTestCenter = self.sceneView.hitTest(center, types: [.featurePoint, .estimatedHorizontalPlane])
-
-                let anchorLeft = ARAnchor(transform: hitTestLeft.first!.worldTransform)
-                let anchorRight = ARAnchor(transform: hitTestRight.first!.worldTransform)
-                let anchorTop = ARAnchor(transform: hitTestTop.first!.worldTransform)
-                let anchorBottom = ARAnchor(transform: hitTestBottom.first!.worldTransform)
-                let anchorCenter = ARAnchor(transform: hitTestCenter.first!.worldTransform)
-
+                let rightMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
+                let anchorRight = self.addAnchor(self.sceneView, rightMiddle)
+                
+                let topMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y)
+                let anchorTop = self.addAnchor(self.sceneView, topMiddle)
+                
+                let bottomMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height)
+                let anchorBottom = self.addAnchor(self.sceneView, bottomMiddle)
+                
+                let center = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
+                let anchorCenter = self.addAnchor(self.sceneView, center)
+                
                 // for debugging
                 self.sceneView.session.add(anchor: anchorLeft)
                 self.sceneView.session.add(anchor: anchorRight)
@@ -240,6 +188,27 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         sceneView.session.pause()
     }
  
+    func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
+        let newAnchor: ARAnchor
+        
+        let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
+        let result = hitTestResults.first
+        newAnchor = ARAnchor(transform: result!.worldTransform)
+        
+        return newAnchor
+    }
+    
+    func getScreenPosition(_ currentView: ARSKView, _ xPos: CGFloat, _ yPos: CGFloat) -> CGPoint {
+        let normalizedPoint = CGPoint(x: xPos, y: yPos)
+        
+        let actualPosition = CGPoint(
+            x: normalizedPoint.x * currentView.bounds.width,
+            y: (1 - normalizedPoint.y) * currentView.bounds.height  // Adjusting for UIKit's coordinate system
+        )
+        
+        return actualPosition
+    }
+    
     // MARK: - ARSessionDelegate
     
     // Pass camera frames received from ARKit to Vision (when not already processing one)
@@ -265,12 +234,13 @@ class ViewController: UIViewController, UIGestureRecognizerDelegate, ARSKViewDel
         do {
             // Instantiate the model from its generated Swift class.
             let model = try VNCoreMLModel(for: yolo3Model.model)
+
             let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
                 self?.processDetections(for: request, error: error)
             })
             
             // Use CPU for Vision processing to ensure that there are adequate GPU resources for rendering.
-            request.usesCPUOnly = true
+//            request.usesCPUOnly = true
             
             return request
         } catch {

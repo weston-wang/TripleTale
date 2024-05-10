@@ -88,3 +88,16 @@ func cropImage(_ image: UIImage, withNormalizedRect normalizedRect: CGRect) -> U
     // Convert cropped CGImage back to UIImage
     return UIImage(cgImage: croppedCgImage, scale: image.scale, orientation: image.imageOrientation)
 }
+
+func saveDebugImage(_ inputPixelBuffer: CVPixelBuffer, _ inputBoundingBox: CGRect) {
+    let ciImage = CIImage(cvPixelBuffer: inputPixelBuffer)
+    let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
+    let rotatedCIImage = ciImage.transformed(by: rotation)
+
+    let context = CIContext()
+    guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return }
+    let image = UIImage(cgImage: cgImage)
+
+    let imageWithBox = drawRectanglesOnImage(image: image, boundingBoxes: [inputBoundingBox])
+    saveImageToGallery(imageWithBox)
+}
