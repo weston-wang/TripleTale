@@ -18,7 +18,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var refAnchor: ARAnchor?
 
     private var isFrozen = false
-    private var firstSession = true
 
     /// The ML model to be used for detection of arbitrary objects
     private var _tripleTaleModel: TripleTaleV1!
@@ -54,7 +53,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         sceneView.presentScene(overlayScene)
         sceneView.session.delegate = self
         
-        let freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
+        let freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, 
+                                                  width: 70, height: 70))
         freezeButton.backgroundColor = .white
         freezeButton.layer.cornerRadius = 35
         freezeButton.clipsToBounds = true
@@ -79,21 +79,16 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             self.isFrozen.toggle()  // Toggle the state of isFrozen
 
             if self.isFrozen {
-                // Actions to perform when freezing
-                if self.firstSession {
-                    // Pause the AR session
-                    let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
-                    self.refAnchor = addAnchor(self.sceneView, bottomLeft)
-                    
-                    let position = self.refAnchor!.transform.columns.3
-                    print("ref position: \(position)")
-                    
-                    self.sceneView.session.add(anchor: self.refAnchor!)
-                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
-                    
-                    self.firstSession = false
-                }
+                // Pause the AR session
+                let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
+                self.refAnchor = addAnchor(self.sceneView, bottomLeft)
                 
+                let position = self.refAnchor!.transform.columns.3
+                print("ref position: \(position)")
+                
+                self.sceneView.session.add(anchor: self.refAnchor!)
+                self.anchorLabels[self.refAnchor!.identifier] = "ref"
+
                 // saving image
                 saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
@@ -166,8 +161,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     // Pass camera frames received from ARKit to Vision (when not already processing one)
     /// - Tag: ConsumeARFrames
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-//        print("Tracking State: \(frame.camera.trackingState), Frozen: \(isFrozen==true)")
-
         // Do not enqueue other buffers for processing while another Vision task is still running.
         // The camera stream has only a finite amount of buffers available; holding too many buffers for analysis would starve the camera.
         guard currentBuffer == nil, case .normal = frame.camera.trackingState else {
