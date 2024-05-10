@@ -88,14 +88,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 
                 self.sceneView.session.add(anchor: self.refAnchor!)
                 self.anchorLabels[self.refAnchor!.identifier] = "ref"
-
+                
                 // saving image
                 saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
                 /// Measurements
                 let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
                 let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
-
+                
                 // for debugging
                 self.sceneView.session.add(anchor: cornerAnchors[0])
                 self.sceneView.session.add(anchor: cornerAnchors[1])
@@ -103,14 +103,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 self.sceneView.session.add(anchor: cornerAnchors[3])
                 self.sceneView.session.add(anchor: cornerAnchors[4])
                 self.sceneView.session.add(anchor: normCenterAnchor)
-
+                
                 self.anchorLabels[cornerAnchors[0].identifier] = "l"
                 self.anchorLabels[cornerAnchors[1].identifier] = "r"
                 self.anchorLabels[cornerAnchors[2].identifier] = "t"
                 self.anchorLabels[cornerAnchors[3].identifier] = "b"
                 self.anchorLabels[cornerAnchors[4].identifier] = "c"
                 self.anchorLabels[normCenterAnchor.identifier] = "c_t"
-
+                
                 // size calculation
                 let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
                 let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
@@ -127,14 +127,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let formattedWidth = String(format: "%.3f", width)
                 let formattedLength = String(format: "%.3f", length)
                 let formattedHeight = String(format: "%.3f", height)
-
+                
                 print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight), circumference \(circumference) m")
-
-                self.sceneView.session.pause()
-            } else {
-                // Actions to perform when unfreezing
-                let configuration = ARWorldTrackingConfiguration()
-                self.sceneView.session.run(configuration)
+                
+                //                self.sceneView.session.pause()
+                self.isFrozen.toggle()
             }
         }
     }
