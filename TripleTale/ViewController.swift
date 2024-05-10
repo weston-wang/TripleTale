@@ -98,36 +98,33 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 
                 /// Measurements
                 let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
-                
+                let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
+
                 // for debugging
                 self.sceneView.session.add(anchor: cornerAnchors[0])
                 self.sceneView.session.add(anchor: cornerAnchors[1])
                 self.sceneView.session.add(anchor: cornerAnchors[2])
                 self.sceneView.session.add(anchor: cornerAnchors[3])
                 self.sceneView.session.add(anchor: cornerAnchors[4])
+                self.sceneView.session.add(anchor: normCenterAnchor)
+
                 self.anchorLabels[cornerAnchors[0].identifier] = "l"
                 self.anchorLabels[cornerAnchors[1].identifier] = "r"
                 self.anchorLabels[cornerAnchors[2].identifier] = "t"
                 self.anchorLabels[cornerAnchors[3].identifier] = "b"
                 self.anchorLabels[cornerAnchors[4].identifier] = "c"
+                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
 
                 // size calculation
                 let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
                 let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
-
-                // keep only the center point's height
-                let normCenter = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
-                let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenter)
+                let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenterAnchor)
                 
                 let circumference = ovalCircumference(a: width, b: length, roundness: 1.0)
                 
                 let fishWeight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
                 let formattedWeight = String(format: "%.3f", fishWeight)
-
-                self.sceneView.session.add(anchor: normCenter)
-                self.anchorLabels[normCenter.identifier] = "ref"
-
-                
+     
                 let formattedWidth = String(format: "%.3f", width)
                 let formattedLength = String(format: "%.3f", length)
                 let formattedHeight = String(format: "%.3f", height)
