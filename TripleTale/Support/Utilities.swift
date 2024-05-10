@@ -46,6 +46,31 @@ extension CGImagePropertyOrientation {
     }
 }
 
+extension UIImage {
+    func imageWithText(_ text: String, atPoint point: CGPoint, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: fontSize),
+            .foregroundColor: textColor
+        ]
+        
+        // Start drawing image context
+        UIGraphicsBeginImageContextWithOptions(self.size, false, 0.0)
+        defer { UIGraphicsEndImageContext() }
+        
+        // Draw the original image
+        self.draw(in: CGRect(origin: CGPoint.zero, size: self.size))
+        
+        // Define text rectangle
+        let rect = CGRect(origin: point, size: self.size)
+        
+        // Draw text in the rect
+        text.draw(in: rect, withAttributes: textAttributes)
+        
+        // Get the new image
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+}
+
 func saveImageToGallery(_ image: UIImage) {
     // Request authorization
     PHPhotoLibrary.requestAuthorization { status in
@@ -68,6 +93,17 @@ func saveImageToGallery(_ image: UIImage) {
             print("No permission to access photo library.")
         }
     }
+}
+
+func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
+    let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+    
+    let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
+    let rotatedCIImage = ciImage.transformed(by: rotation)
+
+    let context = CIContext(options: nil)
+    guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+    return UIImage(cgImage: cgImage)
 }
 
 func drawRectanglesOnImage(image: UIImage, boundingBoxes: [CGRect]) -> UIImage {

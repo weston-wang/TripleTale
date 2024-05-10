@@ -19,7 +19,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 
     private var freezeButton: UIButton?
     private var isFrozen = false
-
+    
+    private var saveImage: UIImage?
+    
     /// The ML model to be used for detection of arbitrary objects
     private var _tripleTaleModel: TripleTaleV1!
     private var tripleTaleModel: TripleTaleV1! {
@@ -92,9 +94,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 //                self.sceneView.session.add(anchor: self.refAnchor!)
 //                self.anchorLabels[self.refAnchor!.identifier] = "ref"
                 
-                // saving image
-//                saveDebugImage(self.currentBuffer!, self.boundingBox!)
-                
                 /// Measurements
                 let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
                 let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
@@ -134,7 +133,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 
                 self.view.showToast(message: "W \(formattedWidth) m x H \(formattedLength) m x L \(formattedHeight), C \(formattedCircumference) m")
                 
-                //                self.sceneView.session.pause()
+                // saving image
+//                let point = CGPoint(x: 50, y: 50)  // Modify as needed
+//                let fontSize: CGFloat = 30
+//                let textColor = UIColor.white
+//                let newTextImage = self.saveImage!.imageWithText("\(weightLb) lb, \(lengthIn) in ", atPoint: point, fontSize: fontSize, textColor: textColor)
+//
+//                saveImageToGallery(newTextImage!)
+
                 self.isFrozen.toggle()
             }
         }
@@ -170,6 +176,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         // Retain the image buffer for Vision processing.
         self.currentBuffer = frame.capturedImage
+        
+        self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
+        
         detectCurrentImage()
     }
     
@@ -199,7 +208,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var currentBuffer: CVPixelBuffer?
     
     // Queue for dispatching vision classification requests
-    private let visionQueue = DispatchQueue(label: "com.example.apple-samplecode.ARKitVision.serialVisionQueue")
+    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
     
     private func detectCurrentImage() {
         // Most computer vision tasks are not rotation agnostic so it is important to pass in the orientation of the image with respect to device.
