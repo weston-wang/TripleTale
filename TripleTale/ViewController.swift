@@ -89,8 +89,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let position = self.refAnchor!.transform.columns.3
                 print("ref position: \(position)")
                 
-                self.sceneView.session.add(anchor: self.refAnchor!)
-                self.anchorLabels[self.refAnchor!.identifier] = "ref"
+//                self.sceneView.session.add(anchor: self.refAnchor!)
+//                self.anchorLabels[self.refAnchor!.identifier] = "ref"
                 
                 // saving image
 //                saveDebugImage(self.currentBuffer!, self.boundingBox!)
@@ -100,19 +100,19 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
                 
                 // for debugging
-                self.sceneView.session.add(anchor: cornerAnchors[0])
-                self.sceneView.session.add(anchor: cornerAnchors[1])
-                self.sceneView.session.add(anchor: cornerAnchors[2])
-                self.sceneView.session.add(anchor: cornerAnchors[3])
+//                self.sceneView.session.add(anchor: cornerAnchors[0])
+//                self.sceneView.session.add(anchor: cornerAnchors[1])
+//                self.sceneView.session.add(anchor: cornerAnchors[2])
+//                self.sceneView.session.add(anchor: cornerAnchors[3])
                 self.sceneView.session.add(anchor: cornerAnchors[4])
-                self.sceneView.session.add(anchor: normCenterAnchor)
-                
-                self.anchorLabels[cornerAnchors[0].identifier] = "l"
-                self.anchorLabels[cornerAnchors[1].identifier] = "r"
-                self.anchorLabels[cornerAnchors[2].identifier] = "t"
-                self.anchorLabels[cornerAnchors[3].identifier] = "b"
-                self.anchorLabels[cornerAnchors[4].identifier] = "c"
-                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
+//                self.sceneView.session.add(anchor: normCenterAnchor)
+//                
+//                self.anchorLabels[cornerAnchors[0].identifier] = "l"
+//                self.anchorLabels[cornerAnchors[1].identifier] = "r"
+//                self.anchorLabels[cornerAnchors[2].identifier] = "t"
+//                self.anchorLabels[cornerAnchors[3].identifier] = "b"
+//                self.anchorLabels[cornerAnchors[4].identifier] = "c"
+//                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
                 
                 // size calculation
                 let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
@@ -127,11 +127,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let lengthIn = String(format: "%.3f", length*39.3701)
                 self.anchorLabels[cornerAnchors[4].identifier] = "\(weightLb) lb, \(lengthIn) in "
                 
-                let formattedWidth = String(format: "%.3f", width)
-                let formattedLength = String(format: "%.3f", length)
-                let formattedHeight = String(format: "%.3f", height)
-                
-                print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight), circumference \(circumference) m")
+                let formattedWidth = String(format: "%.2f", width)
+                let formattedLength = String(format: "%.2f", length)
+                let formattedHeight = String(format: "%.2f", height)
+                let formattedCircumference = String(format: "%.2f", circumference)
+
+                self.view.showToast(message: "W \(formattedWidth) m x H \(formattedLength) m x L \(formattedHeight), C \(formattedCircumference) m")
                 
                 //                self.sceneView.session.pause()
                 self.isFrozen.toggle()
