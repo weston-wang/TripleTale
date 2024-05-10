@@ -116,18 +116,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
 
                 // keep only the center point's height
-                let anchor1Transform = self.refAnchor!.transform
-                let anchor1Position = SIMD3<Float>(anchor1Transform.columns.3.x, anchor1Transform.columns.3.y, anchor1Transform.columns.3.z)
-
-                let anchor2Transform = cornerAnchors[4].transform
-                let anchor2Position = SIMD3<Float>(anchor2Transform.columns.3.x, anchor2Transform.columns.3.y, anchor2Transform.columns.3.z)
-
-                var newTransform = anchor2Transform  // Start with the current transform
-                newTransform.columns.3.x = anchor1Position.x
-                newTransform.columns.3.y = anchor2Position.y
-                newTransform.columns.3.z = anchor1Position.z  // If you want to match Z as well
-                
-                let normCenter = ARAnchor(transform: newTransform)
+                let normCenter = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
                 let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenter)
                 
                 let circumference = ovalCircumference(a: width, b: length, roundness: 1.0)

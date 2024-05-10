@@ -149,3 +149,18 @@ func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect) -> [ARAnchor] {
 
     return cornerAnchors
 }
+
+func transformHeightAnchor(_ refAnchor: ARAnchor, _ centerAnchor: ARAnchor) -> ARAnchor {
+    let anchor1Transform = refAnchor.transform
+    let anchor1Position = SIMD3<Float>(anchor1Transform.columns.3.x, anchor1Transform.columns.3.y, anchor1Transform.columns.3.z)
+
+    let anchor2Transform = centerAnchor.transform
+    let anchor2Position = SIMD3<Float>(anchor2Transform.columns.3.x, anchor2Transform.columns.3.y, anchor2Transform.columns.3.z)
+
+    var newTransform = anchor2Transform  // Start with the current transform
+    newTransform.columns.3.x = anchor1Position.x
+    newTransform.columns.3.y = anchor2Position.y
+    newTransform.columns.3.z = anchor1Position.z  // If you want to match Z as well
+    
+    return ARAnchor(transform: newTransform)
+}
