@@ -85,10 +85,10 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     self.refAnchor = addAnchor(self.sceneView, bottomLeft)
                     
                     let position = self.refAnchor!.transform.columns.3
-                    let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
+                    print("ref position: \(position)")
                     
                     self.sceneView.session.add(anchor: self.refAnchor!)
-                    self.anchorLabels[self.refAnchor!.identifier] = coordinatesString
+                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
                     
                     self.firstSession = false
                 }
@@ -120,20 +120,19 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
                 let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenterAnchor)
                 
-                let circumference = ovalCircumference(a: width, b: length, roundness: 1.0)
+                let circumference = calculateCircumference(a: width, b: length, roundness: 1.0)
                 
-                let fishWeight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
-                let formattedWeight = String(format: "%.3f", fishWeight)
-     
+                let weight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
+                
+                let weightLb = String(format: "%.3f", weight)
+                let lengthIn = String(format: "%.3f", length*39.3701)
+                self.anchorLabels[cornerAnchors[4].identifier] = "\(weightLb) lb, \(lengthIn) in "
+                
                 let formattedWidth = String(format: "%.3f", width)
                 let formattedLength = String(format: "%.3f", length)
                 let formattedHeight = String(format: "%.3f", height)
-                
-                let lengthIn = String(format: "%.3f", length*39.3701)
-                self.anchorLabels[cornerAnchors[4].identifier] = "\(formattedWeight) lb, \(lengthIn) in "
 
-                print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight)")
-                print("Object weight: circumference \(circumference), ")
+                print("Object dimensions: width \(formattedWidth) m x length \(formattedLength) m x height \(formattedHeight), circumference \(circumference) m")
 
                 self.sceneView.session.pause()
             } else {
