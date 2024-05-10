@@ -82,7 +82,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 if self.firstSession {
                     // Pause the AR session
                     let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
-                    self.refAnchor = self.addAnchor(self.sceneView, bottomLeft)
+                    self.refAnchor = addAnchor(self.sceneView, bottomLeft)
                     
                     let position = self.refAnchor!.transform.columns.3
                     let coordinatesString = "X: \(position.x), Y: \(position.y), Z: \(position.z)"
@@ -97,20 +97,20 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 //                saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
                 /// Measure width
-                let leftMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
-                let anchorLeft = self.addAnchor(self.sceneView, leftMiddle)
+                let leftMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
+                let anchorLeft = addAnchor(self.sceneView, leftMiddle)
 
-                let rightMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
-                let anchorRight = self.addAnchor(self.sceneView, rightMiddle)
+                let rightMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
+                let anchorRight = addAnchor(self.sceneView, rightMiddle)
                 
-                let topMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y)
-                let anchorTop = self.addAnchor(self.sceneView, topMiddle)
+                let topMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y)
+                let anchorTop = addAnchor(self.sceneView, topMiddle)
                 
-                let bottomMiddle = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height)
-                let anchorBottom = self.addAnchor(self.sceneView, bottomMiddle)
+                let bottomMiddle = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height)
+                let anchorBottom = addAnchor(self.sceneView, bottomMiddle)
                 
-                let center = self.getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
-                let anchorCenter = self.addAnchor(self.sceneView, center)
+                let center = getScreenPosition(self.sceneView, self.boundingBox!.origin.x + self.boundingBox!.size.width / 2, self.boundingBox!.origin.y + self.boundingBox!.size.height / 2)
+                let anchorCenter = addAnchor(self.sceneView, center)
                 
                 // for debugging
                 self.sceneView.session.add(anchor: anchorLeft)
@@ -186,27 +186,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         // Pause the view's session
         sceneView.session.pause()
-    }
- 
-    func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
-        let newAnchor: ARAnchor
-        
-        let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
-        let result = hitTestResults.first
-        newAnchor = ARAnchor(transform: result!.worldTransform)
-        
-        return newAnchor
-    }
-    
-    func getScreenPosition(_ currentView: ARSKView, _ xPos: CGFloat, _ yPos: CGFloat) -> CGPoint {
-        let normalizedPoint = CGPoint(x: xPos, y: yPos)
-        
-        let actualPosition = CGPoint(
-            x: normalizedPoint.x * currentView.bounds.width,
-            y: (1 - normalizedPoint.y) * currentView.bounds.height  // Adjusting for UIKit's coordinate system
-        )
-        
-        return actualPosition
     }
     
     // MARK: - ARSessionDelegate

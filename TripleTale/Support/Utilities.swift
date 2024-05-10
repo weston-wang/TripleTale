@@ -101,3 +101,24 @@ func saveDebugImage(_ inputPixelBuffer: CVPixelBuffer, _ inputBoundingBox: CGRec
     let imageWithBox = drawRectanglesOnImage(image: image, boundingBoxes: [inputBoundingBox])
     saveImageToGallery(imageWithBox)
 }
+
+func getScreenPosition(_ currentView: ARSKView, _ xPos: CGFloat, _ yPos: CGFloat) -> CGPoint {
+    let normalizedPoint = CGPoint(x: xPos, y: yPos)
+    
+    let actualPosition = CGPoint(
+        x: normalizedPoint.x * currentView.bounds.width,
+        y: (1 - normalizedPoint.y) * currentView.bounds.height  // Adjusting for UIKit's coordinate system
+    )
+    
+    return actualPosition
+}
+
+func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
+   let newAnchor: ARAnchor
+   
+   let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
+   let result = hitTestResults.first
+   newAnchor = ARAnchor(transform: result!.worldTransform)
+   
+   return newAnchor
+}
