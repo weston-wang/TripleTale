@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		11BEDD9A201A8EBA00B93233 /* TemplateLabelNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11BEDD99201A8EBA00B93233 /* TemplateLabelNode.swift */; };
-		4E267BC52BEAF55500413D4C /* YOLOv3.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E267BC42BEAF55500413D4C /* YOLOv3.mlmodel */; };
 		4E97242B2BED648F004A73D2 /* Calculations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E97242A2BED648F004A73D2 /* Calculations.swift */; };
+		4E97242D2BEDD74A004A73D2 /* TripleTaleV1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E97242C2BEDD74A004A73D2 /* TripleTaleV1.mlmodel */; };
 		68612C321F7B0746002209A3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68612C311F7B0746002209A3 /* AppDelegate.swift */; };
 		68612C361F7B0746002209A3 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68612C351F7B0746002209A3 /* ViewController.swift */; };
 		68612C3B1F7B0746002209A3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 68612C3A1F7B0746002209A3 /* Assets.xcassets */; };
@@ -23,8 +23,8 @@
 /* Begin PBXFileReference section */
 		11BEDD99201A8EBA00B93233 /* TemplateLabelNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateLabelNode.swift; sourceTree = "<group>"; };
 		30180B1C1F82EB0900BE66A3 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		4E267BC42BEAF55500413D4C /* YOLOv3.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = YOLOv3.mlmodel; sourceTree = "<group>"; };
 		4E97242A2BED648F004A73D2 /* Calculations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calculations.swift; sourceTree = "<group>"; };
+		4E97242C2BEDD74A004A73D2 /* TripleTaleV1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV1.mlmodel; sourceTree = "<group>"; };
 		68612C2E1F7B0746002209A3 /* TripleTale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripleTale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68612C311F7B0746002209A3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		68612C351F7B0746002209A3 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -103,7 +103,7 @@
 			isa = PBXGroup;
 			children = (
 				68612C3A1F7B0746002209A3 /* Assets.xcassets */,
-				4E267BC42BEAF55500413D4C /* YOLOv3.mlmodel */,
+				4E97242C2BEDD74A004A73D2 /* TripleTaleV1.mlmodel */,
 				68612C3F1F7B0746002209A3 /* Info.plist */,
 				68A81B55200FE12E00A4ABCA /* LabelScene.sks */,
 				68612C3C1F7B0746002209A3 /* LaunchScreen.storyboard */,
@@ -196,8 +196,8 @@
 			files = (
 				68612C361F7B0746002209A3 /* ViewController.swift in Sources */,
 				11BEDD9A201A8EBA00B93233 /* TemplateLabelNode.swift in Sources */,
-				4E267BC52BEAF55500413D4C /* YOLOv3.mlmodel in Sources */,
 				68A81B54200FDD8A00A4ABCA /* Utilities.swift in Sources */,
+				4E97242D2BEDD74A004A73D2 /* TripleTaleV1.mlmodel in Sources */,
 				841E31001FC286F900F639ED /* StatusViewController.swift in Sources */,
 				4E97242B2BED648F004A73D2 /* Calculations.swift in Sources */,
 				68612C321F7B0746002209A3 /* AppDelegate.swift in Sources */,

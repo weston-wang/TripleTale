@@ -21,19 +21,19 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var firstSession = true
 
     /// The ML model to be used for detection of arbitrary objects
-    private var _yolo3Model: YOLOv3!
-    private var yolo3Model: YOLOv3! {
+    private var _tripleTaleModel: TripleTaleV1!
+    private var tripleTaleModel: TripleTaleV1! {
         get {
-            if let model = _yolo3Model { return model }
-            _yolo3Model = {
+            if let model = _tripleTaleModel { return model }
+            _tripleTaleModel = {
                 do {
                     let configuration = MLModelConfiguration()
-                    return try YOLOv3(configuration: configuration)
+                    return try TripleTaleV1(configuration: configuration)
                 } catch {
-                    fatalError("Couldn't create Inceptionv3 due to: \(error)")
+                    fatalError("Couldn't create TripleTaleV1 due to: \(error)")
                 }
             }()
-            return _yolo3Model
+            return _tripleTaleModel
         }
     }
     
@@ -73,6 +73,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             self.restartSession()
         }
     }
+    
     @objc func toggleFreeze() {
         DispatchQueue.main.async {
             self.isFrozen.toggle()  // Toggle the state of isFrozen
@@ -94,7 +95,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 }
                 
                 // saving image
-//                saveDebugImage(self.currentBuffer!, self.boundingBox!)
+                saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
                 /// Measurements
                 let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
@@ -184,7 +185,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private lazy var detectionRequest: VNCoreMLRequest = {
         do {
             // Instantiate the model from its generated Swift class.
-            let model = try VNCoreMLModel(for: yolo3Model.model)
+//            let model = try VNCoreMLModel(for: yolo3Model.model)
+            let model = try VNCoreMLModel(for: tripleTaleModel.model)
 
             let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
                 self?.processDetections(for: request, error: error)
