@@ -17,6 +17,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var lastAnchor: ARAnchor?
     private var refAnchor: ARAnchor?
 
+    private var freezeButton: UIButton?
     private var isFrozen = false
 
     /// The ML model to be used for detection of arbitrary objects
@@ -53,20 +54,22 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         sceneView.presentScene(overlayScene)
         sceneView.session.delegate = self
         
-        let freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, 
+        freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150,
                                                   width: 70, height: 70))
-        freezeButton.backgroundColor = .white
-        freezeButton.layer.cornerRadius = 35
-        freezeButton.clipsToBounds = true
+        freezeButton?.backgroundColor = .white
+        freezeButton?.layer.cornerRadius = 35
+        freezeButton?.clipsToBounds = true
 
         // Set the button images for different states
-        freezeButton.setImage(UIImage(named: "measure"), for: .normal)
-        freezeButton.setImage(UIImage(named: "pressed"), for: .highlighted)
+        freezeButton?.setImage(UIImage(named: "measure"), for: .normal)
+        freezeButton?.setImage(UIImage(named: "pressed"), for: .highlighted)
 
-        freezeButton.imageView?.contentMode = .scaleAspectFill
+        freezeButton?.imageView?.contentMode = .scaleAspectFill
         
-        freezeButton.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
-        view.addSubview(freezeButton)
+        freezeButton?.isHidden = true
+        
+        freezeButton?.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
+        view.addSubview(freezeButton!)
 
         // Hook up status view controller callback.
         statusViewController.restartExperienceHandler = { [unowned self] in
@@ -90,7 +93,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 self.anchorLabels[self.refAnchor!.identifier] = "ref"
                 
                 // saving image
-                saveDebugImage(self.currentBuffer!, self.boundingBox!)
+//                saveDebugImage(self.currentBuffer!, self.boundingBox!)
                 
                 /// Measurements
                 let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
@@ -274,8 +277,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         switch camera.trackingState {
         case .notAvailable, .limited:
+            DispatchQueue.main.async {
+                self.freezeButton?.isHidden = true
+            }
             statusViewController.escalateFeedback(for: camera.trackingState, inSeconds: 3.0)
         case .normal:
+            DispatchQueue.main.async {
+                self.freezeButton?.isHidden = false
+            }
             statusViewController.cancelScheduledMessage(for: .trackingStateEscalation)
             // Unhide content after successful relocalization.
             setOverlaysHidden(false)
@@ -310,7 +319,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
          to reset the session if the relocalizing status continues
          for a long time -- see `escalateFeedback` in `StatusViewController`.
          */
-        return true
+        return false
     }
 
     private func setOverlaysHidden(_ shouldHide: Bool) {
