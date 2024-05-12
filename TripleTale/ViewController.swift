@@ -82,7 +82,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     @objc func toggleFreeze() {
         DispatchQueue.main.async {
             self.isFrozen.toggle()  // Toggle the state of isFrozen
-
+            
+            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+            feedbackGenerator.prepare()
+            feedbackGenerator.impactOccurred()
+            
             if self.isFrozen {
                 // Pause the AR session
                 let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
