@@ -138,12 +138,17 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 self.view.showToast(message: "W \(formattedWidth) m x H \(formattedLength) m x L \(formattedHeight), C \(formattedCircumference) m")
                 
                 // saving image
-//                let point = CGPoint(x: 50, y: 50)  // Modify as needed
-//                let fontSize: CGFloat = 30
-//                let textColor = UIColor.white
-//                let newTextImage = self.saveImage!.imageWithText("\(weightLb) lb, \(lengthIn) in ", atPoint: point, fontSize: fontSize, textColor: textColor)
-//
-//                saveImageToGallery(newTextImage!)
+                
+                if self.saveImage != nil {
+                    let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
+
+                    let point = CGPoint(x: 50, y: 50)  // Modify as needed
+                    let fontSize: CGFloat = 45
+                    let textColor = UIColor.white
+                    let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(weightLb) lb, \(lengthIn) in. \(formattedWidth) m x H \(formattedLength) m x L \(formattedHeight), C \(formattedCircumference) m", atPoint: point, fontSize: fontSize, textColor: textColor)
+                    
+                    saveImageToGallery(newTextImage!)
+                }
 
                 self.isFrozen.toggle()
             }

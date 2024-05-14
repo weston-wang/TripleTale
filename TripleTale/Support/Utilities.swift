@@ -102,7 +102,7 @@ func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     let rotatedCIImage = ciImage.transformed(by: rotation)
 
     let context = CIContext(options: nil)
-    guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+    guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return nil }
     return UIImage(cgImage: cgImage)
 }
 
