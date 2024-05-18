@@ -22,12 +22,11 @@ func calculateDistanceBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Fl
 ///   - b: Semi-minor axis of the oval.
 ///   - roundness: A factor from 0 (least round) to 1 (perfect circle) adjusting the calculation.
 /// - Returns: The approximate circumference of the oval.
-func calculateCircumference(a: Float, b: Float, roundness: Float) -> Float {
-    // Calculate the average of the axes as a base calculation
-    let averageAxis = (a + b) / 2.0
-    let baseCircumference = 2 * Float.pi * averageAxis
-
-    // Adjust the circumference based on the roundness
-    let adjustedCircumference = baseCircumference * (1 - roundness) + (2 * Float.pi * min(a, b) * roundness)
-    return adjustedCircumference
+func calculateCircumference(majorAxis: Float, minorAxis: Float) -> Float {
+    let a = majorAxis / 2
+    let b = minorAxis / 2
+    // Ramanujan's first approximation for the circumference of an ellipse
+    let term1 = 3 * (a + b)
+    let term2 = sqrt((3 * a + b) * (a + 3 * b))
+    return Float(Double.pi) * (term1 - term2)
 }

@@ -23,16 +23,16 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var saveImage: UIImage?
     
     /// The ML model to be used for detection of arbitrary objects
-    private var _tripleTaleModel: TripleTaleV1!
-    private var tripleTaleModel: TripleTaleV1! {
+    private var _tripleTaleModel: TripleTaleV4!
+    private var tripleTaleModel: TripleTaleV4! {
         get {
             if let model = _tripleTaleModel { return model }
             _tripleTaleModel = {
                 do {
                     let configuration = MLModelConfiguration()
-                    return try TripleTaleV1(configuration: configuration)
+                    return try TripleTaleV4(configuration: configuration)
                 } catch {
-                    fatalError("Couldn't create TripleTaleV1 due to: \(error)")
+                    fatalError("Couldn't create TripleTaleV4 due to: \(error)")
                 }
             }()
             return _tripleTaleModel
@@ -88,64 +88,80 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             feedbackGenerator.impactOccurred()
             
             if self.isFrozen {
+                if self.saveImage != nil {
                 // Pause the AR session
                 let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
                 self.refAnchor = addAnchor(self.sceneView, bottomLeft)
+//                
+//                let position = self.refAnchor!.transform.columns.3
+//                print("ref position: \(position)")
                 
-                let position = self.refAnchor!.transform.columns.3
-                print("ref position: \(position)")
-                
-//                self.sceneView.session.add(anchor: self.refAnchor!)
-//                self.anchorLabels[self.refAnchor!.identifier] = "ref"
+                self.sceneView.session.add(anchor: self.refAnchor!)
+                self.anchorLabels[self.refAnchor!.identifier] = "ref"
                 
                 /// Measurements
-                let cornerAnchors = getCorners(self.sceneView, self.boundingBox!)
-                let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
-                
+                    let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
+//                let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
+                let normCenterAnchor = transformHeightAnchor(ref: cornerAnchors[5], cen: cornerAnchors[4])
+
                 // for debugging
-//                self.sceneView.session.add(anchor: cornerAnchors[0])
-//                self.sceneView.session.add(anchor: cornerAnchors[1])
-//                self.sceneView.session.add(anchor: cornerAnchors[2])
-//                self.sceneView.session.add(anchor: cornerAnchors[3])
+                self.sceneView.session.add(anchor: cornerAnchors[0])
+                self.sceneView.session.add(anchor: cornerAnchors[1])
+                self.sceneView.session.add(anchor: cornerAnchors[2])
+                self.sceneView.session.add(anchor: cornerAnchors[3])
                 self.sceneView.session.add(anchor: cornerAnchors[4])
+                self.sceneView.session.add(anchor: cornerAnchors[5])
 //                self.sceneView.session.add(anchor: normCenterAnchor)
 //                
-//                self.anchorLabels[cornerAnchors[0].identifier] = "l"
-//                self.anchorLabels[cornerAnchors[1].identifier] = "r"
-//                self.anchorLabels[cornerAnchors[2].identifier] = "t"
-//                self.anchorLabels[cornerAnchors[3].identifier] = "b"
+                self.anchorLabels[cornerAnchors[0].identifier] = "l"
+                self.anchorLabels[cornerAnchors[1].identifier] = "r"
+                self.anchorLabels[cornerAnchors[2].identifier] = "t"
+                self.anchorLabels[cornerAnchors[3].identifier] = "b"
 //                self.anchorLabels[cornerAnchors[4].identifier] = "c"
+                self.anchorLabels[cornerAnchors[5].identifier] = "ref"
 //                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
+                
                 
                 // size calculation
                 let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
                 let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
                 let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenterAnchor)
-                
-                let circumference = calculateCircumference(a: width, b: length, roundness: 1.0)
-                
-                let weight = length*39.3701 * circumference*39.3701 * circumference*39.3701 / 1200.0
-                
-                let weightLb = String(format: "%.3f", weight)
-                let lengthIn = String(format: "%.3f", length*39.3701)
-                self.anchorLabels[cornerAnchors[4].identifier] = "\(weightLb) lb, \(lengthIn) in "
-                
-                let formattedWidth = String(format: "%.2f", width)
-                let formattedLength = String(format: "%.2f", length)
-                let formattedHeight = String(format: "%.2f", height)
-                let formattedCircumference = String(format: "%.2f", circumference)
+//                let height = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[5], anchor2: normCenterAnchor)
 
-                self.view.showToast(message: "W \(formattedWidth) m x H \(formattedLength) m x L \(formattedHeight), C \(formattedCircumference) m")
+                let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+                
+                let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
+                let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
+                let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
+                let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
+
+                let widthInInches = widthInMeters.converted(to: .inches)
+                let lengthInInches = lengthInMeters.converted(to: .inches)
+                let heightInInches = heightInMeters.converted(to: .inches)
+                let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
+
+                let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 1200.0
+                let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
+                
+                let formattedWidth = String(format: "%.2f", widthInInches.value)
+                let formattedLength = String(format: "%.2f", lengthInInches.value)
+                let formattedHeight = String(format: "%.2f", heightInInches.value)
+                let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+                let formattedWeight = String(format: "%.2f", weightInLb.value)
+
+                self.anchorLabels[cornerAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
+                
+                self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
                 
                 // saving image
                 
-                if self.saveImage != nil {
+                
                     let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
 
                     let point = CGPoint(x: 50, y: 50)  // Modify as needed
                     let fontSize: CGFloat = 45
                     let textColor = UIColor.white
-                    let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(weightLb) lb, \(lengthIn) in. \(formattedWidth) m x H \(formattedLength) m x L \(formattedHeight), C \(formattedCircumference) m", atPoint: point, fontSize: fontSize, textColor: textColor)
+                    let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
                     
                     saveImageToGallery(newTextImage!)
                 }
@@ -269,8 +285,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     // Show the classification results in the UI.
     private func displayClassifierResults() {
         guard !self.identifierString.isEmpty else {
+            freezeButton?.isHidden = true
             return // No object was classified.
         }
+        freezeButton?.isHidden = false
+
         let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
         statusViewController.showMessage(message)
     }
@@ -296,14 +315,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         switch camera.trackingState {
         case .notAvailable, .limited:
-            DispatchQueue.main.async {
-                self.freezeButton?.isHidden = true
-            }
             statusViewController.escalateFeedback(for: camera.trackingState, inSeconds: 3.0)
         case .normal:
-            DispatchQueue.main.async {
-                self.freezeButton?.isHidden = false
-            }
             statusViewController.cancelScheduledMessage(for: .trackingStateEscalation)
             // Unhide content after successful relocalization.
             setOverlaysHidden(false)

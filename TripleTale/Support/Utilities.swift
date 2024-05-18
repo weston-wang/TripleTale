@@ -158,16 +158,45 @@ func saveDebugImage(_ inputPixelBuffer: CVPixelBuffer, _ inputBoundingBox: CGRec
     saveImageToGallery(imageWithBox)
 }
 
-func getScreenPosition(_ currentView: ARSKView, _ xPos: CGFloat, _ yPos: CGFloat) -> CGPoint {
-    let normalizedPoint = CGPoint(x: xPos, y: yPos)
+func getScreenPosition(_ currentView: ARSKView, _ normalizedX: CGFloat, _ normalizedY: CGFloat, _ capturedImageSize: CGSize) -> CGPoint {
+    let imageWidth = capturedImageSize.width
+    let imageHeight = capturedImageSize.height
     
+    let viewWidth = currentView.bounds.width
+    let viewHeight = currentView.bounds.height
+    
+    let imageAspectRatio = imageWidth / imageHeight
+    let viewAspectRatio = viewWidth / viewHeight
+    
+    var adjustedX = normalizedX
+    var adjustedY = normalizedY
+    
+    if imageAspectRatio > viewAspectRatio {
+        // Image is wider than the view
+        let scaleFactor = viewHeight / imageHeight
+        let scaledImageWidth = imageWidth * scaleFactor
+        let croppedWidth = (scaledImageWidth - viewWidth) / 2 / scaledImageWidth
+        
+        adjustedX = (normalizedX - croppedWidth) / (1 - 2 * croppedWidth)
+    } else {
+        // View is wider than the image
+        let scaleFactor = viewWidth / imageWidth
+        let scaledImageHeight = imageHeight * scaleFactor
+        let croppedHeight = (scaledImageHeight - viewHeight) / 2 / scaledImageHeight
+        
+        adjustedY = (normalizedY - croppedHeight) / (1 - 2 * croppedHeight)
+    }
+    
+    // Map the adjusted normalized coordinates to the current view bounds
     let actualPosition = CGPoint(
-        x: normalizedPoint.x * currentView.bounds.width,
-        y: (1 - normalizedPoint.y) * currentView.bounds.height  // Adjusting for UIKit's coordinate system
+        x: adjustedX * viewWidth,
+        y: (1 - adjustedY) * viewHeight  // Adjusting for UIKit's coordinate system
     )
     
     return actualPosition
 }
+
+// Example usa
 
 func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    let newAnchor: ARAnchor
@@ -179,34 +208,38 @@ func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    return newAnchor
 }
 
-func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect) -> [ARAnchor] {
+func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
     var cornerAnchors: [ARAnchor] = []
     
-    let leftMiddle = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y + boundingBox.size.height / 2)
+    let leftMiddle = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y + boundingBox.size.height / 2, capturedImageSize)
     let anchorLeft = addAnchor(currentView, leftMiddle)
 
-    let rightMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width, boundingBox.origin.y + boundingBox.size.height / 2)
+    let rightMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width, boundingBox.origin.y + boundingBox.size.height / 2, capturedImageSize)
     let anchorRight = addAnchor(currentView, rightMiddle)
     
-    let topMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y)
+    let topMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y, capturedImageSize)
     let anchorTop = addAnchor(currentView, topMiddle)
     
-    let bottomMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height)
+    let bottomMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height, capturedImageSize)
     let anchorBottom = addAnchor(currentView, bottomMiddle)
     
-    let center = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height / 2)
+    let center = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height / 2, capturedImageSize)
     let anchorCenter = addAnchor(currentView, center)
+    
+    let reference = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y, capturedImageSize)
+    let anchorReference = addAnchor(currentView, reference)
     
     cornerAnchors.append(anchorLeft)
     cornerAnchors.append(anchorRight)
     cornerAnchors.append(anchorTop)
     cornerAnchors.append(anchorBottom)
     cornerAnchors.append(anchorCenter)
+    cornerAnchors.append(anchorReference)
 
     return cornerAnchors
 }
 
-func transformHeightAnchor(_ refAnchor: ARAnchor, _ centerAnchor: ARAnchor) -> ARAnchor {
+func transformHeightAnchor(ref refAnchor: ARAnchor, cen centerAnchor: ARAnchor) -> ARAnchor {
     let anchor1Transform = refAnchor.transform
     let anchor1Position = SIMD3<Float>(anchor1Transform.columns.3.x, anchor1Transform.columns.3.y, anchor1Transform.columns.3.z)
 
