@@ -253,3 +253,41 @@ func transformHeightAnchor(ref refAnchor: ARAnchor, cen centerAnchor: ARAnchor) 
     
     return ARAnchor(transform: newTransform)
 }
+
+func createNudgedCentroidAnchor(from cornerAnchors: [ARAnchor], nudgePercentage: Float) -> ARAnchor? {
+    // Ensure there are at least 4 anchors
+    guard cornerAnchors.count >= 4 else {
+        return nil
+    }
+
+    // Helper function to get the position from an anchor
+    func position(from anchor: ARAnchor) -> SIMD3<Float> {
+        return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
+    }
+
+    // Get the positions of the anchors
+    var leftPos = position(from: cornerAnchors[0])
+    var rightPos = position(from: cornerAnchors[1])
+    var topPos = position(from: cornerAnchors[2])
+    var bottomPos = position(from: cornerAnchors[3])
+
+    // Calculate the width and height based on anchor positions
+    let width = simd_length(rightPos - leftPos)
+    let height = simd_length(topPos - bottomPos)
+
+    // Nudge each position by the specified percentage
+    leftPos.x -= width * nudgePercentage
+    rightPos.x += width * nudgePercentage
+    topPos.y += height * nudgePercentage
+    bottomPos.y -= height * nudgePercentage
+
+    // Calculate the centroid
+    let centroid = (leftPos + rightPos + topPos + bottomPos) / 4.0
+
+    // Create a new transform with the centroid position
+    var centroidTransform = matrix_identity_float4x4
+    centroidTransform.columns.3 = SIMD4<Float>(centroid.x, centroid.y, centroid.z, 1.0)
+
+    // Create and return a new ARAnchor at the centroid position
+    return ARAnchor(transform: centroidTransform)
+}

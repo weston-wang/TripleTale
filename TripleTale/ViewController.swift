@@ -89,73 +89,75 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             
             if self.isFrozen {
                 if self.saveImage != nil {
-                // Pause the AR session
-                let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
-                self.refAnchor = addAnchor(self.sceneView, bottomLeft)
-//                
-//                let position = self.refAnchor!.transform.columns.3
-//                print("ref position: \(position)")
-                
-                self.sceneView.session.add(anchor: self.refAnchor!)
-                self.anchorLabels[self.refAnchor!.identifier] = "ref"
-                
-                /// Measurements
+                    // Pause the AR session
+                    let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
+                    self.refAnchor = addAnchor(self.sceneView, bottomLeft)
+    //
+    //                let position = self.refAnchor!.transform.columns.3
+    //                print("ref position: \(position)")
+                    
+                    self.sceneView.session.add(anchor: self.refAnchor!)
+                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
+                    
+                    /// Measurements
+
                     let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
-//                let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
-                let normCenterAnchor = transformHeightAnchor(ref: cornerAnchors[5], cen: cornerAnchors[4])
+                    
+                    let centroidAnchor = createNudgedCentroidAnchor(from: Array(cornerAnchors.prefix(4)), nudgePercentage: 0.1);
 
-                // for debugging
-                self.sceneView.session.add(anchor: cornerAnchors[0])
-                self.sceneView.session.add(anchor: cornerAnchors[1])
-                self.sceneView.session.add(anchor: cornerAnchors[2])
-                self.sceneView.session.add(anchor: cornerAnchors[3])
-                self.sceneView.session.add(anchor: cornerAnchors[4])
-                self.sceneView.session.add(anchor: cornerAnchors[5])
-//                self.sceneView.session.add(anchor: normCenterAnchor)
-//                
-                self.anchorLabels[cornerAnchors[0].identifier] = "l"
-                self.anchorLabels[cornerAnchors[1].identifier] = "r"
-                self.anchorLabels[cornerAnchors[2].identifier] = "t"
-                self.anchorLabels[cornerAnchors[3].identifier] = "b"
-//                self.anchorLabels[cornerAnchors[4].identifier] = "c"
-                self.anchorLabels[cornerAnchors[5].identifier] = "ref"
-//                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
-                
-                
-                // size calculation
-                let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
-                let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
-                let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenterAnchor)
-//                let height = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[5], anchor2: normCenterAnchor)
+    //                let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
+                    let normCenterAnchor = transformHeightAnchor(ref: cornerAnchors[5], cen: cornerAnchors[4])
 
-                let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-                
-                let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
-                let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
-                let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
-                let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
 
-                let widthInInches = widthInMeters.converted(to: .inches)
-                let lengthInInches = lengthInMeters.converted(to: .inches)
-                let heightInInches = heightInMeters.converted(to: .inches)
-                let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
+                    // for debugging
+                    self.sceneView.session.add(anchor: cornerAnchors[0])
+                    self.sceneView.session.add(anchor: cornerAnchors[1])
+                    self.sceneView.session.add(anchor: cornerAnchors[2])
+                    self.sceneView.session.add(anchor: cornerAnchors[3])
+                    self.sceneView.session.add(anchor: cornerAnchors[4])
+                    self.sceneView.session.add(anchor: cornerAnchors[5])
+    //                self.sceneView.session.add(anchor: normCenterAnchor)
+    //
+                    self.anchorLabels[cornerAnchors[0].identifier] = "l"
+                    self.anchorLabels[cornerAnchors[1].identifier] = "r"
+                    self.anchorLabels[cornerAnchors[2].identifier] = "t"
+                    self.anchorLabels[cornerAnchors[3].identifier] = "b"
+    //                self.anchorLabels[cornerAnchors[4].identifier] = "c"
+                    self.anchorLabels[cornerAnchors[5].identifier] = "ref"
+    //                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
+                    
+                    // size calculation
+                    let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
+                    let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
+//                    let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenterAnchor)
+                    let height = calculateDistanceBetweenAnchors(anchor1: centroidAnchor!, anchor2: cornerAnchors[4])
 
-                let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 1200.0
-                let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
-                
-                let formattedWidth = String(format: "%.2f", widthInInches.value)
-                let formattedLength = String(format: "%.2f", lengthInInches.value)
-                let formattedHeight = String(format: "%.2f", heightInInches.value)
-                let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
-                let formattedWeight = String(format: "%.2f", weightInLb.value)
+                    let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+                    
+                    let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
+                    let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
+                    let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
+                    let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
 
-                self.anchorLabels[cornerAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-                
-                self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
-                
-                // saving image
-                
-                
+                    let widthInInches = widthInMeters.converted(to: .inches)
+                    let lengthInInches = lengthInMeters.converted(to: .inches)
+                    let heightInInches = heightInMeters.converted(to: .inches)
+                    let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
+
+                    let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 1200.0
+                    let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
+                    
+                    let formattedWidth = String(format: "%.2f", widthInInches.value)
+                    let formattedLength = String(format: "%.2f", lengthInInches.value)
+                    let formattedHeight = String(format: "%.2f", heightInInches.value)
+                    let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+                    let formattedWeight = String(format: "%.2f", weightInLb.value)
+
+                    self.anchorLabels[cornerAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
+                    
+                    self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
+                    
+                    // saving image
                     let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
 
                     let point = CGPoint(x: 50, y: 50)  // Modify as needed
