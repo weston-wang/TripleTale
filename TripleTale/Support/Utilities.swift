@@ -208,7 +208,7 @@ func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    return newAnchor
 }
 
-func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
+func getMidpoints(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
     var cornerAnchors: [ARAnchor] = []
     
     let leftMiddle = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y + boundingBox.size.height / 2, capturedImageSize)
@@ -239,6 +239,31 @@ func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageS
     return cornerAnchors
 }
 
+
+func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
+    var cornerAnchors: [ARAnchor] = []
+    
+    let leftTop = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y + boundingBox.size.height, capturedImageSize)
+    let anchorLT = addAnchor(currentView, leftTop)
+
+    let rightTop = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width, boundingBox.origin.y + boundingBox.size.height, capturedImageSize)
+    let anchorRT = addAnchor(currentView, rightTop)
+    
+    let leftBottom = getScreenPosition(currentView, boundingBox.origin.x, boundingBox.origin.y, capturedImageSize)
+    let anchorLB = addAnchor(currentView, leftBottom)
+    
+    let rightBottom = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width, boundingBox.origin.y, capturedImageSize)
+    let anchorRB = addAnchor(currentView, rightBottom)
+    
+    cornerAnchors.append(anchorLT)
+    cornerAnchors.append(anchorRT)
+    cornerAnchors.append(anchorLB)
+    cornerAnchors.append(anchorRB)
+
+    return cornerAnchors
+}
+
+
 func transformHeightAnchor(ref refAnchor: ARAnchor, cen centerAnchor: ARAnchor) -> ARAnchor {
     let anchor1Transform = refAnchor.transform
     let anchor1Position = SIMD3<Float>(anchor1Transform.columns.3.x, anchor1Transform.columns.3.y, anchor1Transform.columns.3.z)
@@ -266,23 +291,30 @@ func createNudgedCentroidAnchor(from cornerAnchors: [ARAnchor], nudgePercentage:
     }
 
     // Get the positions of the anchors
-    var leftPos = position(from: cornerAnchors[0])
-    var rightPos = position(from: cornerAnchors[1])
-    var topPos = position(from: cornerAnchors[2])
-    var bottomPos = position(from: cornerAnchors[3])
+    var lTPos = position(from: cornerAnchors[0])
+    var rTPos = position(from: cornerAnchors[1])
+    var lBPos = position(from: cornerAnchors[2])
+    var rBPos = position(from: cornerAnchors[3])
 
     // Calculate the width and height based on anchor positions
-    let width = simd_length(rightPos - leftPos)
-    let height = simd_length(topPos - bottomPos)
+    let width = simd_length(rTPos - lTPos)
+    let height = simd_length(rTPos - rBPos)
 
     // Nudge each position by the specified percentage
-    leftPos.x -= width * nudgePercentage
-    rightPos.x += width * nudgePercentage
-    topPos.y += height * nudgePercentage
-    bottomPos.y -= height * nudgePercentage
+    lTPos.x -= width * nudgePercentage
+    lTPos.y += height * nudgePercentage
+    
+    rTPos.x += width * nudgePercentage
+    rTPos.y += height * nudgePercentage
+    
+    lBPos.x -= width * nudgePercentage
+    lBPos.y -= height * nudgePercentage
+    
+    rBPos.x += width * nudgePercentage
+    rBPos.y -= height * nudgePercentage
 
     // Calculate the centroid
-    let centroid = (leftPos + rightPos + topPos + bottomPos) / 4.0
+    let centroid = (lTPos + rTPos + lBPos + rBPos) / 4.0
 
     // Create a new transform with the centroid position
     var centroidTransform = matrix_identity_float4x4

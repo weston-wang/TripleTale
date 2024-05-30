@@ -23,16 +23,16 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var saveImage: UIImage?
     
     /// The ML model to be used for detection of arbitrary objects
-    private var _tripleTaleModel: TripleTaleV4!
-    private var tripleTaleModel: TripleTaleV4! {
+    private var _tripleTaleModel: TripleTaleV3!
+    private var tripleTaleModel: TripleTaleV3! {
         get {
             if let model = _tripleTaleModel { return model }
             _tripleTaleModel = {
                 do {
                     let configuration = MLModelConfiguration()
-                    return try TripleTaleV4(configuration: configuration)
+                    return try TripleTaleV3(configuration: configuration)
                 } catch {
-                    fatalError("Couldn't create TripleTaleV4 due to: \(error)")
+                    fatalError("Couldn't create TripleTaleV3 due to: \(error)")
                 }
             }()
             return _tripleTaleModel
@@ -89,48 +89,50 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             
             if self.isFrozen {
                 if self.saveImage != nil {
-                    // Pause the AR session
-                    let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
-                    self.refAnchor = addAnchor(self.sceneView, bottomLeft)
-    //
-    //                let position = self.refAnchor!.transform.columns.3
-    //                print("ref position: \(position)")
-                    
-                    self.sceneView.session.add(anchor: self.refAnchor!)
-                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
+//                    let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
+//                    self.refAnchor = addAnchor(self.sceneView, bottomLeft)
+//                    self.sceneView.session.add(anchor: self.refAnchor!)
+//                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
                     
                     /// Measurements
-
+                    let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                     let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                    
-                    let centroidAnchor = createNudgedCentroidAnchor(from: Array(cornerAnchors.prefix(4)), nudgePercentage: 0.1);
 
-    //                let normCenterAnchor = transformHeightAnchor(self.refAnchor!, cornerAnchors[4])
-                    let normCenterAnchor = transformHeightAnchor(ref: cornerAnchors[5], cen: cornerAnchors[4])
-
+                    let centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1);
 
                     // for debugging
+                    self.sceneView.session.add(anchor: midpointAnchors[0])
+                    self.sceneView.session.add(anchor: midpointAnchors[1])
+                    self.sceneView.session.add(anchor: midpointAnchors[2])
+                    self.sceneView.session.add(anchor: midpointAnchors[3])
+                    self.sceneView.session.add(anchor: midpointAnchors[4])
+
+    //
+                    self.anchorLabels[midpointAnchors[0].identifier] = "l"
+                    self.anchorLabels[midpointAnchors[1].identifier] = "r"
+                    self.anchorLabels[midpointAnchors[2].identifier] = "t"
+                    self.anchorLabels[midpointAnchors[3].identifier] = "b"
+
+                    
                     self.sceneView.session.add(anchor: cornerAnchors[0])
                     self.sceneView.session.add(anchor: cornerAnchors[1])
                     self.sceneView.session.add(anchor: cornerAnchors[2])
                     self.sceneView.session.add(anchor: cornerAnchors[3])
-                    self.sceneView.session.add(anchor: cornerAnchors[4])
-                    self.sceneView.session.add(anchor: cornerAnchors[5])
-    //                self.sceneView.session.add(anchor: normCenterAnchor)
-    //
-                    self.anchorLabels[cornerAnchors[0].identifier] = "l"
-                    self.anchorLabels[cornerAnchors[1].identifier] = "r"
-                    self.anchorLabels[cornerAnchors[2].identifier] = "t"
-                    self.anchorLabels[cornerAnchors[3].identifier] = "b"
-    //                self.anchorLabels[cornerAnchors[4].identifier] = "c"
-                    self.anchorLabels[cornerAnchors[5].identifier] = "ref"
-    //                self.anchorLabels[normCenterAnchor.identifier] = "c_t"
+                    
+                    self.anchorLabels[cornerAnchors[0].identifier] = "lt"
+                    self.anchorLabels[cornerAnchors[1].identifier] = "rt"
+                    self.anchorLabels[cornerAnchors[2].identifier] = "lb"
+                    self.anchorLabels[cornerAnchors[3].identifier] = "rb"
+
+                    
+                    self.sceneView.session.add(anchor: centroidAnchor!)
+                    self.anchorLabels[centroidAnchor!.identifier] = "c"
+
                     
                     // size calculation
-                    let width = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
-                    let length = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
-//                    let height = calculateDistanceBetweenAnchors(anchor1: self.refAnchor!, anchor2: normCenterAnchor)
-                    let height = calculateDistanceBetweenAnchors(anchor1: centroidAnchor!, anchor2: cornerAnchors[4])
+                    let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
+                    let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
+                    let height = calculateDistanceBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
 
                     let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
                     
@@ -153,7 +155,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
                     let formattedWeight = String(format: "%.2f", weightInLb.value)
 
-                    self.anchorLabels[cornerAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
+                    self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
                     
                     self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
                     
