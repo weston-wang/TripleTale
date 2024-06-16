@@ -32,7 +32,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     let configuration = MLModelConfiguration()
                     return try TripleTaleV3(configuration: configuration)
                 } catch {
-                    fatalError("Couldn't create TripleTaleV3 due to: \(error)")
+                    fatalError("Couldn't create TripleTaleV5 due to: \(error)")
                 }
             }()
             return _tripleTaleModel
@@ -94,6 +94,29 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 //                    self.sceneView.session.add(anchor: self.refAnchor!)
 //                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
                     
+                    print("Original Bounding Box: \(self.boundingBox!)")
+
+                    detectAndDrawLargestContour(in: self.saveImage!, boundingBox: self.boundingBox!) { newImage in
+                            if let newImage = newImage {
+                                // Display newImage in an image view or save it
+                                print("Successfully drew contour on the image")
+                                // Example: Save the image to the photo library
+                                UIImageWriteToSavedPhotosAlbum(newImage, nil, nil, nil)
+                            } else {
+                                print("Failed to draw contour on the image")
+                            }
+                        }
+//                    extractAndDrawContoursFromImage(image: self.saveImage!) { resultImage in
+//                            if let resultImage = resultImage {
+//                                // Display or use the resulting image
+//                                print("Contours drawn successfully")
+//                                UIImageWriteToSavedPhotosAlbum(resultImage, nil, nil, nil)
+//
+//                            } else {
+//                                print("Failed to draw contours")
+//                            }
+//                        }
+                    
                     /// Measurements
                     let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                     let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
@@ -132,7 +155,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     // size calculation
                     let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
                     let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
-                    let height = calculateDistanceBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
+//                    let height = calculateDistanceBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
+                    
+//                    let width = calculateWidthBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
+//                    let length = calculateLengthBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
+                    let height = calculateHeightBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
 
                     let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
                     

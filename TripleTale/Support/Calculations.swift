@@ -16,6 +16,23 @@ func calculateDistanceBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Fl
     return simd_distance(position1, position2)
 }
 
+func calculateHeightBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+    let position1 = anchor1.transform.columns.3
+    let position2 = anchor2.transform.columns.3
+    return abs(position1.y - position2.y)
+}
+
+func calculateLengthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+    let position1 = anchor1.transform.columns.3
+    let position2 = anchor2.transform.columns.3
+    return abs(position1.z - position2.z)
+}
+
+func calculateWidthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+    let position1 = anchor1.transform.columns.3
+    let position2 = anchor2.transform.columns.3
+    return abs(position1.x - position2.x)
+}
 /// Calculates the circumference of an oval, adjusting for a 'roundness' factor.
 /// - Parameters:
 ///   - a: Semi-major axis of the oval.
