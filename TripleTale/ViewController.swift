@@ -23,14 +23,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var saveImage: UIImage?
     
     /// The ML model to be used for detection of arbitrary objects
-    private var _tripleTaleModel: TripleTaleV3!
-    private var tripleTaleModel: TripleTaleV3! {
+    private var _tripleTaleModel: TripleTaleV5!
+    private var tripleTaleModel: TripleTaleV5! {
         get {
             if let model = _tripleTaleModel { return model }
             _tripleTaleModel = {
                 do {
                     let configuration = MLModelConfiguration()
-                    return try TripleTaleV3(configuration: configuration)
+                    return try TripleTaleV5(configuration: configuration)
                 } catch {
                     fatalError("Couldn't create TripleTaleV5 due to: \(error)")
                 }
@@ -89,76 +89,56 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             
             if self.isFrozen {
                 if self.saveImage != nil {
-//                    let bottomLeft = CGPoint(x: 0, y: self.sceneView.bounds.maxY - 30)
-//                    self.refAnchor = addAnchor(self.sceneView, bottomLeft)
-//                    self.sceneView.session.add(anchor: self.refAnchor!)
-//                    self.anchorLabels[self.refAnchor!.identifier] = "ref"
-                    
-                    print("Original Bounding Box: \(self.boundingBox!)")
-
-                    detectAndDrawLargestContour(in: self.saveImage!, boundingBox: self.boundingBox!) { newImage in
-                            if let newImage = newImage {
-                                // Display newImage in an image view or save it
-                                print("Successfully drew contour on the image")
-                                // Example: Save the image to the photo library
-                                UIImageWriteToSavedPhotosAlbum(newImage, nil, nil, nil)
-                            } else {
-                                print("Failed to draw contour on the image")
-                            }
-                        }
-//                    extractAndDrawContoursFromImage(image: self.saveImage!) { resultImage in
-//                            if let resultImage = resultImage {
-//                                // Display or use the resulting image
-//                                print("Contours drawn successfully")
-//                                UIImageWriteToSavedPhotosAlbum(resultImage, nil, nil, nil)
-//
-//                            } else {
-//                                print("Failed to draw contours")
-//                            }
-//                        }
-                    
                     /// Measurements
                     let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                     let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
 
                     let centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1);
+                    
+                    let distanceToPhone: Float = sqrt(midpointAnchors[4].transform.columns.3.x*midpointAnchors[4].transform.columns.3.x + midpointAnchors[4].transform.columns.3.y*midpointAnchors[4].transform.columns.3.y + midpointAnchors[4].transform.columns.3.z*midpointAnchors[4].transform.columns.3.z)
 
+                    let distanceToGround: Float = sqrt(centroidAnchor!.transform.columns.3.x*centroidAnchor!.transform.columns.3.x + centroidAnchor!.transform.columns.3.y*centroidAnchor!.transform.columns.3.y + centroidAnchor!.transform.columns.3.z*centroidAnchor!.transform.columns.3.z)
+                    
+                    print("distance to phone: \(distanceToPhone*39.37) in, distanced to ground: \(distanceToGround*39.37) in")
+                    
+                    // update boundingbox for calculations
+                    let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
+                    let updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
+                    
+                    
                     // for debugging
-                    self.sceneView.session.add(anchor: midpointAnchors[0])
-                    self.sceneView.session.add(anchor: midpointAnchors[1])
-                    self.sceneView.session.add(anchor: midpointAnchors[2])
-                    self.sceneView.session.add(anchor: midpointAnchors[3])
-                    self.sceneView.session.add(anchor: midpointAnchors[4])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[0])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[1])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[2])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[3])
+//
+//                    self.anchorLabels[updatedMidpointAnchors[0].identifier] = "l"
+//                    self.anchorLabels[updatedMidpointAnchors[1].identifier] = "r"
+//                    self.anchorLabels[updatedMidpointAnchors[2].identifier] = "t"
+//                    self.anchorLabels[updatedMidpointAnchors[3].identifier] = "b"
+//
+//                    
+//                    self.sceneView.session.add(anchor: cornerAnchors[0])
+//                    self.sceneView.session.add(anchor: cornerAnchors[1])
+//                    self.sceneView.session.add(anchor: cornerAnchors[2])
+//                    self.sceneView.session.add(anchor: cornerAnchors[3])
+//                    
+//                    self.anchorLabels[cornerAnchors[0].identifier] = "lt"
+//                    self.anchorLabels[cornerAnchors[1].identifier] = "rt"
+//                    self.anchorLabels[cornerAnchors[2].identifier] = "lb"
+//                    self.anchorLabels[cornerAnchors[3].identifier] = "rb"
+//
+//                    
+//                    self.sceneView.session.add(anchor: centroidAnchor!)
+//                    self.anchorLabels[centroidAnchor!.identifier] = "c"
 
-    //
-                    self.anchorLabels[midpointAnchors[0].identifier] = "l"
-                    self.anchorLabels[midpointAnchors[1].identifier] = "r"
-                    self.anchorLabels[midpointAnchors[2].identifier] = "t"
-                    self.anchorLabels[midpointAnchors[3].identifier] = "b"
 
-                    
-                    self.sceneView.session.add(anchor: cornerAnchors[0])
-                    self.sceneView.session.add(anchor: cornerAnchors[1])
-                    self.sceneView.session.add(anchor: cornerAnchors[2])
-                    self.sceneView.session.add(anchor: cornerAnchors[3])
-                    
-                    self.anchorLabels[cornerAnchors[0].identifier] = "lt"
-                    self.anchorLabels[cornerAnchors[1].identifier] = "rt"
-                    self.anchorLabels[cornerAnchors[2].identifier] = "lb"
-                    self.anchorLabels[cornerAnchors[3].identifier] = "rb"
-
-                    
-                    self.sceneView.session.add(anchor: centroidAnchor!)
-                    self.anchorLabels[centroidAnchor!.identifier] = "c"
-
-                    
                     // size calculation
-                    let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
-                    let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
-//                    let height = calculateDistanceBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
+//                    let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
+//                    let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
+                    let width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1])
+                    let length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3])
                     
-//                    let width = calculateWidthBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
-//                    let length = calculateLengthBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
                     let height = calculateHeightBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
 
                     let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
@@ -207,7 +187,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         // Create a session configuration
         let configuration = ARWorldTrackingConfiguration()
-        
+        configuration.planeDetection = [.horizontal]
+
         // Run the view's session
         sceneView.session.run(configuration)
     }
@@ -333,6 +314,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     // When an anchor is added, provide a SpriteKit node for it and set its text to the classification label.
     /// - Tag: UpdateARContent
     func view(_ view: ARSKView, didAdd node: SKNode, for anchor: ARAnchor) {
+        // Check if the anchor is an ARPlaneAnchor
+        if anchor is ARPlaneAnchor {
+            print("A plane anchor was added. Ignoring label assignment for plane anchors.")
+            return
+        }
+        
         guard let labelText = anchorLabels[anchor.identifier] else {
             fatalError("missing expected associated label for anchor")
         }

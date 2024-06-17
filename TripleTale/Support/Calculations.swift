@@ -11,7 +11,7 @@ import ARKit
 
 func calculateDistanceBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
     let position1 = SIMD3<Float>(anchor1.transform.columns.3.x, anchor1.transform.columns.3.y, anchor1.transform.columns.3.z)
-    let position2 = SIMD3<Float>(anchor2.transform.columns.3.x, anchor2.transform.columns.3.y, anchor2.transform.columns.3.z)
+    let position2 = SIMD3<Float>(anchor2.transform.columns.3.x, anchor1.transform.columns.3.y, anchor2.transform.columns.3.z)
     
     return simd_distance(position1, position2)
 }
