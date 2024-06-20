@@ -330,13 +330,17 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
     let scalingFactor = distanceToPhone / totalDistance
 
     // Reverse the bounding box dimensions
-    let originalWidth = boundingBox.width * CGFloat(scalingFactor)
-    let originalHeight = boundingBox.height * CGFloat(scalingFactor)
+    let correctedWidth = boundingBox.width * CGFloat(scalingFactor)
+    let correctedHeight = boundingBox.height * CGFloat(scalingFactor)
+    
+    // scaling factor is less than 1, so this
+    let shiftX = (correctedWidth - boundingBox.width) / 2
+    let shiftY = (correctedHeight - boundingBox.height) / 2
 
     // Reverse the bounding box position
-    let originalX = boundingBox.origin.x * CGFloat(scalingFactor)
-    let originalY = boundingBox.origin.y * CGFloat(scalingFactor)
-
+    let correctedX = boundingBox.origin.x - shiftX
+    let correctedY = boundingBox.origin.y - shiftY
+    
     // Return the original bounding box
-    return CGRect(x: originalX, y: originalY, width: originalWidth, height: originalHeight)
+    return CGRect(x: correctedX, y: correctedY, width: correctedWidth, height: correctedHeight)
 }
