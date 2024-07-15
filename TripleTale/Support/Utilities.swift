@@ -344,3 +344,85 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
     // Return the original bounding box
     return CGRect(x: correctedX, y: correctedY, width: correctedWidth, height: correctedHeight)
 }
+
+
+func removeBackground(from image: UIImage) -> (UIImage?, CGRect?) {
+    guard let ciImage = CIImage(image: image) else { return (nil, nil) }
+    if let maskImage = generateMaskImage(from: ciImage) {
+        let boundingBox = calculateBoundingBox(from: maskImage)
+        let outputImage = applyMask(maskImage, to: ciImage)
+        
+        return (outputImage, boundingBox)
+    }
+    return (nil, nil)
+}
+
+private func generateMaskImage(from ciImage: CIImage) -> CIImage? {
+    let request = VNGenerateForegroundInstanceMaskRequest()
+    let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+    
+    do {
+        try handler.perform([request])
+        if let result = request.results?.first {
+            let maskPixelBuffer = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
+
+            return CIImage(cvPixelBuffer: maskPixelBuffer)
+        }
+    } catch {
+        print(error.localizedDescription)
+    }
+    return nil
+}
+
+private func calculateBoundingBox(from maskImage: CIImage) -> CGRect? {
+    let context = CIContext()
+    guard let cgImage = context.createCGImage(maskImage, from: maskImage.extent) else { return nil }
+
+    let width = cgImage.width
+    let height = cgImage.height
+    guard let data = cgImage.dataProvider?.data else { return nil }
+    let pixelData = CFDataGetBytePtr(data)
+
+    var minX = width
+    var minY = height
+    var maxX: Int = 0
+    var maxY: Int = 0
+
+    for y in 0..<height {
+        for x in 0..<width {
+            let pixelIndex = y * width + x
+            let luma = pixelData![pixelIndex]
+            if luma > 0 { // Check if the pixel is part of the foreground
+                if x < minX { minX = x }
+                if x > maxX { maxX = x }
+                if y < minY { minY = y }
+                if y > maxY { maxY = y }
+            }
+        }
+    }
+
+    if minX >= maxX || minY >= maxY { return nil }
+
+    let normalizedBoundingBox = CGRect(
+        x: CGFloat(minX) / CGFloat(width),
+        y: CGFloat(minY) / CGFloat(height),
+        width: CGFloat(maxX - minX) / CGFloat(width),
+        height: CGFloat(maxY - minY) / CGFloat(height)
+    )
+
+    return normalizedBoundingBox
+}
+
+private func applyMask(_ mask: CIImage?, to image: CIImage) -> UIImage? {
+    guard let mask = mask else { return nil }
+    let filter = CIFilter(name: "CIBlendWithMask")
+    filter?.setValue(image, forKey: kCIInputImageKey)
+    filter?.setValue(mask, forKey: kCIInputMaskImageKey)
+    filter?.setValue(CIImage(color: .clear).cropped(to: image.extent), forKey: kCIInputBackgroundImageKey)
+    
+    let context = CIContext()
+    if let outputImage = filter?.outputImage, let cgImage = context.createCGImage(outputImage, from: outputImage.extent) {
+        return UIImage(cgImage: cgImage)
+    }
+    return nil
+}

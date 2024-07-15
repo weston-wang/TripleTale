@@ -23,14 +23,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var saveImage: UIImage?
     
     /// The ML model to be used for detection of arbitrary objects
-    private var _tripleTaleModel: TripleTaleV6!
-    private var tripleTaleModel: TripleTaleV6! {
+    private var _tripleTaleModel: TripleTaleV1!
+    private var tripleTaleModel: TripleTaleV1! {
         get {
             if let model = _tripleTaleModel { return model }
             _tripleTaleModel = {
                 do {
                     let configuration = MLModelConfiguration()
-                    return try TripleTaleV6(configuration: configuration)
+                    return try TripleTaleV1(configuration: configuration)
                 } catch {
                     fatalError("Couldn't create TripleTale due to: \(error)")
                 }
@@ -175,6 +175,13 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
                     
                     saveImageToGallery(newTextImage!)
+                    
+                    let (imageNoBG, newBox) = removeBackground(from: self.saveImage!)
+                    saveImageToGallery(imageNoBG!)
+
+                    let imageWithNewBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [newBox!])
+                    saveImageToGallery(imageWithNewBox)
+
                 }
 
                 self.isFrozen.toggle()
