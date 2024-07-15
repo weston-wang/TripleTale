@@ -346,15 +346,27 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
 }
 
 
-func removeBackground(from image: UIImage) -> (UIImage?, CGRect?) {
-    guard let ciImage = CIImage(image: image) else { return (nil, nil) }
+func removeBackground(from image: UIImage) -> (UIImage?, UIImage?, CGRect?) {
+    guard let ciImage = CIImage(image: image) else { return (nil, nil, nil) }
     if let maskImage = generateMaskImage(from: ciImage) {
-        let boundingBox = calculateBoundingBox(from: maskImage)
         let outputImage = applyMask(maskImage, to: ciImage)
         
-        return (outputImage, boundingBox)
+        // Create a CIContext
+        let context = CIContext()
+
+        // Create a CGImage from the CIImage
+        if let cgImage = context.createCGImage(maskImage, from: maskImage.extent) {
+            // Convert the CGImage to a UIImage
+            let maskUiImage = UIImage(cgImage: cgImage)
+            
+//            let boundingBox = boundingBoxForWhiteArea(in: maskUiImage)
+            let boundingBox = boundingBoxForCenteredObject(in: maskUiImage)
+            return (outputImage, maskUiImage, boundingBox)
+
+        }
+        
     }
-    return (nil, nil)
+    return (nil, nil, nil)
 }
 
 private func generateMaskImage(from ciImage: CIImage) -> CIImage? {
@@ -424,5 +436,154 @@ private func applyMask(_ mask: CIImage?, to image: CIImage) -> UIImage? {
     if let outputImage = filter?.outputImage, let cgImage = context.createCGImage(outputImage, from: outputImage.extent) {
         return UIImage(cgImage: cgImage)
     }
+    return nil
+}
+
+func boundingBoxForWhiteArea(in image: UIImage) -> CGRect? {
+    guard let cgImage = image.cgImage else {
+        return nil
+    }
+
+    let width = cgImage.width
+    let height = cgImage.height
+
+    // Create a bitmap context for the image
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    var pixelData = [UInt8](repeating: 0, count: width * height)
+    let context = CGContext(data: &pixelData,
+                            width: width,
+                            height: height,
+                            bitsPerComponent: 8,
+                            bytesPerRow: width,
+                            space: colorSpace,
+                            bitmapInfo: CGImageAlphaInfo.none.rawValue)
+
+    context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+    var minX = width
+    var minY = height
+    var maxX = 0
+    var maxY = 0
+
+    // Find the bounding box of the white area
+    for y in 0..<height {
+        for x in 0..<width {
+            let pixelIndex = y * width + x
+            if pixelData[pixelIndex] == 255 { // Assuming white is represented as 255
+                if x < minX { minX = x }
+                if y < minY { minY = y }
+                if x > maxX { maxX = x }
+                if y > maxY { maxY = y }
+            }
+        }
+    }
+
+    guard minX <= maxX && minY <= maxY else {
+        return nil
+    }
+
+    let boundingBox = CGRect(x: CGFloat(minX) / CGFloat(width),
+                             y: CGFloat(minY) / CGFloat(height),
+                             width: CGFloat(maxX - minX + 1) / CGFloat(width),
+                             height: CGFloat(maxY - minY + 1) / CGFloat(height))
+
+    return boundingBox
+}
+
+func boundingBoxForCenteredObject(in image: UIImage) -> CGRect? {
+    guard let cgImage = image.cgImage else {
+        return nil
+    }
+
+    let width = cgImage.width
+    let height = cgImage.height
+
+    // Create a bitmap context for the image
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    var pixelData = [UInt8](repeating: 0, count: width * height)
+    let context = CGContext(data: &pixelData,
+                            width: width,
+                            height: height,
+                            bitsPerComponent: 8,
+                            bytesPerRow: width,
+                            space: colorSpace,
+                            bitmapInfo: CGImageAlphaInfo.none.rawValue)
+
+    context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+    var visited = Set<Int>()
+    var components: [(minX: Int, minY: Int, maxX: Int, maxY: Int)] = []
+
+    let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    func bfs(startX: Int, startY: Int) -> (minX: Int, minY: Int, maxX: Int, maxY: Int) {
+        var queue = [(x: Int, y: Int)]()
+        queue.append((startX, startY))
+        visited.insert(startY * width + startX)
+
+        var minX = startX
+        var minY = startY
+        var maxX = startX
+        var maxY = startY
+
+        while !queue.isEmpty {
+            let (x, y) = queue.removeFirst()
+
+            for (dx, dy) in directions {
+                let nx = x + dx
+                let ny = y + dy
+                let index = ny * width + nx
+
+                if nx >= 0 && nx < width && ny >= 0 && ny < height && !visited.contains(index) && pixelData[index] == 255 {
+                    visited.insert(index)
+                    queue.append((nx, ny))
+                    if nx < minX { minX = nx }
+                    if ny < minY { minY = ny }
+                    if nx > maxX { maxX = nx }
+                    if ny > maxY { maxY = ny }
+                }
+            }
+        }
+
+        return (minX, minY, maxX, maxY)
+    }
+
+    // Identify all white pixel groups and their bounding boxes
+    for y in 0..<height {
+        for x in 0..<width {
+            let index = y * width + x
+            if pixelData[index] == 255 && !visited.contains(index) {
+                let boundingBox = bfs(startX: x, startY: y)
+                components.append(boundingBox)
+            }
+        }
+    }
+
+    // Find the component closest to the center
+    let centerX = width / 2
+    let centerY = height / 2
+    var closestComponent: (minX: Int, minY: Int, maxX: Int, maxY: Int)?
+    var minDistance = Int.max
+
+    for component in components {
+        let componentCenterX = (component.minX + component.maxX) / 2
+        let componentCenterY = (component.minY + component.maxY) / 2
+        let distance = abs(componentCenterX - centerX) + abs(componentCenterY - centerY)
+
+        if distance < minDistance {
+            minDistance = distance
+            closestComponent = component
+        }
+    }
+
+    // Normalize the bounding box coordinates
+    if let bounds = closestComponent {
+        let normalizedBoundingBox = CGRect(x: CGFloat(bounds.minX) / CGFloat(width),
+                                           y: CGFloat(bounds.minY) / CGFloat(height),
+                                           width: CGFloat(bounds.maxX - bounds.minX + 1) / CGFloat(width),
+                                           height: CGFloat(bounds.maxY - bounds.minY + 1) / CGFloat(height))
+        return normalizedBoundingBox
+    }
+
     return nil
 }

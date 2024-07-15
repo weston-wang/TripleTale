@@ -90,6 +90,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             if self.isFrozen {
                 if self.saveImage != nil {
                     /// Measurements
+                    let (_, _, newBoundingBox) = removeBackground(from: self.saveImage!)
+                    self.boundingBox = newBoundingBox
+
                     let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                     let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
 
@@ -176,11 +179,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     
                     saveImageToGallery(newTextImage!)
                     
-                    let (imageNoBG, newBox) = removeBackground(from: self.saveImage!)
-                    saveImageToGallery(imageNoBG!)
-
-                    let imageWithNewBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [newBox!])
-                    saveImageToGallery(imageWithNewBox)
+//                    let (imageNoBG, maskImage, newBox) = removeBackground(from: self.saveImage!)
+//                    saveImageToGallery(imageNoBG!)
+//                    saveImageToGallery(maskImage!)
+//
+//                    let imageWithNewBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [newBox!])
+//                    saveImageToGallery(imageWithNewBox)
 
                 }
 
@@ -415,3 +419,4 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         present(alertController, animated: true, completion: nil)
     }
 }
+
