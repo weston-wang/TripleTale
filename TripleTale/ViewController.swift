@@ -110,30 +110,30 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     
                     
                     // for debugging
-                    self.sceneView.session.add(anchor: updatedMidpointAnchors[0])
-                    self.sceneView.session.add(anchor: updatedMidpointAnchors[1])
-                    self.sceneView.session.add(anchor: updatedMidpointAnchors[2])
-                    self.sceneView.session.add(anchor: updatedMidpointAnchors[3])
-
-                    self.anchorLabels[updatedMidpointAnchors[0].identifier] = "l"
-                    self.anchorLabels[updatedMidpointAnchors[1].identifier] = "r"
-                    self.anchorLabels[updatedMidpointAnchors[2].identifier] = "t"
-                    self.anchorLabels[updatedMidpointAnchors[3].identifier] = "b"
-
-                    
-                    self.sceneView.session.add(anchor: cornerAnchors[0])
-                    self.sceneView.session.add(anchor: cornerAnchors[1])
-                    self.sceneView.session.add(anchor: cornerAnchors[2])
-                    self.sceneView.session.add(anchor: cornerAnchors[3])
-                    
-                    self.anchorLabels[cornerAnchors[0].identifier] = "lt"
-                    self.anchorLabels[cornerAnchors[1].identifier] = "rt"
-                    self.anchorLabels[cornerAnchors[2].identifier] = "lb"
-                    self.anchorLabels[cornerAnchors[3].identifier] = "rb"
-
-                    
-                    self.sceneView.session.add(anchor: centroidAnchor!)
-                    self.anchorLabels[centroidAnchor!.identifier] = "c"
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[0])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[1])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[2])
+//                    self.sceneView.session.add(anchor: updatedMidpointAnchors[3])
+//
+//                    self.anchorLabels[updatedMidpointAnchors[0].identifier] = "l"
+//                    self.anchorLabels[updatedMidpointAnchors[1].identifier] = "r"
+//                    self.anchorLabels[updatedMidpointAnchors[2].identifier] = "t"
+//                    self.anchorLabels[updatedMidpointAnchors[3].identifier] = "b"
+//
+//                    
+//                    self.sceneView.session.add(anchor: cornerAnchors[0])
+//                    self.sceneView.session.add(anchor: cornerAnchors[1])
+//                    self.sceneView.session.add(anchor: cornerAnchors[2])
+//                    self.sceneView.session.add(anchor: cornerAnchors[3])
+//                    
+//                    self.anchorLabels[cornerAnchors[0].identifier] = "lt"
+//                    self.anchorLabels[cornerAnchors[1].identifier] = "rt"
+//                    self.anchorLabels[cornerAnchors[2].identifier] = "lb"
+//                    self.anchorLabels[cornerAnchors[3].identifier] = "rb"
+//
+//                    
+//                    self.sceneView.session.add(anchor: centroidAnchor!)
+//                    self.anchorLabels[centroidAnchor!.identifier] = "c"
 
 
                     // size calculation

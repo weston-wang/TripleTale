@@ -349,7 +349,7 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
 func removeBackground(from image: UIImage) -> (UIImage?, UIImage?, CGRect?) {
     guard let ciImage = CIImage(image: image) else { return (nil, nil, nil) }
     if let maskImage = generateMaskImage(from: ciImage) {
-        let outputImage = applyMask(maskImage, to: ciImage)
+//        let outputImage = applyMask(maskImage, to: ciImage)
         
         // Create a CIContext
         let context = CIContext()
@@ -361,7 +361,7 @@ func removeBackground(from image: UIImage) -> (UIImage?, UIImage?, CGRect?) {
             
 //            let boundingBox = boundingBoxForWhiteArea(in: maskUiImage)
             let boundingBox = boundingBoxForCenteredObject(in: maskUiImage)
-            return (outputImage, maskUiImage, boundingBox)
+            return (nil, maskUiImage, boundingBox)
 
         }
         
@@ -439,62 +439,11 @@ private func applyMask(_ mask: CIImage?, to image: CIImage) -> UIImage? {
     return nil
 }
 
-func boundingBoxForWhiteArea(in image: UIImage) -> CGRect? {
-    guard let cgImage = image.cgImage else {
-        return nil
-    }
-
-    let width = cgImage.width
-    let height = cgImage.height
-
-    // Create a bitmap context for the image
-    let colorSpace = CGColorSpaceCreateDeviceGray()
-    var pixelData = [UInt8](repeating: 0, count: width * height)
-    let context = CGContext(data: &pixelData,
-                            width: width,
-                            height: height,
-                            bitsPerComponent: 8,
-                            bytesPerRow: width,
-                            space: colorSpace,
-                            bitmapInfo: CGImageAlphaInfo.none.rawValue)
-
-    context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-
-    var minX = width
-    var minY = height
-    var maxX = 0
-    var maxY = 0
-
-    // Find the bounding box of the white area
-    for y in 0..<height {
-        for x in 0..<width {
-            let pixelIndex = y * width + x
-            if pixelData[pixelIndex] == 255 { // Assuming white is represented as 255
-                if x < minX { minX = x }
-                if y < minY { minY = y }
-                if x > maxX { maxX = x }
-                if y > maxY { maxY = y }
-            }
-        }
-    }
-
-    guard minX <= maxX && minY <= maxY else {
-        return nil
-    }
-
-    let boundingBox = CGRect(x: CGFloat(minX) / CGFloat(width),
-                             y: CGFloat(minY) / CGFloat(height),
-                             width: CGFloat(maxX - minX + 1) / CGFloat(width),
-                             height: CGFloat(maxY - minY + 1) / CGFloat(height))
-
-    return boundingBox
-}
-
 func boundingBoxForCenteredObject(in image: UIImage) -> CGRect? {
     guard let cgImage = image.cgImage else {
         return nil
     }
-
+    
     let width = cgImage.width
     let height = cgImage.height
 
@@ -511,7 +460,7 @@ func boundingBoxForCenteredObject(in image: UIImage) -> CGRect? {
 
     context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
 
-    var visited = Set<Int>()
+    var visited = Array(repeating: false, count: width * height)
     var components: [(minX: Int, minY: Int, maxX: Int, maxY: Int)] = []
 
     let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -519,23 +468,25 @@ func boundingBoxForCenteredObject(in image: UIImage) -> CGRect? {
     func bfs(startX: Int, startY: Int) -> (minX: Int, minY: Int, maxX: Int, maxY: Int) {
         var queue = [(x: Int, y: Int)]()
         queue.append((startX, startY))
-        visited.insert(startY * width + startX)
+        visited[startY * width + startX] = true
 
         var minX = startX
         var minY = startY
         var maxX = startX
         var maxY = startY
 
-        while !queue.isEmpty {
-            let (x, y) = queue.removeFirst()
+        var queueIndex = 0
+        while queueIndex < queue.count {
+            let (x, y) = queue[queueIndex]
+            queueIndex += 1
 
             for (dx, dy) in directions {
                 let nx = x + dx
                 let ny = y + dy
                 let index = ny * width + nx
 
-                if nx >= 0 && nx < width && ny >= 0 && ny < height && !visited.contains(index) && pixelData[index] == 255 {
-                    visited.insert(index)
+                if nx >= 0 && nx < width && ny >= 0 && ny < height && !visited[index] && pixelData[index] == 255 {
+                    visited[index] = true
                     queue.append((nx, ny))
                     if nx < minX { minX = nx }
                     if ny < minY { minY = ny }
@@ -552,7 +503,7 @@ func boundingBoxForCenteredObject(in image: UIImage) -> CGRect? {
     for y in 0..<height {
         for x in 0..<width {
             let index = y * width + x
-            if pixelData[index] == 255 && !visited.contains(index) {
+            if pixelData[index] == 255 && !visited[index] {
                 let boundingBox = bfs(startX: x, startY: y)
                 components.append(boundingBox)
             }
