@@ -108,6 +108,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             
                             // save result to gallery
                             self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                        } else {
+                            self.view.showToast(message: "Could not get real world measurements, uneven surface!")
                         }
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
