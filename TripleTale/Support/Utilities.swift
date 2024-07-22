@@ -346,8 +346,8 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
 }
 
 
-func removeBackground(from image: UIImage) -> (UIImage?, UIImage?, CGRect?) {
-    guard let ciImage = CIImage(image: image) else { return (nil, nil, nil) }
+func removeBackground(from image: UIImage) -> CGRect? {
+    guard let ciImage = CIImage(image: image) else { return nil }
     if let maskImage = generateMaskImage(from: ciImage) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
         
@@ -361,12 +361,12 @@ func removeBackground(from image: UIImage) -> (UIImage?, UIImage?, CGRect?) {
             
 //            let boundingBox = boundingBoxForWhiteArea(in: maskUiImage)
             let boundingBox = boundingBoxForCenteredObject(in: maskUiImage)
-            return (nil, maskUiImage, boundingBox)
+            return boundingBox
 
         }
         
     }
-    return (nil, nil, nil)
+    return nil
 }
 
 private func generateMaskImage(from ciImage: CIImage) -> CIImage? {
