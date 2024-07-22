@@ -89,109 +89,26 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             
             if self.isFrozen {
                 if self.saveImage != nil {
-                    /// Measurements
+                    // isolate fish through foreground vs background separation
                     let (_, _, newBoundingBox) = removeBackground(from: self.saveImage!)
                     self.boundingBox = newBoundingBox
                     
+                    // interact with AR world and define anchor points
                     let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                     let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                    
                     let centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1);
                     
-                    let distanceToPhone: Float = sqrt(midpointAnchors[4].transform.columns.3.x*midpointAnchors[4].transform.columns.3.x + midpointAnchors[4].transform.columns.3.y*midpointAnchors[4].transform.columns.3.y + midpointAnchors[4].transform.columns.3.z*midpointAnchors[4].transform.columns.3.z)
+                    // measure in real world units
+                    let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!)
                     
-                    let distanceToGround: Float = sqrt(centroidAnchor!.transform.columns.3.x*centroidAnchor!.transform.columns.3.x + centroidAnchor!.transform.columns.3.y*centroidAnchor!.transform.columns.3.y + centroidAnchor!.transform.columns.3.z*centroidAnchor!.transform.columns.3.z)
+                    // calculate weight
+                    let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = self.calculateWeight(width, length, height, circumference)
                     
-                    print("distance to phone: \(distanceToPhone*39.37) in, distanced to ground: \(distanceToGround*39.37) in")
-                    
-                    // update boundingbox for calculations
-                    let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
-                    let updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
-                    
-                    
-                    // for debugging
-                    //                    self.sceneView.session.add(anchor: updatedMidpointAnchors[0])
-                    //                    self.sceneView.session.add(anchor: updatedMidpointAnchors[1])
-                    //                    self.sceneView.session.add(anchor: updatedMidpointAnchors[2])
-                    //                    self.sceneView.session.add(anchor: updatedMidpointAnchors[3])
-                    //
-                    //                    self.anchorLabels[updatedMidpointAnchors[0].identifier] = "l"
-                    //                    self.anchorLabels[updatedMidpointAnchors[1].identifier] = "r"
-                    //                    self.anchorLabels[updatedMidpointAnchors[2].identifier] = "t"
-                    //                    self.anchorLabels[updatedMidpointAnchors[3].identifier] = "b"
-                    //
-                    //
-                    //                    self.sceneView.session.add(anchor: cornerAnchors[0])
-                    //                    self.sceneView.session.add(anchor: cornerAnchors[1])
-                    //                    self.sceneView.session.add(anchor: cornerAnchors[2])
-                    //                    self.sceneView.session.add(anchor: cornerAnchors[3])
-                    //
-                    //                    self.anchorLabels[cornerAnchors[0].identifier] = "lt"
-                    //                    self.anchorLabels[cornerAnchors[1].identifier] = "rt"
-                    //                    self.anchorLabels[cornerAnchors[2].identifier] = "lb"
-                    //                    self.anchorLabels[cornerAnchors[3].identifier] = "rb"
-                    //
-                    //
-                    //                    self.sceneView.session.add(anchor: centroidAnchor!)
-                    //                    self.anchorLabels[centroidAnchor!.identifier] = "c"
-                    
-                    
-                    // size calculation
-                    //                    let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1])
-                    //                    let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3])
-                    let width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1])
-                    let length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3])
-                    
-                    let height = calculateHeightBetweenAnchors(anchor1: centroidAnchor!, anchor2: midpointAnchors[4])
-                    
-                    let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-                    
-                    let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
-                    let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
-                    let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
-                    let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
-                    
-                    let widthInInches = widthInMeters.converted(to: .inches)
-                    let lengthInInches = lengthInMeters.converted(to: .inches)
-                    let heightInInches = heightInMeters.converted(to: .inches)
-                    let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
-                    
-                    let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 1200.0
-                    let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
-                    
-                    let formattedWidth = String(format: "%.2f", widthInInches.value)
-                    let formattedLength = String(format: "%.2f", lengthInInches.value)
-                    let formattedHeight = String(format: "%.2f", heightInInches.value)
-                    let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
-                    let formattedWeight = String(format: "%.2f", weightInLb.value)
-                    
-                    self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-                    
-                    self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
-                    
-                    // saving image
-                    let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
-                    
-                    let point = CGPoint(x: 50, y: 50)  // Modify as needed
-                    let fontSize: CGFloat = 45
-                    let textColor = UIColor.white
-                    let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
-                    
-                    saveImageToGallery(newTextImage!)
-                    
-                    //                    let (imageNoBG, maskImage, newBox) = removeBackground(from: self.saveImage!)
-                    //                    saveImageToGallery(imageNoBG!)
-                    //                    saveImageToGallery(maskImage!)
-                    //
-                    //                    let imageWithNewBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [newBox!])
-                    //                    saveImageToGallery(imageWithNewBox)
-                    
+                    // save result to gallery
+                    self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
                 }
                 
-                // Add a 1 second delay before toggling back
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.isFrozen.toggle()
-                }
+                self.isFrozen.toggle()
             }
         }
     }
@@ -212,6 +129,70 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         // Pause the view's session
         sceneView.session.pause()
+    }
+    
+    // MARK: - Helpers
+    private func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor) -> (Float, Float, Float, Float){
+        
+        let distanceToPhone: Float = sqrt(midpointAnchors[4].transform.columns.3.x*midpointAnchors[4].transform.columns.3.x + midpointAnchors[4].transform.columns.3.y*midpointAnchors[4].transform.columns.3.y + midpointAnchors[4].transform.columns.3.z*midpointAnchors[4].transform.columns.3.z)
+        
+        let distanceToGround: Float = sqrt(centroidAnchor.transform.columns.3.x*centroidAnchor.transform.columns.3.x + centroidAnchor.transform.columns.3.y*centroidAnchor.transform.columns.3.y + centroidAnchor.transform.columns.3.z*centroidAnchor.transform.columns.3.z)
+        
+        print("distance to phone: \(distanceToPhone*39.37) in, distanced to ground: \(distanceToGround*39.37) in")
+        
+        // update boundingbox for calculations
+        let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
+        let updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
+        
+        let width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1])
+        let length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3])
+        
+        let height = calculateHeightBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[4])
+        
+        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+        
+        return (width, length, height, circumference)
+    }
+    
+    private func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
+        
+        let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
+        let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
+        let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
+        let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
+        
+        let widthInInches = widthInMeters.converted(to: .inches)
+        let lengthInInches = lengthInMeters.converted(to: .inches)
+        let heightInInches = heightInMeters.converted(to: .inches)
+        let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
+        
+        let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 800
+        let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
+        
+        return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)
+    }
+    
+    private func saveResult(_ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>) {
+        
+        let formattedWidth = String(format: "%.2f", widthInInches.value)
+        let formattedLength = String(format: "%.2f", lengthInInches.value)
+        let formattedHeight = String(format: "%.2f", heightInInches.value)
+        let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+        let formattedWeight = String(format: "%.2f", weightInLb.value)
+        
+//        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
+        
+        self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
+        
+        // saving image
+        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
+        
+        let point = CGPoint(x: 50, y: 50)  // Modify as needed
+        let fontSize: CGFloat = 45
+        let textColor = UIColor.white
+        let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
+        
+        saveImageToGallery(newTextImage!)
     }
     
     // MARK: - ARSessionDelegate
