@@ -285,6 +285,18 @@ func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    return newAnchor
 }
 
+func nudgeBoundingBox(_ boundingBox: CGRect, _ nudgePercent: Float) -> CGRect {
+    var newBoundingBox: CGRect = boundingBox
+    
+    newBoundingBox.size.width = boundingBox.size.width * CGFloat((1.0 - nudgePercent))
+    newBoundingBox.size.height = boundingBox.size.height * CGFloat((1.0 - nudgePercent))
+    
+    newBoundingBox.origin.x = boundingBox.origin.x + boundingBox.size.width * CGFloat(nudgePercent/2.0)
+    newBoundingBox.origin.y = boundingBox.origin.y + boundingBox.size.height * CGFloat(nudgePercent/2.0)
+
+    return newBoundingBox
+}
+
 func getMidpoints(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
     var cornerAnchors: [ARAnchor] = []
     
@@ -340,6 +352,13 @@ func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageS
     return cornerAnchors
 }
 
+func getTailAnchor(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> ARAnchor {
+    
+    let bottomMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height * CGFloat(0.1), capturedImageSize)
+    let anchorBottomShifted = addAnchor(currentView, bottomMiddle)
+    
+    return anchorBottomShifted
+}
 
 func transformHeightAnchor(ref refAnchor: ARAnchor, cen centerAnchor: ARAnchor) -> ARAnchor {
     let anchor1Transform = refAnchor.transform

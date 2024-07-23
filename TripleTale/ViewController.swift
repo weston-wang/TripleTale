@@ -115,25 +115,44 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 if self.saveImage != nil {
                     // isolate fish through foreground vs background separation
                     if let fishBoundingBox = removeBackground(from: self.saveImage!) {
-                        self.boundingBox = fishBoundingBox
-                        
-                        // interact with AR world and define anchor points
-                        let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                        let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                        
-                        // calculate centroid beneath fish, will fail if not all corners available
-                        if let centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1) {
+                        if !self.isForwardFacing {
+                            self.boundingBox = fishBoundingBox
 
+                            // interact with AR world and define anchor points
+                            let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                            let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                            
+                            // calculate centroid beneath fish, will fail if not all corners available
+                            if let centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1) {
+                                
+                                // measure in real world units
+                                let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor)
+                                
+                                // calculate weight
+                                let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = self.calculateWeight(width, length, height, circumference)
+                                
+                                // save result to gallery
+                                self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                            } else {
+                                self.view.showToast(message: "Could not get real world measurements, uneven surface!")
+                            }
+                        } else {
+                            let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,0.1)
+                            self.boundingBox = tightFishBoundingBox
+                            
+                            // interact with AR world and define anchor points
+                            let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                            
+                            let tailAnchor = getTailAnchor(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                            
                             // measure in real world units
-                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor)
+                            let (width, length, height, circumference) = self.measureDimensionsForward(midpointAnchors, tailAnchor)
                             
                             // calculate weight
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = self.calculateWeight(width, length, height, circumference)
                             
                             // save result to gallery
                             self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
-                        } else {
-                            self.view.showToast(message: "Could not get real world measurements, uneven surface!")
                         }
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -186,6 +205,18 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         return (width, length, height, circumference)
     }
     
+    private func measureDimensionsForward(_ midpointAnchors: [ARAnchor], _ tailAnchor: ARAnchor) -> (Float, Float, Float, Float){
+        
+        let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1]) * 1.1
+        let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3]) * 1.1
+        
+        let height = calculateLengthBetweenAnchors(anchor1: tailAnchor, anchor2: midpointAnchors[4]) * 2.0
+        
+        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+        
+        return (width, length, height, circumference)
+    }
+    
     private func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
         
         let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
@@ -208,14 +239,15 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         let formattedLength = String(format: "%.2f", lengthInInches.value)
         let formattedWeight = String(format: "%.2f", weightInLb.value)
-//        let formattedWidth = String(format: "%.2f", widthInInches.value)
-//        let formattedHeight = String(format: "%.2f", heightInInches.value)
-//        let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+        let formattedWidth = String(format: "%.2f", widthInInches.value)
+        let formattedHeight = String(format: "%.2f", heightInInches.value)
+        let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-//        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
+        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
+        let newTextImage = imageWithBox.imageWithCenteredText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
 
-        let newTextImage = self.saveImage!.imageWithCenteredText("\(formattedLength) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
+//        let newTextImage = self.saveImage!.imageWithCenteredText("\(formattedLength) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
 
         let overlayImage = UIImage(named: "shimano_logo")!
         let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
