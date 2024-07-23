@@ -71,6 +71,56 @@ extension UIImage {
         return UIGraphicsGetImageFromCurrentImageContext()
     }
     
+    func imageWithCenteredText(_ text: String, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
+        // Create a paragraph style with center alignment
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        
+        // Create a shadow for the text (optional)
+        let shadow = NSShadow()
+        shadow.shadowColor = UIColor.gray
+        shadow.shadowOffset = CGSize(width: 2, height: 2)
+        shadow.shadowBlurRadius = 1
+        
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.boldSystemFont(ofSize: fontSize),
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle,
+            .shadow: shadow
+        ]
+        
+        // Start drawing image context
+        UIGraphicsBeginImageContextWithOptions(self.size, false, 0.0)
+        defer { UIGraphicsEndImageContext() }
+        
+        // Draw the original image
+        self.draw(in: CGRect(origin: CGPoint.zero, size: self.size))
+        
+        // Define text size
+        let textSize = (text as NSString).boundingRect(
+            with: CGSize(width: self.size.width, height: self.size.height),
+            options: .usesLineFragmentOrigin,
+            attributes: textAttributes,
+            context: nil
+        ).size
+        
+        // Calculate the position to center the text
+        let textPoint = CGPoint(
+            x: (self.size.width - textSize.width) / 2,
+            y: (self.size.height - textSize.height) / 2
+        )
+        
+        // Define text rectangle
+        let rect = CGRect(origin: textPoint, size: textSize)
+        
+        // Draw text in the rect
+        (text as NSString).draw(in: rect, withAttributes: textAttributes)
+        
+        // Get the new image
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+    
     func addImageToBottomRightCorner(overlayImage: UIImage) -> UIImage? {
         let mainImageSize = self.size
         let overlayImageSize = overlayImage.size

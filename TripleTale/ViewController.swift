@@ -189,22 +189,24 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         let formattedWeight = String(format: "%.2f", weightInLb.value)
         
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-        
-        self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
+//        self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
         
         // saving image
         let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
         
         let point = CGPoint(x: 50, y: 50)  // Modify as needed
-        let fontSize: CGFloat = 45
+        let fontSize: CGFloat = 90
         let textColor = UIColor.white
 //        let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
-        let newTextImage = imageWithBox.imageWithText(" \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
+        let newTextImage = imageWithBox.imageWithCenteredText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", fontSize: fontSize, textColor: textColor)
 
         let overlayImage = UIImage(named: "shimano_logo")!
         let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
         
         saveImageToGallery(combinedImage!)
+        
+        showImagePopup(combinedImage: combinedImage!)
+
     }
     
     // MARK: - ARSessionDelegate
@@ -224,6 +226,63 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
         
         detectCurrentImage()
+    }
+    
+    func showImagePopup(combinedImage: UIImage) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
+        
+        // Create an image view with the image
+        let imageView = UIImageView(image: combinedImage)
+        imageView.contentMode = .scaleAspectFit
+        
+        // Set the desired width and height for the image view with padding
+        let maxWidth: CGFloat = 270
+        let maxHeight: CGFloat = 480
+        
+        // Calculate the aspect ratio
+        let aspectRatio = combinedImage.size.width / combinedImage.size.height
+        
+        // Determine the width and height based on the aspect ratio
+        var imageViewWidth = maxWidth
+        var imageViewHeight = maxWidth / aspectRatio
+        
+        if imageViewHeight > maxHeight {
+            imageViewHeight = maxHeight
+            imageViewWidth = maxHeight * aspectRatio
+        }
+        
+        // Create a container view for the image view to add constraints
+        let containerView = UIView()
+        containerView.addSubview(imageView)
+        
+        // Set up auto layout constraints
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: imageViewWidth),
+            imageView.heightAnchor.constraint(equalToConstant: imageViewHeight),
+            imageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            containerView.widthAnchor.constraint(equalToConstant: imageViewWidth + 20),  // Adding padding
+            containerView.heightAnchor.constraint(equalToConstant: imageViewHeight + 20) // Adding padding
+        ])
+        
+        // Add the container view to the alert controller
+        alert.view.addSubview(containerView)
+        
+        // Set up the container view's constraints within the alert view
+        NSLayoutConstraint.activate([
+            containerView.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
+            containerView.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 20),
+            containerView.bottomAnchor.constraint(equalTo: alert.view.bottomAnchor, constant: -45)
+        ])
+        
+        // Add an action to dismiss the alert
+        alert.addAction(UIAlertAction(title: "Fish on!", style: .default, handler: nil))
+        
+        // Present the alert controller
+        present(alert, animated: true, completion: nil)
     }
     
     // MARK: - Vision classification
