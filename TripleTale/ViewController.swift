@@ -9,11 +9,16 @@ import UIKit
 import SpriteKit
 import ARKit
 import Vision
+import CoreMotion
 
 class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     @IBOutlet weak var sceneView: ARSKView!
     
+    let motionManager = CMMotionManager()
+    
+    private var isForwardFacing = false
+
     private var lastAnchor: ARAnchor?
     private var refAnchor: ARAnchor?
 
@@ -48,6 +53,25 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Check if the accelerometer is available
+        guard motionManager.isAccelerometerAvailable else {
+            print("Accelerometer is not available")
+            return
+        }
+        
+        // Set the update interval for accelerometer data
+        motionManager.accelerometerUpdateInterval = 0.1
+        
+        // Start receiving accelerometer updates
+        motionManager.startAccelerometerUpdates(to: OperationQueue.main) { [weak self] (data, error) in
+            guard let data = data, error == nil else {
+                return
+            }
+            
+            // Determine the device orientation based on accelerometer data
+            self?.detectOrientation(acceleration: data.acceleration)
+        }
         
         // Configure and present the SpriteKit scene that draws overlay content.
         let overlayScene = SKScene()
@@ -182,12 +206,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     private func saveResult(_ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>) {
         
-        let formattedWidth = String(format: "%.2f", widthInInches.value)
         let formattedLength = String(format: "%.2f", lengthInInches.value)
-        let formattedHeight = String(format: "%.2f", heightInInches.value)
-        let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
         let formattedWeight = String(format: "%.2f", weightInLb.value)
-        
+//        let formattedWidth = String(format: "%.2f", widthInInches.value)
+//        let formattedHeight = String(format: "%.2f", heightInInches.value)
+//        let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
 //        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
 
@@ -200,6 +224,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         
         showImagePopup(combinedImage: combinedImage!)
 
+    }
+    
+    private func detectOrientation(acceleration: CMAcceleration) {
+        if acceleration.y < -0.8 {
+            isForwardFacing = true
+        } else {
+            isForwardFacing = false
+        }
     }
     
     // MARK: - ARSessionDelegate
