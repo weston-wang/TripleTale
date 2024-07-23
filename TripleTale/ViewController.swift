@@ -189,16 +189,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         let formattedWeight = String(format: "%.2f", weightInLb.value)
         
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-//        self.view.showToast(message: "W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in")
-        
-        // saving image
-        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
-        
-        let point = CGPoint(x: 50, y: 50)  // Modify as needed
-        let fontSize: CGFloat = 90
-        let textColor = UIColor.white
-//        let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
-        let newTextImage = imageWithBox.imageWithCenteredText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", fontSize: fontSize, textColor: textColor)
+//        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
+
+        let newTextImage = self.saveImage!.imageWithCenteredText("\(formattedLength) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
 
         let overlayImage = UIImage(named: "shimano_logo")!
         let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
