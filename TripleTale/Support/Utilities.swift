@@ -70,6 +70,32 @@ extension UIImage {
         // Get the new image
         return UIGraphicsGetImageFromCurrentImageContext()
     }
+    
+    func addImageToBottomRightCorner(overlayImage: UIImage) -> UIImage? {
+        let mainImageSize = self.size
+        let overlayImageSize = overlayImage.size
+        
+        UIGraphicsBeginImageContextWithOptions(mainImageSize, false, 0.0)
+        
+        // Draw the main image
+        self.draw(in: CGRect(origin: .zero, size: mainImageSize))
+        
+        // Calculate the position to place the overlay image (bottom right corner)
+        let overlayOrigin = CGPoint(
+            x: mainImageSize.width - overlayImageSize.width,
+            y: mainImageSize.height - overlayImageSize.height
+        )
+        
+        // Draw the overlay image
+        overlayImage.draw(in: CGRect(origin: overlayOrigin, size: overlayImageSize))
+        
+        // Get the resulting image
+        let combinedImage = UIGraphicsGetImageFromCurrentImageContext()
+        
+        UIGraphicsEndImageContext()
+        
+        return combinedImage
+    }
 }
 
 func saveImageToGallery(_ image: UIImage) {

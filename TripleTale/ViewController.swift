@@ -198,9 +198,13 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         let point = CGPoint(x: 50, y: 50)  // Modify as needed
         let fontSize: CGFloat = 45
         let textColor = UIColor.white
-        let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
+//        let newTextImage = imageWithBox.imageWithText("\(self.identifierString): \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
+        let newTextImage = imageWithBox.imageWithText(" \(formattedWeight) lb, W \(formattedWidth) in x L \(formattedLength) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: fontSize, textColor: textColor)
+
+        let overlayImage = UIImage(named: "shimano_logo")!
+        let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
         
-        saveImageToGallery(newTextImage!)
+        saveImageToGallery(combinedImage!)
     }
     
     // MARK: - ARSessionDelegate
