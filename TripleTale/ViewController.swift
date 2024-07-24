@@ -115,6 +115,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                         var centroidAnchor: ARAnchor?
                         var midpointAnchors: [ARAnchor]
                         
+                        var nudgeRate: Float = 0.0
+                        
                         if !self.isForwardFacing {
                             self.boundingBox = fishBoundingBox
                             
@@ -123,7 +125,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1)
 
                         } else {
-                            let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,0.1)
+                            nudgeRate = 0.1
+                            
+                            let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,nudgeRate)
                             self.boundingBox = tightFishBoundingBox
 
                             centroidAnchor = getTailAnchor(self.sceneView, self.boundingBox!, self.saveImage!.size)
@@ -134,7 +138,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                             
                             // measure in real world units
-                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!)
+                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, scale: (1.0 + nudgeRate))
                             
                             // calculate weight
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
@@ -173,14 +177,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     // MARK: - Helpers
-    private func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor) -> (Float, Float, Float, Float){
+    private func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, scale: Float = 1.0) -> (Float, Float, Float, Float){
         var length: Float
         var width: Float
         var height: Float
         var circumference: Float
-        
-        var dimScale: Float
-        
+                
         var updatedMidpointAnchors: [ARAnchor]
         
         if !isForwardFacing {
@@ -192,8 +194,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             // update boundingbox for calculations
             let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
             updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
-
-            dimScale = 1.0
         } else {
             let heightL = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[0])
             let heightR = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[1])
@@ -201,12 +201,10 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             height = max(heightL, heightR) * 2.0
             
             updatedMidpointAnchors = midpointAnchors
-            
-            dimScale = 1.1
         }
         
-        width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1]) * dimScale
-        length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3]) * dimScale
+        width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1]) * scale
+        length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3]) * scale
                 
         circumference = calculateCircumference(majorAxis: width, minorAxis: height)
         
