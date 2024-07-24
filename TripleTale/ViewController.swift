@@ -146,7 +146,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             let tailAnchor = getTailAnchor(self.sceneView, self.boundingBox!, self.saveImage!.size)
                             
                             // measure in real world units
-                            let (width, length, height, circumference) = self.measureDimensionsForward(midpointAnchors, tailAnchor)
+                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, tailAnchor)
                             
                             // calculate weight
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
@@ -184,34 +184,38 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     // MARK: - Helpers
     private func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor) -> (Float, Float, Float, Float){
+        var length: Float
+        var width: Float
+        var height: Float
+        var circumference: Float
         
-        let distanceToPhone = calculateDistanceToObject(midpointAnchors[4])
-        let distanceToGround = calculateDistanceToObject(centroidAnchor)
+        var dimScale: Float
         
-        print("distance to phone: \(distanceToPhone*39.37) in, distanced to ground: \(distanceToGround*39.37) in")
+        var updatedMidpointAnchors: [ARAnchor]
         
-        // update boundingbox for calculations
-        let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
-        let updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
+        if !isForwardFacing {
+            height = calculateHeightBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[4])
+
+            let distanceToPhone = calculateDistanceToObject(midpointAnchors[4])
+            let distanceToGround = calculateDistanceToObject(centroidAnchor)
+                        
+            // update boundingbox for calculations
+            let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
+            updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
+
+            dimScale = 1.0
+        } else {
+            height = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[4]) * 2.0
+
+            updatedMidpointAnchors = midpointAnchors
+            
+            dimScale = 1.1
+        }
         
-        let width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1])
-        let length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3])
-        
-        let height = calculateHeightBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[4])
-        
-        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-        
-        return (width, length, height, circumference)
-    }
-    
-    private func measureDimensionsForward(_ midpointAnchors: [ARAnchor], _ tailAnchor: ARAnchor) -> (Float, Float, Float, Float){
-        
-        let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1]) * 1.1
-        let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3]) * 1.1
-        
-        let height = calculateDepthBetweenAnchors(anchor1: tailAnchor, anchor2: midpointAnchors[4]) * 2.0
-        
-        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+        width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1]) * dimScale
+        length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3]) * dimScale
+                
+        circumference = calculateCircumference(majorAxis: width, minorAxis: height)
         
         return (width, length, height, circumference)
     }
