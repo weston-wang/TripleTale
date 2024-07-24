@@ -112,44 +112,37 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 if self.saveImage != nil {
                     // isolate fish through foreground vs background separation
                     if let fishBoundingBox = removeBackground(from: self.saveImage!) {
+                        var centroidAnchor: ARAnchor?
+                        var midpointAnchors: [ARAnchor]
+                        
                         if !self.isForwardFacing {
                             self.boundingBox = fishBoundingBox
-
-                            // interact with AR world and define anchor points
-                            let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                            let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
                             
                             // calculate centroid beneath fish, will fail if not all corners available
-                            if let centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1) {
-                                
-                                // measure in real world units
-                                let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor)
-                                
-                                // calculate weight
-                                let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
-                                
-                                // save result to gallery
-                                self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
-                            } else {
-                                self.view.showToast(message: "Could not get real world measurements, uneven surface!")
-                            }
+                            let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                            centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1)
+
                         } else {
                             let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,0.1)
                             self.boundingBox = tightFishBoundingBox
-                            
+
+                            centroidAnchor = getTailAnchor(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                        }
+                        
+                        if centroidAnchor != nil {
                             // interact with AR world and define anchor points
-                            let midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                            
-                            let tailAnchor = getTailAnchor(self.sceneView, self.boundingBox!, self.saveImage!.size)
+                            midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
                             
                             // measure in real world units
-                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, tailAnchor)
+                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!)
                             
                             // calculate weight
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                             
                             // save result to gallery
                             self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                        } else {
+                            self.view.showToast(message: "Could not measure the fish, uneven surface!")
                         }
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
