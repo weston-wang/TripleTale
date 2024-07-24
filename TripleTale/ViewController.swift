@@ -205,8 +205,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 
             dimScale = 1.0
         } else {
-            height = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[4]) * 2.0
+            let heightL = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[0])
+            let heightR = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[1])
 
+            height = max(heightL, heightR) * 2.0
+            
             updatedMidpointAnchors = midpointAnchors
             
             dimScale = 1.1
