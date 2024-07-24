@@ -129,7 +129,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                                 let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor)
                                 
                                 // calculate weight
-                                let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = self.calculateWeight(width, length, height, circumference)
+                                let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                                 
                                 // save result to gallery
                                 self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
@@ -149,7 +149,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             let (width, length, height, circumference) = self.measureDimensionsForward(midpointAnchors, tailAnchor)
                             
                             // calculate weight
-                            let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = self.calculateWeight(width, length, height, circumference)
+                            let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                             
                             // save result to gallery
                             self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
@@ -185,9 +185,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     // MARK: - Helpers
     private func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor) -> (Float, Float, Float, Float){
         
-        let distanceToPhone: Float = sqrt(midpointAnchors[4].transform.columns.3.x*midpointAnchors[4].transform.columns.3.x + midpointAnchors[4].transform.columns.3.y*midpointAnchors[4].transform.columns.3.y + midpointAnchors[4].transform.columns.3.z*midpointAnchors[4].transform.columns.3.z)
-        
-        let distanceToGround: Float = sqrt(centroidAnchor.transform.columns.3.x*centroidAnchor.transform.columns.3.x + centroidAnchor.transform.columns.3.y*centroidAnchor.transform.columns.3.y + centroidAnchor.transform.columns.3.z*centroidAnchor.transform.columns.3.z)
+        let distanceToPhone = calculateDistanceToObject(midpointAnchors[4])
+        let distanceToGround = calculateDistanceToObject(centroidAnchor)
         
         print("distance to phone: \(distanceToPhone*39.37) in, distanced to ground: \(distanceToGround*39.37) in")
         
@@ -210,29 +209,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         let width = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[0], anchor2: midpointAnchors[1]) * 1.1
         let length = calculateDistanceBetweenAnchors(anchor1: midpointAnchors[2], anchor2: midpointAnchors[3]) * 1.1
         
-        let height = calculateLengthBetweenAnchors(anchor1: tailAnchor, anchor2: midpointAnchors[4]) * 2.0
+        let height = calculateDepthBetweenAnchors(anchor1: tailAnchor, anchor2: midpointAnchors[4]) * 2.0
         
         let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
         
         return (width, length, height, circumference)
-    }
-    
-    private func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
-        
-        let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
-        let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
-        let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
-        let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
-        
-        let widthInInches = widthInMeters.converted(to: .inches)
-        let lengthInInches = lengthInMeters.converted(to: .inches)
-        let heightInInches = heightInMeters.converted(to: .inches)
-        let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
-        
-        let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 800
-        let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
-        
-        return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)
     }
     
     private func saveResult(_ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>) {

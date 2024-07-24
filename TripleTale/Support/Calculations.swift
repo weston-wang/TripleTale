@@ -22,13 +22,13 @@ func calculateHeightBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Floa
     return abs(position1.y - position2.y)
 }
 
-func calculateLengthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+func calculateDepthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
     let position1 = anchor1.transform.columns.3
     let position2 = anchor2.transform.columns.3
     return abs(position1.z - position2.z)
 }
 
-func calculateWidthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+func calculateLengthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
     let position1 = anchor1.transform.columns.3
     let position2 = anchor2.transform.columns.3
     return abs(position1.x - position2.x)
@@ -46,4 +46,28 @@ func calculateCircumference(majorAxis: Float, minorAxis: Float) -> Float {
     let term1 = 3 * (a + b)
     let term2 = sqrt((3 * a + b) * (a + 3 * b))
     return Float(Double.pi) * (term1 - term2)
+}
+
+func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
+    
+    let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
+    let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
+    let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
+    let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
+    
+    let widthInInches = widthInMeters.converted(to: .inches)
+    let lengthInInches = lengthInMeters.converted(to: .inches)
+    let heightInInches = heightInMeters.converted(to: .inches)
+    let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
+    
+    let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 800
+    let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
+    
+    return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)
+}
+
+func calculateDistanceToObject(_ inputAnchor: ARAnchor) -> Float {
+    let distance = sqrt(inputAnchor.transform.columns.3.x*inputAnchor.transform.columns.3.x + inputAnchor.transform.columns.3.y*inputAnchor.transform.columns.3.y + inputAnchor.transform.columns.3.z*inputAnchor.transform.columns.3.z)
+    
+    return distance
 }
