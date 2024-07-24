@@ -195,10 +195,10 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
             updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
         } else {
-            let heightL = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[0])
-            let heightR = calculateDepthBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[1])
+            let heightL = calculateDepthBetweenAnchors(anchor1: midpointAnchors[4], anchor2: midpointAnchors[0])
+            let heightR = calculateDepthBetweenAnchors(anchor1: midpointAnchors[4], anchor2: midpointAnchors[1])
 
-            height = max(heightL, heightR) * 2.0
+            height = max(heightL, heightR) * 2.0 * scale
             
             updatedMidpointAnchors = midpointAnchors
         }
