@@ -19,9 +19,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     private var isForwardFacing = false
 
-    private var lastAnchor: ARAnchor?
-    private var refAnchor: ARAnchor?
-
     private var freezeButton: UIButton?
     private var isFrozen = false
     
@@ -500,7 +497,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         statusViewController.showMessage("RESTARTING SESSION")
 
         anchorLabels = [UUID: String]()
-        lastAnchor = nil
         
         let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
