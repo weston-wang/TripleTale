@@ -273,8 +273,6 @@ func getScreenPosition(_ currentView: ARSKView, _ normalizedX: CGFloat, _ normal
     return actualPosition
 }
 
-// Example usa
-
 func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    let newAnchor: ARAnchor
    

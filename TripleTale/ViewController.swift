@@ -25,14 +25,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var saveImage: UIImage?
     
     /// The ML model to be used for detection of arbitrary objects
-    private var _tripleTaleModel: TripleTaleV1!
-    private var tripleTaleModel: TripleTaleV1! {
+    private var _tripleTaleModel: TripleTaleV2!
+    private var tripleTaleModel: TripleTaleV2! {
         get {
             if let model = _tripleTaleModel { return model }
             _tripleTaleModel = {
                 do {
                     let configuration = MLModelConfiguration()
-                    return try TripleTaleV1(configuration: configuration)
+                    return try TripleTaleV2(configuration: configuration)
                 } catch {
                     fatalError("Couldn't create TripleTale due to: \(error)")
                 }
@@ -320,6 +320,22 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     // MARK: - Vision classification
     
+    // Vision classification request and model
+    /// - Tag: ClassificationRequest
+    private lazy var classificationRequest: VNCoreMLRequest = {
+        do {
+            // Instantiate the model from its generated Swift class.
+            let model = try VNCoreMLModel(for: tripleTaleModel.model)
+            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
+                self?.processClassifications(for: request, error: error)
+            })
+
+            return request
+        } catch {
+            fatalError("Failed to load Vision ML model: \(error)")
+        }
+    }()
+
     /// - Tag: DetectionRequest
     private lazy var detectionRequest: VNCoreMLRequest = {
         do {
@@ -355,7 +371,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             do {
                 // Release the pixel buffer when done, allowing the next buffer to be processed.
                 defer { self.currentBuffer = nil }
-                try requestHandler.perform([self.detectionRequest])
+                try requestHandler.perform([self.classificationRequest])
+//                try requestHandler.perform([self.detectionRequest])
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")
             }
@@ -388,6 +405,29 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             confidence = 0
         }
         
+        DispatchQueue.main.async { [weak self] in
+            self?.displayClassifierResults()
+        }
+    }
+    
+    func processClassifications(for request: VNRequest, error: Error?) {
+        guard let results = request.results else {
+            print("Unable to classify image.\n\(error!.localizedDescription)")
+            return
+        }
+        // The `results` will always be `VNClassificationObservation`s, as specified by the Core ML model in this project.
+        let classifications = results as! [VNClassificationObservation]
+
+        // Show a label for the highest-confidence result (but only above a minimum confidence threshold).
+        if let bestResult = classifications.first(where: { result in result.confidence > 0.5 }),
+            let label = bestResult.identifier.split(separator: ",").first {
+            identifierString = String(label)
+            confidence = bestResult.confidence
+        } else {
+            identifierString = ""
+            confidence = 0
+        }
+
         DispatchQueue.main.async { [weak self] in
             self?.displayClassifierResults()
         }
