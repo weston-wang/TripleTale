@@ -117,6 +117,4 @@ func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInI
     saveImageToGallery(combinedImage!)
     
     return combinedImage!
-//        showImagePopup(combinedImage: combinedImage!)
-
 }

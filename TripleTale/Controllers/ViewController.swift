@@ -46,6 +46,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         return children.lazy.compactMap({ $0 as? StatusViewController }).first!
     }()
     
+    // MARK: - Main logic
     @objc func toggleFreeze() {
         DispatchQueue.main.async {
             self.isFrozen.toggle()  // Toggle the state of isFrozen
@@ -68,11 +69,11 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             // calculate weight
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                             
-                            // save result to gallery
+                            // add text/logo and save result to gallery
                             let combinedImage = processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
                             
+                            // show popup to user
                             self.showImagePopup(combinedImage: combinedImage!)
-
                         } else {
                             self.view.showToast(message: "Could not measure, uneven surface!")
                         }
@@ -107,7 +108,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             }
             
             // Determine the device orientation based on accelerometer data
-            self?.detectOrientation(acceleration: data.acceleration)
+            let previousFacing = self!.isForwardFacing
+            self!.isForwardFacing = self!.detectOrientation(acceleration: data.acceleration)
+            
+            if self!.isForwardFacing != previousFacing {
+                self!.restartSession()
+            }
         }
         
         // Configure and present the SpriteKit scene that draws overlay content.
@@ -170,18 +176,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         sceneView.session.run(configuration)
     }
     
-    func detectOrientation(acceleration: CMAcceleration) {
-        let previousFacingState = isForwardFacing
-        
-        if acceleration.y < -0.8 {
-            isForwardFacing = true
-        } else {
-            isForwardFacing = false
-        }
-        
-        if isForwardFacing != previousFacingState {
-            self.restartSession()
-        }
+    func detectOrientation(acceleration: CMAcceleration) -> Bool {
+        return  acceleration.y < -0.8
     }
     
     // MARK: - ARSessionDelegate
