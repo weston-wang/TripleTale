@@ -96,3 +96,27 @@ func findAnchors(_ fishBoundingBox: CGRect, _ imageSize: CGSize, _ currentView: 
         return(nil, [], nudgeRate)
     }
 }
+
+func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>) -> UIImage? {
+    
+    let formattedLength = String(format: "%.2f", lengthInInches.value)
+    let formattedWeight = String(format: "%.2f", weightInLb.value)
+    let formattedWidth = String(format: "%.2f", widthInInches.value)
+    let formattedHeight = String(format: "%.2f", heightInInches.value)
+    let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+
+//        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
+    let imageWithBox = drawRectanglesOnImage(image: inputImage, boundingBoxes: [inputBoundingBox])
+    let newTextImage = imageWithBox.imageWithCenteredText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
+
+//        let newTextImage = self.saveImage!.imageWithCenteredText("\(formattedLength) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
+
+    let overlayImage = UIImage(named: "shimano_logo")!
+    let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
+    
+    saveImageToGallery(combinedImage!)
+    
+    return combinedImage!
+//        showImagePopup(combinedImage: combinedImage!)
+
+}

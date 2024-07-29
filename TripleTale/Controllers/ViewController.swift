@@ -59,17 +59,20 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     // isolate fish through foreground vs background separation
                     if let fishBoundingBox = removeBackground(from: self.saveImage!) {
                         // define anchors for calculations
-                        let (centroidAnchor,midpointAnchors,nudgeRate) =  self.findAnchors(fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing)
+                        let (centroidAnchor,midpointAnchors,nudgeRate) =  findAnchors(fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing)
                         
                         if centroidAnchor != nil {
                             // measure in real world units
-                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing, scale: (1.0 + nudgeRate))
+                            let (width, length, height, circumference) = measureDimensions(midpointAnchors, centroidAnchor!, fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing, scale: (1.0 + nudgeRate))
                             
                             // calculate weight
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                             
                             // save result to gallery
-                            self.processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                            let combinedImage = processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                            
+                            self.showImagePopup(combinedImage: combinedImage!)
+
                         } else {
                             self.view.showToast(message: "Could not measure, uneven surface!")
                         }
