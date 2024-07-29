@@ -59,16 +59,20 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                     // isolate fish through foreground vs background separation
                     if let fishBoundingBox = removeBackground(from: self.saveImage!) {
                         // define anchors for calculations
-                        let (centroidAnchor,midpointAnchors,nudgeRate) =  self.findAnchors(fishBoundingBox)
+                        let (centroidAnchor,midpointAnchors,nudgeRate) =  self.findAnchors(fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing)
                         
-                        // measure in real world units
-                        let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, fishBoundingBox, scale: (1.0 + nudgeRate))
-                        
-                        // calculate weight
-                        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
-                        
-                        // save result to gallery
-                        self.processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                        if centroidAnchor != nil {
+                            // measure in real world units
+                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing, scale: (1.0 + nudgeRate))
+                            
+                            // calculate weight
+                            let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
+                            
+                            // save result to gallery
+                            self.processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                        } else {
+                            self.view.showToast(message: "Could not measure, uneven surface!")
+                        }
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                     }
@@ -76,40 +80,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 
                 self.isFrozen.toggle()
             }
-        }
-    }
-    
-    func findAnchors(_ fishBoundingBox: CGRect) -> (ARAnchor?, [ARAnchor], Float) {
-        var centroidAnchor: ARAnchor?
-        var midpointAnchors: [ARAnchor]
-        
-        var useBoundingBox: CGRect
-        
-        var nudgeRate: Float = 0.0
-        
-        if !self.isForwardFacing {
-            useBoundingBox = fishBoundingBox
-            
-            // calculate centroid beneath fish, will fail if not all corners available
-            let cornerAnchors = getCorners(self.sceneView, fishBoundingBox, self.saveImage!.size)
-            centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1)
-
-        } else {
-            nudgeRate = 0.1
-            
-            let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,nudgeRate)
-            useBoundingBox = tightFishBoundingBox
-
-            centroidAnchor = getTailAnchor(self.sceneView, tightFishBoundingBox, self.saveImage!.size)
-        }
-        
-        if centroidAnchor != nil {
-            // interact with AR world and define anchor points
-            midpointAnchors = getMidpoints(self.sceneView, useBoundingBox, self.saveImage!.size)
-            
-            return(centroidAnchor, midpointAnchors, nudgeRate)
-        } else {
-            return(nil, [], nudgeRate)
         }
     }
     
@@ -195,41 +165,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     func startBodyTracking() {
         let configuration = ARBodyTrackingConfiguration()
         sceneView.session.run(configuration)
-    }
-    
-    func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, _ originalBoundingBox:CGRect, scale: Float = 1.0) -> (Float, Float, Float, Float){
-        var length: Float
-        var width: Float
-        var height: Float
-        var circumference: Float
-                
-        var updatedMidpointAnchors: [ARAnchor]
-        
-        if !isForwardFacing {
-            height = calculateHeightBetweenAnchors(anchor1: centroidAnchor, anchor2: midpointAnchors[4])
-
-            let distanceToPhone = calculateDistanceToObject(midpointAnchors[4])
-            let distanceToGround = calculateDistanceToObject(centroidAnchor)
-                        
-            // update boundingbox for calculations
-            let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: originalBoundingBox, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
-            
-            updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
-        } else {
-            let heightL = calculateDepthBetweenAnchors(anchor1: midpointAnchors[4], anchor2: midpointAnchors[0])
-            let heightR = calculateDepthBetweenAnchors(anchor1: midpointAnchors[4], anchor2: midpointAnchors[1])
-
-            height = max(heightL, heightR) * 2.0 * scale
-            
-            updatedMidpointAnchors = midpointAnchors
-        }
-        
-        width = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[0], anchor2: updatedMidpointAnchors[1]) * scale
-        length = calculateDistanceBetweenAnchors(anchor1: updatedMidpointAnchors[2], anchor2: updatedMidpointAnchors[3]) * scale
-                
-        circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-        
-        return (width, length, height, circumference)
     }
     
     func detectOrientation(acceleration: CMAcceleration) {
