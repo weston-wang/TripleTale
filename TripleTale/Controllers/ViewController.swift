@@ -158,13 +158,10 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         }
     }
 
-    
     func startPlaneDetection() {
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
         sceneView.session.run(configuration)
-        
-//        sceneView.session.delegate = nil // Not needed for plane detection
     }
     
     func startBodyTracking() {
@@ -180,12 +177,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         } else {
             startPlaneDetection()
         }
-//        // Create a session configuration
-//        let configuration = ARWorldTrackingConfiguration()
-//        configuration.planeDetection = [.horizontal]
-//
-//        // Run the view's session
-//        sceneView.session.run(configuration)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
