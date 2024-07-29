@@ -144,7 +144,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                             
                             // save result to gallery
-                            self.saveResult(widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                            self.processResult(self.saveImage!, self.boundingBox!, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
                         } else {
                             self.view.showToast(message: "Could not measure the fish, uneven surface!")
                         }
@@ -187,7 +187,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     // MARK: - Helpers
-    private func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, scale: Float = 1.0) -> (Float, Float, Float, Float){
+    func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, scale: Float = 1.0) -> (Float, Float, Float, Float){
         var length: Float
         var width: Float
         var height: Float
@@ -219,29 +219,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         circumference = calculateCircumference(majorAxis: width, minorAxis: height)
         
         return (width, length, height, circumference)
-    }
-    
-    private func saveResult(_ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>) {
-        
-        let formattedLength = String(format: "%.2f", lengthInInches.value)
-        let formattedWeight = String(format: "%.2f", weightInLb.value)
-        let formattedWidth = String(format: "%.2f", widthInInches.value)
-        let formattedHeight = String(format: "%.2f", heightInInches.value)
-        let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
-
-//        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-        let imageWithBox = drawRectanglesOnImage(image: self.saveImage!, boundingBoxes: [self.boundingBox!])
-        let newTextImage = imageWithBox.imageWithCenteredText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
-
-//        let newTextImage = self.saveImage!.imageWithCenteredText("\(formattedLength) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
-
-        let overlayImage = UIImage(named: "shimano_logo")!
-        let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-        
-        saveImageToGallery(combinedImage!)
-        
-        showImagePopup(combinedImage: combinedImage!)
-
     }
     
     private func detectOrientation(acceleration: CMAcceleration) {
