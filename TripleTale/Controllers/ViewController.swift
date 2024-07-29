@@ -46,6 +46,71 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         return children.lazy.compactMap({ $0 as? StatusViewController }).first!
     }()
     
+    @objc func toggleFreeze() {
+        DispatchQueue.main.async {
+            self.isFrozen.toggle()  // Toggle the state of isFrozen
+            
+            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+            feedbackGenerator.prepare()
+            feedbackGenerator.impactOccurred()
+            
+            if self.isFrozen {
+                if self.saveImage != nil {
+                    // isolate fish through foreground vs background separation
+                    if let fishBoundingBox = removeBackground(from: self.saveImage!) {
+                        // define anchors for calculations
+                        let (centroidAnchor,midpointAnchors,nudgeRate) =  self.findAnchors(fishBoundingBox)
+                        
+                        // measure in real world units
+                        let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, scale: (1.0 + nudgeRate))
+                        
+                        // calculate weight
+                        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
+                        
+                        // save result to gallery
+                        self.processResult(self.saveImage!, self.boundingBox!, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                    } else {
+                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+                    }
+                }
+                
+                self.isFrozen.toggle()
+            }
+        }
+    }
+    
+    func findAnchors(_ fishBoundingBox: CGRect) -> (ARAnchor?, [ARAnchor], Float) {
+        var centroidAnchor: ARAnchor?
+        var midpointAnchors: [ARAnchor]
+        
+        var nudgeRate: Float = 0.0
+        
+        if !self.isForwardFacing {
+            self.boundingBox = fishBoundingBox
+            
+            // calculate centroid beneath fish, will fail if not all corners available
+            let cornerAnchors = getCorners(self.sceneView, fishBoundingBox, self.saveImage!.size)
+            centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1)
+
+        } else {
+            nudgeRate = 0.1
+            
+            let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,nudgeRate)
+            self.boundingBox = tightFishBoundingBox
+
+            centroidAnchor = getTailAnchor(self.sceneView, tightFishBoundingBox, self.saveImage!.size)
+        }
+        
+        if centroidAnchor != nil {
+            // interact with AR world and define anchor points
+            midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
+            
+            return(centroidAnchor, midpointAnchors, nudgeRate)
+        } else {
+            return(nil, [], nudgeRate)
+        }
+    }
+    
     // MARK: - View controller lifecycle
     
     override func viewDidLoad() {
@@ -100,75 +165,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         }
     }
     
-    @objc func toggleFreeze() {
-        DispatchQueue.main.async {
-            self.isFrozen.toggle()  // Toggle the state of isFrozen
-            
-            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
-            feedbackGenerator.prepare()
-            feedbackGenerator.impactOccurred()
-            
-            if self.isFrozen {
-                if self.saveImage != nil {
-                    // isolate fish through foreground vs background separation
-                    if let fishBoundingBox = removeBackground(from: self.saveImage!) {
-                        var centroidAnchor: ARAnchor?
-                        var midpointAnchors: [ARAnchor]
-                        
-                        var nudgeRate: Float = 0.0
-                        
-                        if !self.isForwardFacing {
-                            self.boundingBox = fishBoundingBox
-                            
-                            // calculate centroid beneath fish, will fail if not all corners available
-                            let cornerAnchors = getCorners(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                            centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1)
-
-                        } else {
-                            nudgeRate = 0.1
-                            
-                            let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,nudgeRate)
-                            self.boundingBox = tightFishBoundingBox
-
-                            centroidAnchor = getTailAnchor(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                        }
-                        
-                        if centroidAnchor != nil {
-                            // interact with AR world and define anchor points
-                            midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
-                            
-                            // measure in real world units
-                            let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, scale: (1.0 + nudgeRate))
-                            
-                            // calculate weight
-                            let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
-                            
-                            // save result to gallery
-                            self.processResult(self.saveImage!, self.boundingBox!, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
-                        } else {
-                            self.view.showToast(message: "Could not measure the fish, uneven surface!")
-                        }
-                    } else {
-                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-                    }
-                }
-                
-                self.isFrozen.toggle()
-            }
-        }
-    }
-
-    func startPlaneDetection() {
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal]
-        sceneView.session.run(configuration)
-    }
-    
-    func startBodyTracking() {
-        let configuration = ARBodyTrackingConfiguration()
-        sceneView.session.run(configuration)
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -187,6 +183,18 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     // MARK: - Helpers
+    
+    func startPlaneDetection() {
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal]
+        sceneView.session.run(configuration)
+    }
+    
+    func startBodyTracking() {
+        let configuration = ARBodyTrackingConfiguration()
+        sceneView.session.run(configuration)
+    }
+    
     func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, scale: Float = 1.0) -> (Float, Float, Float, Float){
         var length: Float
         var width: Float
@@ -221,7 +229,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         return (width, length, height, circumference)
     }
     
-    private func detectOrientation(acceleration: CMAcceleration) {
+    func detectOrientation(acceleration: CMAcceleration) {
         let previousFacingState = isForwardFacing
         
         if acceleration.y < -0.8 {
@@ -486,4 +494,3 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         present(alertController, animated: true, completion: nil)
     }
 }
-
