@@ -98,8 +98,8 @@
 			isa = PBXGroup;
 			children = (
 				4E187F1E2C5803E1000AB86B /* Controllers */,
-				841E31011FC287CA00F639ED /* Resources */,
 				841E30FE1FC286E800F639ED /* Support */,
+				841E31011FC287CA00F639ED /* Resources */,
 			);
 			path = TripleTale;
 			sourceTree = "<group>";

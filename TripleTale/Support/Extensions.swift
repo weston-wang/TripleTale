@@ -151,3 +151,63 @@ extension UIImage {
         return combinedImage
     }
 }
+
+/// - Tag: UIViewController
+extension UIViewController {
+    func showImagePopup(combinedImage: UIImage) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
+        
+        // Create an image view with the image
+        let imageView = UIImageView(image: combinedImage)
+        imageView.contentMode = .scaleAspectFit
+        
+        // Set the desired width and height for the image view with padding
+        let maxWidth: CGFloat = 270
+        let maxHeight: CGFloat = 480
+        
+        // Calculate the aspect ratio
+        let aspectRatio = combinedImage.size.width / combinedImage.size.height
+        
+        // Determine the width and height based on the aspect ratio
+        var imageViewWidth = maxWidth
+        var imageViewHeight = maxWidth / aspectRatio
+        
+        if imageViewHeight > maxHeight {
+            imageViewHeight = maxHeight
+            imageViewWidth = maxHeight * aspectRatio
+        }
+        
+        // Create a container view for the image view to add constraints
+        let containerView = UIView()
+        containerView.addSubview(imageView)
+        
+        // Set up auto layout constraints
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: imageViewWidth),
+            imageView.heightAnchor.constraint(equalToConstant: imageViewHeight),
+            imageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            containerView.widthAnchor.constraint(equalToConstant: imageViewWidth + 20),  // Adding padding
+            containerView.heightAnchor.constraint(equalToConstant: imageViewHeight + 20) // Adding padding
+        ])
+        
+        // Add the container view to the alert controller
+        alert.view.addSubview(containerView)
+        
+        // Set up the container view's constraints within the alert view
+        NSLayoutConstraint.activate([
+            containerView.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
+            containerView.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 20),
+            containerView.bottomAnchor.constraint(equalTo: alert.view.bottomAnchor, constant: -45)
+        ])
+        
+        // Add an action to dismiss the alert
+        alert.addAction(UIAlertAction(title: "Fish on!", style: .default, handler: nil))
+        
+        // Present the alert controller
+        present(alert, animated: true, completion: nil)
+    }
+}
