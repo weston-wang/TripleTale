@@ -62,13 +62,13 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                         let (centroidAnchor,midpointAnchors,nudgeRate) =  self.findAnchors(fishBoundingBox)
                         
                         // measure in real world units
-                        let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, scale: (1.0 + nudgeRate))
+                        let (width, length, height, circumference) = self.measureDimensions(midpointAnchors, centroidAnchor!, fishBoundingBox, scale: (1.0 + nudgeRate))
                         
                         // calculate weight
                         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         
                         // save result to gallery
-                        self.processResult(self.saveImage!, self.boundingBox!, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+                        self.processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                     }
@@ -83,10 +83,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         var centroidAnchor: ARAnchor?
         var midpointAnchors: [ARAnchor]
         
+        var useBoundingBox: CGRect
+        
         var nudgeRate: Float = 0.0
         
         if !self.isForwardFacing {
-            self.boundingBox = fishBoundingBox
+            useBoundingBox = fishBoundingBox
             
             // calculate centroid beneath fish, will fail if not all corners available
             let cornerAnchors = getCorners(self.sceneView, fishBoundingBox, self.saveImage!.size)
@@ -96,14 +98,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             nudgeRate = 0.1
             
             let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,nudgeRate)
-            self.boundingBox = tightFishBoundingBox
+            useBoundingBox = tightFishBoundingBox
 
             centroidAnchor = getTailAnchor(self.sceneView, tightFishBoundingBox, self.saveImage!.size)
         }
         
         if centroidAnchor != nil {
             // interact with AR world and define anchor points
-            midpointAnchors = getMidpoints(self.sceneView, self.boundingBox!, self.saveImage!.size)
+            midpointAnchors = getMidpoints(self.sceneView, useBoundingBox, self.saveImage!.size)
             
             return(centroidAnchor, midpointAnchors, nudgeRate)
         } else {
@@ -195,7 +197,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         sceneView.session.run(configuration)
     }
     
-    func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, scale: Float = 1.0) -> (Float, Float, Float, Float){
+    func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor, _ originalBoundingBox:CGRect, scale: Float = 1.0) -> (Float, Float, Float, Float){
         var length: Float
         var width: Float
         var height: Float
@@ -210,7 +212,8 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             let distanceToGround = calculateDistanceToObject(centroidAnchor)
                         
             // update boundingbox for calculations
-            let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: self.boundingBox!, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
+            let updatedBoundingBox = reversePerspectiveEffectOnBoundingBox(boundingBox: originalBoundingBox, distanceToPhone: distanceToPhone, totalDistance: distanceToGround)
+            
             updatedMidpointAnchors = getMidpoints(self.sceneView, updatedBoundingBox, self.saveImage!.size)
         } else {
             let heightL = calculateDepthBetweenAnchors(anchor1: midpointAnchors[4], anchor2: midpointAnchors[0])
