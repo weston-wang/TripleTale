@@ -631,3 +631,4 @@ func boundingBoxForCenteredObject(in image: UIImage) -> CGRect? {
 
     return nil
 }
+

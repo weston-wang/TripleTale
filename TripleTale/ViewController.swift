@@ -158,15 +158,34 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         }
     }
 
+    
+    func startPlaneDetection() {
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal]
+        sceneView.session.run(configuration)
+        
+//        sceneView.session.delegate = nil // Not needed for plane detection
+    }
+    
+    func startBodyTracking() {
+        let configuration = ARBodyTrackingConfiguration()
+        sceneView.session.run(configuration)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        // Create a session configuration
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal]
-
-        // Run the view's session
-        sceneView.session.run(configuration)
+        if isForwardFacing {
+            startBodyTracking()
+        } else {
+            startPlaneDetection()
+        }
+//        // Create a session configuration
+//        let configuration = ARWorldTrackingConfiguration()
+//        configuration.planeDetection = [.horizontal]
+//
+//        // Run the view's session
+//        sceneView.session.run(configuration)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -235,10 +254,16 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     private func detectOrientation(acceleration: CMAcceleration) {
+        let previousFacingState = isForwardFacing
+        
         if acceleration.y < -0.8 {
             isForwardFacing = true
         } else {
             isForwardFacing = false
+        }
+        
+        if isForwardFacing != previousFacingState {
+            self.restartSession()
         }
     }
     
@@ -529,12 +554,16 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
 
         anchorLabels = [UUID: String]()
         
-        let configuration = ARWorldTrackingConfiguration()
+        var configuration: ARConfiguration
+        if !isForwardFacing {
+            configuration = ARWorldTrackingConfiguration()
+        } else {
+            configuration = ARBodyTrackingConfiguration()
+        }
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     
     // MARK: - Error handling
-    
     private func displayErrorMessage(title: String, message: String) {
         // Present an alert informing about the error that has occurred.
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -546,4 +575,3 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         present(alertController, animated: true, completion: nil)
     }
 }
-
