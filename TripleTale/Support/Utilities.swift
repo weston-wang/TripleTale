@@ -107,12 +107,16 @@ func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInI
 
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
     let imageWithBox = drawRectanglesOnImage(image: inputImage, boundingBoxes: [inputBoundingBox])
-    let newTextImage = imageWithBox.imageWithCenteredText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
 
-//        let newTextImage = self.saveImage!.imageWithCenteredText("\(formattedLength) in, \(formattedWeight) lb", fontSize: 150, textColor: UIColor.white)
+    let weightTextImage = imageWithBox.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
+    
+    let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
+
+    let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
+    
 
     let overlayImage = UIImage(named: "shimano_logo")!
-    let combinedImage = newTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
+    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
     
     saveImageToGallery(combinedImage!)
     
