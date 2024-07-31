@@ -15,7 +15,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     
     @IBOutlet weak var sceneView: ARSKView!
     
-    var bracketNode: SKShapeNode?
+    var bracketView: BracketView?
 
     let isMLDetection = false
     
@@ -140,6 +140,12 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         sceneView.presentScene(overlayScene)
         sceneView.session.delegate = self
         
+        // Add the bracket view to the main view
+        let initialRect = CGRect(x: view.bounds.midX - 50, y: view.bounds.midY - 50, width: 100, height: 100)
+        bracketView = BracketView(frame: view.bounds)
+        bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
+        view.addSubview(bracketView!)
+
         freezeButton = createFreezeButton()
         view.addSubview(freezeButton!)
         
@@ -147,6 +153,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         statusViewController.restartExperienceHandler = { [unowned self] in
             self.restartSession()
         }
+        
+        // Initial bracket update
+        updateBracketSize()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -166,7 +175,30 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         sceneView.session.pause()
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        bracketView?.frame = view.bounds
+        updateBracketSize()
+    }
+    
     // MARK: - Helpers
+    func updateBracketSize() {
+        guard let bracketView = bracketView else { return }
+        
+        // Define different sizes for forward-facing and not forward-facing
+        let width: CGFloat
+        if isForwardFacing {
+            width = view.bounds.width * 0.65 // Example size for forward-facing, adjust as needed
+        } else {
+            width = view.bounds.width * 0.85 // Example size for not forward-facing, adjust as needed
+        }
+        
+        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
+        let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
+        bracketView.updateBracket(rect: rect)
+    }
+    
     func createFreezeButton() -> UIButton {
         let button = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
         button.backgroundColor = .white
@@ -370,6 +402,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             configuration = ARBodyTrackingConfiguration()
         }
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        
+        // Update the bracket size based on the current state
+        updateBracketSize()
     }
     
     // MARK: - Error handling
