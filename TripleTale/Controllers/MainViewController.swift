@@ -73,8 +73,14 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             feedbackGenerator.impactOccurred()
 
             if self.isFrozen {
-                if self.saveImage != nil {
-                    if let resultImage = processImage(self.saveImage!, self.sceneView, self.isForwardFacing) {
+                if let userImage = self.saveImage {
+                    
+                    var inputImage = userImage
+                    if self.isForwardFacing {
+                        inputImage = userImage.cropCenter(to: 50)!
+                    }
+                    
+                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing) {
                         self.showImagePopup(combinedImage: resultImage)
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")

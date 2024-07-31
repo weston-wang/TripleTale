@@ -52,6 +52,23 @@ extension CGImagePropertyOrientation {
 
 /// - Tag: UIImage
 extension UIImage {
+    func cropCenter(to percent: CGFloat) -> UIImage? {
+        // Ensure the percentage is between 0 and 100
+        let percentage = max(0, min(100, percent))
+        
+        let width = self.size.width
+        let height = self.size.height
+        let newWidth = width * (percentage / 100.0)
+        let newHeight = height * (percentage / 100.0)
+        let cropRect = CGRect(x: (width - newWidth) / 2, y: (height - newHeight) / 2, width: newWidth, height: newHeight)
+        
+        guard let cgImage = self.cgImage?.cropping(to: cropRect) else {
+            return nil
+        }
+        
+        return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
+    }
+    
     func imageWithText(_ text: String, atPoint point: CGPoint, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize),
