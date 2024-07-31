@@ -40,6 +40,49 @@ func drawRectanglesOnImage(image: UIImage, boundingBoxes: [CGRect]) -> UIImage {
     return newImage
 }
 
+func drawBracketsOnImage(image: UIImage, boundingBoxes: [CGRect], bracketLength: CGFloat = 20.0, bracketThickness: CGFloat = 5.0) -> UIImage {
+    UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+    image.draw(at: CGPoint.zero)
+    
+    let context = UIGraphicsGetCurrentContext()!
+    context.setStrokeColor(UIColor.white.cgColor)
+    context.setLineWidth(bracketThickness)
+    
+    for rect in boundingBoxes {
+        let transformedRect = CGRect(x: rect.origin.x * image.size.width,
+                                     y: (1 - rect.origin.y - rect.size.height) * image.size.height,
+                                     width: rect.size.width * image.size.width,
+                                     height: rect.size.height * image.size.height)
+        
+        // Top-left bracket
+        context.move(to: CGPoint(x: transformedRect.minX, y: transformedRect.minY + bracketLength))
+        context.addLine(to: CGPoint(x: transformedRect.minX, y: transformedRect.minY))
+        context.addLine(to: CGPoint(x: transformedRect.minX + bracketLength, y: transformedRect.minY))
+        
+        // Top-right bracket
+        context.move(to: CGPoint(x: transformedRect.maxX - bracketLength, y: transformedRect.minY))
+        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.minY))
+        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.minY + bracketLength))
+        
+        // Bottom-left bracket
+        context.move(to: CGPoint(x: transformedRect.minX, y: transformedRect.maxY - bracketLength))
+        context.addLine(to: CGPoint(x: transformedRect.minX, y: transformedRect.maxY))
+        context.addLine(to: CGPoint(x: transformedRect.minX + bracketLength, y: transformedRect.maxY))
+        
+        // Bottom-right bracket
+        context.move(to: CGPoint(x: transformedRect.maxX - bracketLength, y: transformedRect.maxY))
+        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.maxY))
+        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.maxY - bracketLength))
+        
+        context.strokePath()
+    }
+    
+    let newImage = UIGraphicsGetImageFromCurrentImageContext()!
+    UIGraphicsEndImageContext()
+    
+    return newImage
+}
+
 func cropImage(_ image: UIImage, withNormalizedRect normalizedRect: CGRect) -> UIImage? {
     // Calculate the actual rect based on image size
     let rect = CGRect(x: normalizedRect.origin.x * image.size.width,

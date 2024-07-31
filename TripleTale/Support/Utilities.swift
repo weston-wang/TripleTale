@@ -106,7 +106,7 @@ func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInI
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-    let imageWithBox = drawRectanglesOnImage(image: inputImage, boundingBoxes: [inputBoundingBox])
+    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [inputBoundingBox])
 
     let weightTextImage = imageWithBox.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
     
