@@ -97,7 +97,7 @@ func findAnchors(_ fishBoundingBox: CGRect, _ imageSize: CGSize, _ currentView: 
     }
 }
 
-func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>) -> UIImage? {
+func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
     
     let formattedLength = String(format: "%.2f", lengthInInches.value)
     let formattedWeight = String(format: "%.2f", weightInLb.value)
@@ -108,7 +108,7 @@ func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInI
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
     let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [inputBoundingBox])
 
-    let weightTextImage = imageWithBox.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
+    let weightTextImage = imageWithBox.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
     
     let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
 

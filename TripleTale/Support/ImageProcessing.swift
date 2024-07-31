@@ -327,7 +327,7 @@ func nudgeBoundingBox(_ boundingBox: CGRect, _ nudgePercent: Float) -> CGRect {
     return newBoundingBox
 }
 
-func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool ) -> UIImage? {
+func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String ) -> UIImage? {
     // isolate fish through foreground vs background separation
     if let fishBoundingBox = removeBackground(from: inputImage) {
         // define anchors for calculations
@@ -341,7 +341,7 @@ func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: B
             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
             
             // add text/logo and save result to gallery
-            let combinedImage = processResult(inputImage, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
+            let combinedImage = processResult(inputImage, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, fishName)
             
             // show popup to user
             return combinedImage

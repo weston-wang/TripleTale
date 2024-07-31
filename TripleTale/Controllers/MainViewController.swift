@@ -80,7 +80,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         inputImage = userImage.cropCenter(to: 50)!
                     }
                     
-                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing) {
+                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString) {
                         self.showImagePopup(combinedImage: resultImage)
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -296,7 +296,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         freezeButton?.isHidden = false
 
         let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
-        statusViewController.showMessage(message)
+        
+//        statusViewController.showMessage(message)
     }
     
     // MARK: - Tap gesture handler & ARSKViewDelegate
@@ -322,7 +323,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     
     // MARK: - AR Session Handling
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
-        statusViewController.showTrackingQualityInfo(for: camera.trackingState, autoHide: true)
+//        statusViewController.showTrackingQualityInfo(for: camera.trackingState, autoHide: true)
         
         switch camera.trackingState {
         case .notAvailable, .limited:
