@@ -40,7 +40,7 @@ func drawRectanglesOnImage(image: UIImage, boundingBoxes: [CGRect]) -> UIImage {
     return newImage
 }
 
-func drawBracketsOnImage(image: UIImage, boundingBoxes: [CGRect], bracketLength: CGFloat = 20.0, bracketThickness: CGFloat = 5.0) -> UIImage {
+func drawBracketsOnImage(image: UIImage, boundingBoxes: [CGRect], bracketLength: CGFloat = 50.0, bracketThickness: CGFloat = 10.0) -> UIImage {
     UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
     image.draw(at: CGPoint.zero)
     
