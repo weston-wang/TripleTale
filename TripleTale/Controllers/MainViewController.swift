@@ -16,7 +16,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     @IBOutlet weak var sceneView: ARSKView!
     
     var bracketView: BracketView?
-    var activityIndicator: UIActivityIndicatorView?
 
     let isMLDetection = false
     
@@ -72,10 +71,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
             feedbackGenerator.prepare()
             feedbackGenerator.impactOccurred()
-            
-            // Start activity indicator animation
-//            self.activityIndicator?.startAnimating()
-            
+
             if self.isFrozen {
                 if self.saveImage != nil {
                     if let resultImage = processImage(self.saveImage!, self.sceneView, self.isForwardFacing) {
@@ -130,9 +126,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         bracketView = BracketView(frame: view.bounds)
         bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
         view.addSubview(bracketView!)
-        
-        // Setup the activity indicator
-        setupActivityIndicator()
 
         // Add the freeze button and other UI elements
         freezeButton = createFreezeButton()
@@ -172,22 +165,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     }
     
     // MARK: - Helpers
-    func setupActivityIndicator() {
-        activityIndicator = UIActivityIndicatorView(style: .large)
-        guard let activityIndicator = activityIndicator else { return }
-        
-        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(activityIndicator)
-        
-        // Set constraints for the activity indicator
-        NSLayoutConstraint.activate([
-            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-        
-        activityIndicator.hidesWhenStopped = true
-    }
-    
     func updateBracketSize() {
         guard let bracketView = bracketView else { return }
         
