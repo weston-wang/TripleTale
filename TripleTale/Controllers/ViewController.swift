@@ -15,8 +15,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     @IBOutlet weak var sceneView: ARSKView!
     
-    let motionManager = CMMotionManager()
+    let isMLDetection = false
     
+    let motionManager = CMMotionManager()
     private var isForwardFacing = false
 
     private var freezeButton: UIButton?
@@ -201,36 +202,14 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     // MARK: - Vision classification
     
-    // Vision classification request and model
-    /// - Tag: ClassificationRequest
-    private lazy var classificationRequest: VNCoreMLRequest = {
+    private lazy var mlRequest: VNCoreMLRequest = {
         do {
             // Instantiate the model from its generated Swift class.
             let model = try VNCoreMLModel(for: tripleTaleModel.model)
             let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-                self?.processClassifications(for: request, error: error)
+                self?.processObservations(for: request, error: error)
             })
 
-            return request
-        } catch {
-            fatalError("Failed to load Vision ML model: \(error)")
-        }
-    }()
-
-    /// - Tag: DetectionRequest
-    private lazy var detectionRequest: VNCoreMLRequest = {
-        do {
-            // Instantiate the model from its generated Swift class.
-//            let model = try VNCoreMLModel(for: yolo3Model.model)
-            let model = try VNCoreMLModel(for: tripleTaleModel.model)
-
-            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-                self?.processDetections(for: request, error: error)
-            })
-            
-            // Use CPU for Vision processing to ensure that there are adequate GPU resources for rendering.
-//            request.usesCPUOnly = true
-            
             return request
         } catch {
             fatalError("Failed to load Vision ML model: \(error)")
@@ -252,7 +231,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             do {
                 // Release the pixel buffer when done, allowing the next buffer to be processed.
                 defer { self.currentBuffer = nil }
-                try requestHandler.perform([self.classificationRequest])
+                try requestHandler.perform([self.mlRequest])
+
+//                try requestHandler.perform([self.classificationRequest])
 //                try requestHandler.perform([self.detectionRequest])
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")
@@ -265,48 +246,37 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var confidence: VNConfidence = 0.0
     private var boundingBox: CGRect?
     
-    func processDetections(for request: VNRequest, error: Error?) {
+    func processObservations(for request: VNRequest, error: Error?) {
         guard let results = request.results else {
-            print("Unable to classify image.\n\(error!.localizedDescription)")
+            print("Unable to process image.\n\(error?.localizedDescription ?? "Unknown error")")
             return
         }
-        // The `results` will always be `VNClassificationObservation`s, as specified by the Core ML model in this project.
-        let detections = results as! [VNRecognizedObjectObservation]
-        
-        // Show a label for the highest-confidence result (but only above a minimum confidence threshold).
-        if let bestResult = detections.first(where: { result in result.confidence > 0.5 }),
-           let label = bestResult.labels.first!.identifier.split(separator: ",").first {
-            identifierString = String(label)
-            confidence = bestResult.confidence
-            boundingBox = bestResult.boundingBox
-//            print("Detected \(label) with bounding box: \(String(describing: boundingBox))")
 
+        if let detections = results as? [VNRecognizedObjectObservation] {
+            // Handle object detections
+            if let bestResult = detections.first(where: { result in result.confidence > 0.5 }),
+               let label = bestResult.labels.first?.identifier.split(separator: ",").first {
+                identifierString = String(label)
+                confidence = bestResult.confidence
+                boundingBox = bestResult.boundingBox
+            } else {
+                identifierString = ""
+                confidence = 0
+                boundingBox = .zero
+            }
+        } else if let classifications = results as? [VNClassificationObservation] {
+            // Handle classifications
+            if let bestResult = classifications.first(where: { result in result.confidence > 0.5 }),
+               let label = bestResult.identifier.split(separator: ",").first {
+                identifierString = String(label)
+                confidence = bestResult.confidence
+            } else {
+                identifierString = ""
+                confidence = 0
+            }
         } else {
-            identifierString = ""
-            confidence = 0
-        }
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.displayClassifierResults()
-        }
-    }
-    
-    func processClassifications(for request: VNRequest, error: Error?) {
-        guard let results = request.results else {
-            print("Unable to classify image.\n\(error!.localizedDescription)")
+            print("Unknown result type: \(type(of: results))")
             return
-        }
-        // The `results` will always be `VNClassificationObservation`s, as specified by the Core ML model in this project.
-        let classifications = results as! [VNClassificationObservation]
-
-        // Show a label for the highest-confidence result (but only above a minimum confidence threshold).
-        if let bestResult = classifications.first(where: { result in result.confidence > 0.5 }),
-            let label = bestResult.identifier.split(separator: ",").first {
-            identifierString = String(label)
-            confidence = bestResult.confidence
-        } else {
-            identifierString = ""
-            confidence = 0
         }
 
         DispatchQueue.main.async { [weak self] in
