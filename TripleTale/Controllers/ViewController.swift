@@ -25,6 +25,17 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     private var saveImage: UIImage?
     
+    // Classification results
+    private var identifierString = ""
+    private var confidence: VNConfidence = 0.0
+    private var boundingBox: CGRect?
+    
+    // The pixel buffer being held for analysis; used to serialize Vision requests.
+    private var currentBuffer: CVPixelBuffer?
+    
+    // Queue for dispatching vision classification requests
+    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
+    
     /// The ML model to be used for detection of arbitrary objects
     private var _tripleTaleModel: TripleTaleV2!
     private var tripleTaleModel: TripleTaleV2! {
@@ -201,13 +212,29 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     // MARK: - Vision classification
+    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
+        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
+        self.identifierString = identifier
+        self.confidence = confidence
+        self.boundingBox = boundingBox ?? .zero
+        
+        self.displayClassifierResults()
+    }
     
     private lazy var mlRequest: VNCoreMLRequest = {
         do {
             // Instantiate the model from its generated Swift class.
             let model = try VNCoreMLModel(for: tripleTaleModel.model)
             let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-                self?.processObservations(for: request, error: error)
+                if let result = processObservations(for: request, error: error) {
+                    DispatchQueue.main.async {
+                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
+                    }
+                }
             })
 
             return request
@@ -215,12 +242,6 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
             fatalError("Failed to load Vision ML model: \(error)")
         }
     }()
-    
-    // The pixel buffer being held for analysis; used to serialize Vision requests.
-    private var currentBuffer: CVPixelBuffer?
-    
-    // Queue for dispatching vision classification requests
-    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
     
     private func detectCurrentImage() {
         // Most computer vision tasks are not rotation agnostic so it is important to pass in the orientation of the image with respect to device.
@@ -232,58 +253,12 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
                 // Release the pixel buffer when done, allowing the next buffer to be processed.
                 defer { self.currentBuffer = nil }
                 try requestHandler.perform([self.mlRequest])
-
-//                try requestHandler.perform([self.classificationRequest])
-//                try requestHandler.perform([self.detectionRequest])
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")
             }
         }
     }
-    
-    // Classification results
-    private var identifierString = ""
-    private var confidence: VNConfidence = 0.0
-    private var boundingBox: CGRect?
-    
-    func processObservations(for request: VNRequest, error: Error?) {
-        guard let results = request.results else {
-            print("Unable to process image.\n\(error?.localizedDescription ?? "Unknown error")")
-            return
-        }
 
-        if let detections = results as? [VNRecognizedObjectObservation] {
-            // Handle object detections
-            if let bestResult = detections.first(where: { result in result.confidence > 0.5 }),
-               let label = bestResult.labels.first?.identifier.split(separator: ",").first {
-                identifierString = String(label)
-                confidence = bestResult.confidence
-                boundingBox = bestResult.boundingBox
-            } else {
-                identifierString = ""
-                confidence = 0
-                boundingBox = .zero
-            }
-        } else if let classifications = results as? [VNClassificationObservation] {
-            // Handle classifications
-            if let bestResult = classifications.first(where: { result in result.confidence > 0.5 }),
-               let label = bestResult.identifier.split(separator: ",").first {
-                identifierString = String(label)
-                confidence = bestResult.confidence
-            } else {
-                identifierString = ""
-                confidence = 0
-            }
-        } else {
-            print("Unknown result type: \(type(of: results))")
-            return
-        }
-
-        DispatchQueue.main.async { [weak self] in
-            self?.displayClassifierResults()
-        }
-    }
-    
     // Show the classification results in the UI.
     private func displayClassifierResults() {
         guard !self.identifierString.isEmpty else {

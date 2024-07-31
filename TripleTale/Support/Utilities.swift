@@ -118,3 +118,38 @@ func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInI
     
     return combinedImage!
 }
+
+func processObservations(for request: VNRequest, error: Error?) -> (identifierString: String, confidence: VNConfidence, boundingBox: CGRect?)? {
+    guard let results = request.results else {
+        print("Unable to process image.\n\(error?.localizedDescription ?? "Unknown error")")
+        return nil
+    }
+
+    let threshold: Float = 0.0
+    
+    var identifierString = ""
+    var confidence: VNConfidence = 0
+    var boundingBox: CGRect? = nil
+
+    if let detections = results as? [VNRecognizedObjectObservation] {
+        // Handle object detections
+        if let bestResult = detections.first(where: { result in result.confidence > threshold }),
+           let label = bestResult.labels.first?.identifier.split(separator: ",").first {
+            identifierString = String(label)
+            confidence = bestResult.confidence
+            boundingBox = bestResult.boundingBox
+        }
+    } else if let classifications = results as? [VNClassificationObservation] {
+        // Handle classifications
+        if let bestResult = classifications.first(where: { result in result.confidence > threshold }),
+           let label = bestResult.identifier.split(separator: ",").first {
+            identifierString = String(label)
+            confidence = bestResult.confidence
+        }
+    } else {
+        print("Unknown result type: \(type(of: results))")
+        return nil
+    }
+
+    return (identifierString, confidence, boundingBox)
+}
