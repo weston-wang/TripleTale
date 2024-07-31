@@ -15,6 +15,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     
     @IBOutlet weak var sceneView: ARSKView!
     
+    var bracketNode: SKShapeNode?
+
     let isMLDetection = false
     
     let motionManager = CMMotionManager()
@@ -165,7 +167,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     }
     
     // MARK: - Helpers
-    
     func createFreezeButton() -> UIButton {
         let button = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
         button.backgroundColor = .white
@@ -286,6 +287,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Check if the anchor is an ARPlaneAnchor
         if anchor is ARPlaneAnchor {
             print("A plane anchor was added. Ignoring label assignment for plane anchors.")
+            return
+        } else if anchor is ARBodyAnchor {
+            print("A body anchor was added. Ignoring label assignment for plane anchors.")
             return
         }
         
