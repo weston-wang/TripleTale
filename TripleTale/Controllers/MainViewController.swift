@@ -11,7 +11,7 @@ import ARKit
 import Vision
 import CoreMotion
 
-class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
+class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     
     @IBOutlet weak var sceneView: ARSKView!
     
@@ -24,6 +24,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     private var isFrozen = false
     
     private var saveImage: UIImage?
+    
+    // Labels for classified objects by ARAnchor UUID
+    private var anchorLabels = [UUID: String]()
     
     // Classification results
     private var identifierString = ""
@@ -135,23 +138,9 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
         sceneView.presentScene(overlayScene)
         sceneView.session.delegate = self
         
-        freezeButton = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150,
-                                                  width: 70, height: 70))
-        freezeButton?.backgroundColor = .white
-        freezeButton?.layer.cornerRadius = 35
-        freezeButton?.clipsToBounds = true
-
-        // Set the button images for different states
-        freezeButton?.setImage(UIImage(named: "measure"), for: .normal)
-        freezeButton?.setImage(UIImage(named: "pressed"), for: .highlighted)
-
-        freezeButton?.imageView?.contentMode = .scaleAspectFill
-        
-        freezeButton?.isHidden = true
-        
-        freezeButton?.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
+        freezeButton = createFreezeButton()
         view.addSubview(freezeButton!)
-
+        
         // Hook up status view controller callback.
         statusViewController.restartExperienceHandler = { [unowned self] in
             self.restartSession()
@@ -176,6 +165,24 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     // MARK: - Helpers
+    
+    func createFreezeButton() -> UIButton {
+        let button = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 35
+        button.clipsToBounds = true
+
+        // Set the button images for different states
+        button.setImage(UIImage(named: "measure"), for: .normal)
+        button.setImage(UIImage(named: "pressed"), for: .highlighted)
+
+        button.imageView?.contentMode = .scaleAspectFill
+
+        button.isHidden = true
+
+        button.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
+        return button
+    }
     
     func startPlaneDetection() {
         let configuration = ARWorldTrackingConfiguration()
@@ -272,10 +279,7 @@ class ViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate {
     }
     
     // MARK: - Tap gesture handler & ARSKViewDelegate
-    
-    // Labels for classified objects by ARAnchor UUID
-    private var anchorLabels = [UUID: String]()
-    
+
     // When an anchor is added, provide a SpriteKit node for it and set its text to the classification label.
     /// - Tag: UpdateARContent
     func view(_ view: ARSKView, didAdd node: SKNode, for anchor: ARAnchor) {
