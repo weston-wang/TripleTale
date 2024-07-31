@@ -189,7 +189,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Define different sizes for forward-facing and not forward-facing
         let width: CGFloat
         if isForwardFacing {
-            width = view.bounds.width * 0.65 // Example size for forward-facing, adjust as needed
+            width = view.bounds.width * 0.5 // Example size for forward-facing, adjust as needed
         } else {
             width = view.bounds.width * 0.85 // Example size for not forward-facing, adjust as needed
         }
