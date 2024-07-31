@@ -16,6 +16,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     @IBOutlet weak var sceneView: ARSKView!
     
     var bracketView: BracketView?
+    var activityIndicator: UIActivityIndicatorView?
 
     let isMLDetection = false
     
@@ -72,28 +73,13 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             feedbackGenerator.prepare()
             feedbackGenerator.impactOccurred()
             
+            // Start activity indicator animation
+//            self.activityIndicator?.startAnimating()
+            
             if self.isFrozen {
                 if self.saveImage != nil {
-                    // isolate fish through foreground vs background separation
-                    if let fishBoundingBox = removeBackground(from: self.saveImage!) {
-                        // define anchors for calculations
-                        let (centroidAnchor,midpointAnchors,nudgeRate) =  findAnchors(fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing)
-                        
-                        if centroidAnchor != nil {
-                            // measure in real world units
-                            let (width, length, height, circumference) = measureDimensions(midpointAnchors, centroidAnchor!, fishBoundingBox, self.saveImage!.size, self.sceneView, self.isForwardFacing, scale: (1.0 + nudgeRate))
-                            
-                            // calculate weight
-                            let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
-                            
-                            // add text/logo and save result to gallery
-                            let combinedImage = processResult(self.saveImage!, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb)
-                            
-                            // show popup to user
-                            self.showImagePopup(combinedImage: combinedImage!)
-                        } else {
-                            self.view.showToast(message: "Could not measure, uneven surface!")
-                        }
+                    if let resultImage = processImage(self.saveImage!, self.sceneView, self.isForwardFacing) {
+                        self.showImagePopup(combinedImage: resultImage)
                     } else {
                         self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                     }
@@ -103,7 +89,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             }
         }
     }
-    
+
     // MARK: - View controller lifecycle
     
     override func viewDidLoad() {
@@ -141,11 +127,14 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         sceneView.session.delegate = self
         
         // Add the bracket view to the main view
-        let initialRect = CGRect(x: view.bounds.midX - 50, y: view.bounds.midY - 50, width: 100, height: 100)
         bracketView = BracketView(frame: view.bounds)
         bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
         view.addSubview(bracketView!)
+        
+        // Setup the activity indicator
+        setupActivityIndicator()
 
+        // Add the freeze button and other UI elements
         freezeButton = createFreezeButton()
         view.addSubview(freezeButton!)
         
@@ -183,6 +172,22 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     }
     
     // MARK: - Helpers
+    func setupActivityIndicator() {
+        activityIndicator = UIActivityIndicatorView(style: .large)
+        guard let activityIndicator = activityIndicator else { return }
+        
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(activityIndicator)
+        
+        // Set constraints for the activity indicator
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+        
+        activityIndicator.hidesWhenStopped = true
+    }
+    
     func updateBracketSize() {
         guard let bracketView = bracketView else { return }
         
