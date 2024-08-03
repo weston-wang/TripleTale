@@ -124,12 +124,18 @@ func findEllipseVertices(from image: UIImage) -> [CGPoint]? {
                             
                             let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
                             
+                            let tipsNormalized = tips.map { point in
+                                CGPoint(x: point.x / CGFloat(width), y: point.y / CGFloat(height))
+                            }
+
+                            
                             if let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
                                 // Use the resultImage, e.g., display it in an UIImageView or save it
                                 saveImageToGallery(resultImage)
                             }
                             
-                            return tips
+                            
+                            return tipsNormalized
 
                         }
                     }
