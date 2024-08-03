@@ -121,7 +121,10 @@ func removeBackground(from image: UIImage) -> CGRect? {
                     if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
                         if let ellipse = fitEllipse(to: closestContour, imageWidth: width, imageHeight: height) {
                             let size = CGSize(width: ellipse.size.width*CGFloat(width)/4.0, height: ellipse.size.height*CGFloat(height)/4.0)
-                            if let resultImage = drawContoursAndEllipse(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)) {
+                            
+                            let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
+
+                            if let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
                                 // Use the resultImage, e.g., display it in an UIImageView or save it
                                 saveImageToGallery(resultImage)
                             }
@@ -492,7 +495,30 @@ func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (cen
     return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
 }
 
-func drawContoursAndEllipse(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat)) -> UIImage? {
+func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [CGPoint] {
+    let rotationRadians = rotation * CGFloat.pi / 180
+    let cosTheta = cos(rotationRadians)
+    let sinTheta = sin(rotationRadians)
+
+    let semiMajorAxis = size.height
+    let semiMinorAxis = size.width
+
+    // Define the tips in the ellipse's local coordinate system
+    let top = CGPoint(x: 0, y: -semiMajorAxis)
+    let right = CGPoint(x: semiMinorAxis, y: 0)
+    let bottom = CGPoint(x: 0, y: semiMajorAxis)
+    let left = CGPoint(x: -semiMinorAxis, y: 0)
+
+    // Rotate and translate the points to the image coordinate system
+    let topRotated = CGPoint(x: center.x + cosTheta * top.x - sinTheta * top.y, y: center.y + sinTheta * top.x + cosTheta * top.y)
+    let rightRotated = CGPoint(x: center.x + cosTheta * right.x - sinTheta * right.y, y: center.y + sinTheta * right.x + cosTheta * right.y)
+    let bottomRotated = CGPoint(x: center.x + cosTheta * bottom.x - sinTheta * bottom.y, y: center.y + sinTheta * bottom.x + cosTheta * bottom.y)
+    let leftRotated = CGPoint(x: center.x + cosTheta * left.x - sinTheta * left.y, y: center.y + sinTheta * left.x + cosTheta * left.y)
+
+    return [topRotated, rightRotated, bottomRotated, leftRotated]
+}
+
+func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat), tips: [CGPoint]) -> UIImage? {
     let renderer = UIGraphicsImageRenderer(size: image.size)
     let renderedImage = renderer.image { context in
         // Draw the original image
@@ -534,6 +560,14 @@ func drawContoursAndEllipse(on image: UIImage, contours: [[CGPoint]], closestCon
         
         // Restore the context state
         context.cgContext.restoreGState()
+        
+        // Set the tips drawing properties
+        context.cgContext.setFillColor(UIColor.green.cgColor)
+        
+        // Draw the tips
+        for tip in tips {
+            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 10, height: 10))
+        }
     }
     
     return renderedImage
