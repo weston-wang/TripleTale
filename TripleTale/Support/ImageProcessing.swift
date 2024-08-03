@@ -101,7 +101,7 @@ func cropImage(_ image: UIImage, withNormalizedRect normalizedRect: CGRect) -> U
     return UIImage(cgImage: croppedCgImage, scale: image.scale, orientation: image.imageOrientation)
 }
 
-func removeBackground(from image: UIImage) -> CGRect? {
+func findEllipseVertices(from image: UIImage) -> [CGPoint]? {
     guard let ciImage = CIImage(image: image) else { return nil }
     if let maskImage = generateMaskImage(from: ciImage) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
@@ -123,15 +123,35 @@ func removeBackground(from image: UIImage) -> CGRect? {
                             let size = CGSize(width: ellipse.size.width*CGFloat(width)/4.0, height: ellipse.size.height*CGFloat(height)/4.0)
                             
                             let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
-
+                            
                             if let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
                                 // Use the resultImage, e.g., display it in an UIImageView or save it
                                 saveImageToGallery(resultImage)
                             }
                             
+                            return tips
+
                         }
                     }
                 }
+        }
+        
+    }
+    return nil
+}
+
+func removeBackground(from image: UIImage) -> CGRect? {
+    guard let ciImage = CIImage(image: image) else { return nil }
+    if let maskImage = generateMaskImage(from: ciImage) {
+//        let outputImage = applyMask(maskImage, to: ciImage)
+        
+        // Create a CIContext
+        let context = CIContext()
+
+        // Create a CGImage from the CIImage
+        if let cgImage = context.createCGImage(maskImage, from: maskImage.extent) {
+            // Convert the CGImage to a UIImage
+            let maskUiImage = UIImage(cgImage: cgImage)
             
 //            let boundingBox = boundingBoxForWhiteArea(in: maskUiImage)
             let boundingBox = boundingBoxForCenteredObject(in: maskUiImage)
@@ -348,6 +368,9 @@ func nudgeBoundingBox(_ boundingBox: CGRect, _ nudgePercent: Float) -> CGRect {
 }
 
 func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String ) -> UIImage? {
+    let points = findEllipseVertices(from: inputImage)
+    print(points)
+    
     // isolate fish through foreground vs background separation
     if let fishBoundingBox = removeBackground(from: inputImage) {
         // define anchors for calculations
