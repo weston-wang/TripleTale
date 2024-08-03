@@ -140,7 +140,7 @@ func findEllipseVertices(from image: UIImage) -> [CGPoint]? {
     return nil
 }
 
-func removeBackground(from image: UIImage) -> CGRect? {
+func isolateFish(from image: UIImage) -> CGRect? {
     guard let ciImage = CIImage(image: image) else { return nil }
     if let maskImage = generateMaskImage(from: ciImage) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
@@ -372,7 +372,7 @@ func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: B
     print(points)
     
     // isolate fish through foreground vs background separation
-    if let fishBoundingBox = removeBackground(from: inputImage) {
+    if let fishBoundingBox = isolateFish(from: inputImage) {
         // define anchors for calculations
         let (centroidAnchor,midpointAnchors,nudgeRate) =  findAnchors(fishBoundingBox, inputImage.size, currentView, isForward)
         
