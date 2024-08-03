@@ -63,40 +63,6 @@ func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     return UIImage(cgImage: cgImage)
 }
 
-func findAnchors(_ fishBoundingBox: CGRect, _ imageSize: CGSize, _ currentView: ARSKView, _ isForward: Bool) -> (ARAnchor?, [ARAnchor], Float) {
-    var centroidAnchor: ARAnchor?
-    var midpointAnchors: [ARAnchor]
-    
-    var useBoundingBox: CGRect
-    
-    var nudgeRate: Float = 0.0
-    
-    if !isForward {
-        useBoundingBox = fishBoundingBox
-        
-        // calculate centroid beneath fish, will fail if not all corners available
-        let cornerAnchors = getCorners(currentView, fishBoundingBox, imageSize)
-        centroidAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.1)
-
-    } else {
-        nudgeRate = 0.1
-        
-        let tightFishBoundingBox = nudgeBoundingBox(fishBoundingBox,nudgeRate)
-        useBoundingBox = tightFishBoundingBox
-
-        centroidAnchor = getTailAnchor(currentView, tightFishBoundingBox, imageSize)
-    }
-    
-    if centroidAnchor != nil {
-        // interact with AR world and define anchor points
-        midpointAnchors = getMidpoints(currentView, useBoundingBox, imageSize)
-        
-        return(centroidAnchor, midpointAnchors, nudgeRate)
-    } else {
-        return(nil, [], nudgeRate)
-    }
-}
-
 func processResult(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
     
     let formattedLength = String(format: "%.2f", lengthInInches.value)
