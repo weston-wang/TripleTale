@@ -78,6 +78,17 @@ func getVertices(_ currentView: ARSKView, _ normalizedVertices: [CGPoint], _ cap
     return verticesAnchors
 }
 
+func getVerticesCenter(_ currentView: ARSKView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ARAnchor {
+    let centroid = CGPoint(
+        x: (normalizedVertices[0].x + normalizedVertices[1].x + normalizedVertices[2].x + normalizedVertices[3].x) / 4,
+        y: (normalizedVertices[0].y + normalizedVertices[1].y + normalizedVertices[2].y + normalizedVertices[3].y) / 4
+    )
+    
+    let centroidAnchor = addAnchor(currentView, centroid)
+
+    return centroidAnchor
+}
+
 func getMidpoints(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
     var cornerAnchors: [ARAnchor] = []
     
@@ -232,4 +243,41 @@ func findAnchors(_ fishBoundingBox: CGRect, _ imageSize: CGSize, _ currentView: 
     } else {
         return(nil, [], nudgeRate)
     }
+}
+
+func stretchVertices(_ anchors: [ARAnchor], verticalScaleFactor: Float, horizontalScaleFactor: Float) -> [ARAnchor] {
+    var updatedVerticesAnchors: [ARAnchor] = []
+
+    // Calculate the center of the quadrilateral
+    let centerX = (anchors[0].transform.columns.3.x + anchors[2].transform.columns.3.x) / 2.0
+    let centerY = (anchors[0].transform.columns.3.y + anchors[2].transform.columns.3.y) / 2.0
+    let centerZ = (anchors[0].transform.columns.3.z + anchors[2].transform.columns.3.z) / 2.0
+
+    let center = simd_float3(x: centerX, y: centerY, z: centerZ)
+
+    // Update the anchors
+    for i in 0..<anchors.count {
+        var position = anchors[i].transform.columns.3
+        let scaledPosition = scalePoint(point: simd_float3(position.x, position.y, position.z), center: center, verticalScaleFactor: verticalScaleFactor, horizontalScaleFactor: horizontalScaleFactor)
+        position = simd_float4(scaledPosition.x, scaledPosition.y, scaledPosition.z, 1.0)
+        
+        // Create a new transform with the updated position
+        var newTransform = anchors[i].transform
+        newTransform.columns.3 = position
+        
+        // Update the anchor with the new transform
+        let updatedAnchor = ARAnchor(transform: newTransform)
+        
+        updatedVerticesAnchors.append(updatedAnchor)
+    }
+    
+    return updatedVerticesAnchors
+}
+
+
+// Function to scale a point around the center with different scale factors for each direction
+func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Float, horizontalScaleFactor: Float) -> simd_float3 {
+    let vector = point - center
+    let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
+    return center + scaledVector
 }
