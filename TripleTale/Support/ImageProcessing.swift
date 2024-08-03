@@ -374,8 +374,10 @@ func nudgeBoundingBox(_ boundingBox: CGRect, _ nudgePercent: Float) -> CGRect {
 }
 
 func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String ) -> UIImage? {
-    let points = findEllipseVertices(from: inputImage)
-    print(points)
+    if let normalizedVertices = findEllipseVertices(from: inputImage) {
+        let verticesAnchors = getVertices(currentView, normalizedVertices, inputImage.size)
+        print(verticesAnchors)
+    }
     
     // isolate fish through foreground vs background separation
     if let fishBoundingBox = isolateFish(from: inputImage) {

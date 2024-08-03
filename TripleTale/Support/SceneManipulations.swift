@@ -64,6 +64,20 @@ func addAnchor(_ currentView: ARSKView, _ point: CGPoint) -> ARAnchor {
    return newAnchor
 }
 
+func getVertices(_ currentView: ARSKView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> [ARAnchor] {
+    var verticesAnchors: [ARAnchor] = []
+    
+    
+    for vertex in normalizedVertices {
+        let vertexOnScreen = getScreenPosition(currentView, vertex.x, vertex.y, capturedImageSize)
+        let vertexAnchor = addAnchor(currentView, vertexOnScreen)
+        
+        verticesAnchors.append(vertexAnchor)
+    }
+    
+    return verticesAnchors
+}
+
 func getMidpoints(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> [ARAnchor] {
     var cornerAnchors: [ARAnchor] = []
     
