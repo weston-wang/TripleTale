@@ -115,20 +115,20 @@ func removeBackground(from image: UIImage) -> CGRect? {
             let maskUiImage = UIImage(cgImage: cgImage)
             
             if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
-                let width = cgImage.width
-                let height = cgImage.height
-
-                let contours = extractContours(from: pixelData, width: width, height: height)
-                if let ellipse = fitEllipse(to: contours, imageWidth: width, imageHeight: height) {
-                    let size = CGSize(width: ellipse.size.width*CGFloat(width)/4.0, height: ellipse.size.height*CGFloat(height)/4.0)
-                    
-                    if let resultImage = drawContoursAndEllipse(on: maskUiImage, contours: contours, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)) {
-                        // Use the resultImage, e.g., display it in an UIImageView or save it
-                        saveImageToGallery(resultImage)
+                    let width = cgImage.width
+                    let height = cgImage.height
+                    let contours = extractContours(from: pixelData, width: width, height: height)
+                    if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
+                        if let ellipse = fitEllipse(to: closestContour, imageWidth: width, imageHeight: height) {
+                            let size = CGSize(width: ellipse.size.width*CGFloat(width)/4.0, height: ellipse.size.height*CGFloat(height)/4.0)
+                            if let resultImage = drawContoursAndEllipse(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)) {
+                                // Use the resultImage, e.g., display it in an UIImageView or save it
+                                saveImageToGallery(resultImage)
+                            }
+                            
+                        }
                     }
-                
                 }
-            }
             
 //            let boundingBox = boundingBoxForWhiteArea(in: maskUiImage)
             let boundingBox = boundingBoxForCenteredObject(in: maskUiImage)
@@ -391,18 +391,65 @@ func convertCGImageToGrayscalePixelData(_ cgImage: CGImage) -> [UInt8]? {
     return pixelData
 }
 
-func extractContours(from pixelData: [UInt8], width: Int, height: Int) -> [CGPoint] {
-    var contours = [CGPoint]()
+func extractContours(from pixelData: [UInt8], width: Int, height: Int) -> [[CGPoint]] {
+    var contours = [[CGPoint]]()
+    var visited = Array(repeating: Array(repeating: false, count: width), count: height)
+    let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)] // 4-connected directions
+
+    func bfs(startX: Int, startY: Int) -> [CGPoint] {
+        var queue = [(x: Int, y: Int)]()
+        queue.append((startX, startY))
+        visited[startY][startX] = true
+        var contour = [CGPoint]()
+        
+        while !queue.isEmpty {
+            let (x, y) = queue.removeFirst()
+            contour.append(CGPoint(x: x, y: y))
+            
+            for (dx, dy) in directions {
+                let newX = x + dx
+                let newY = y + dy
+                if newX >= 0, newX < width, newY >= 0, newY < height, !visited[newY][newX], pixelData[newY * width + newX] == 255 {
+                    queue.append((newX, newY))
+                    visited[newY][newX] = true
+                }
+            }
+        }
+        
+        return contour
+    }
 
     for y in 0..<height {
         for x in 0..<width {
-            if pixelData[y * width + x] == 255 {
-                contours.append(CGPoint(x: x, y: y))
+            if pixelData[y * width + x] == 255 && !visited[y][x] {
+                let contour = bfs(startX: x, startY: y)
+                if !contour.isEmpty {
+                    contours.append(contour)
+                }
             }
         }
     }
 
     return contours
+}
+
+func findContourClosestToCenter(contours: [[CGPoint]], imageWidth: Int, imageHeight: Int) -> [CGPoint]? {
+    let center = CGPoint(x: imageWidth / 2, y: imageHeight / 2)
+    var minDistance = CGFloat.greatestFiniteMagnitude
+    var closestContour: [CGPoint]?
+
+    for contour in contours {
+        let contourCenter = contour.reduce(CGPoint.zero) { CGPoint(x: $0.x + $1.x, y: $0.y + $1.y) }
+        let avgContourCenter = CGPoint(x: contourCenter.x / CGFloat(contour.count), y: contourCenter.y / CGFloat(contour.count))
+        let distance = hypot(center.x - avgContourCenter.x, center.y - avgContourCenter.y)
+        
+        if distance < minDistance {
+            minDistance = distance
+            closestContour = contour
+        }
+    }
+
+    return closestContour
 }
 
 func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
@@ -445,7 +492,7 @@ func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (cen
     return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
 }
 
-func drawContoursAndEllipse(on image: UIImage, contours: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat)) -> UIImage? {
+func drawContoursAndEllipse(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat)) -> UIImage? {
     let renderer = UIGraphicsImageRenderer(size: image.size)
     let renderedImage = renderer.image { context in
         // Draw the original image
@@ -455,16 +502,18 @@ func drawContoursAndEllipse(on image: UIImage, contours: [CGPoint], ellipse: (ce
         context.cgContext.setStrokeColor(UIColor.blue.cgColor)
         context.cgContext.setLineWidth(1.0)
         
-        // Draw the contours
-        context.cgContext.beginPath()
-        for point in contours {
-            if point == contours.first {
-                context.cgContext.move(to: point)
-            } else {
-                context.cgContext.addLine(to: point)
+        // Draw all contours
+        for contour in contours {
+            context.cgContext.beginPath()
+            for point in contour {
+                if point == contour.first {
+                    context.cgContext.move(to: point)
+                } else {
+                    context.cgContext.addLine(to: point)
+                }
             }
+            context.cgContext.strokePath()
         }
-        context.cgContext.strokePath()
         
         // Set the ellipse drawing properties
         context.cgContext.setStrokeColor(UIColor.red.cgColor)
@@ -489,5 +538,3 @@ func drawContoursAndEllipse(on image: UIImage, contours: [CGPoint], ellipse: (ce
     
     return renderedImage
 }
-
-
