@@ -117,7 +117,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             self!.isForwardFacing = self!.detectOrientation(acceleration: data.acceleration)
             
             if self!.isForwardFacing != previousFacing {
-                self!.restartSession()
+                
+                // Update the bracket size based on the current state
+                self!.updateBracketSize()
             }
         }
         
@@ -149,11 +151,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        if isForwardFacing {
-            startBodyTracking()
-        } else {
-            startPlaneDetection()
-        }
+        startPlaneDetection()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -176,13 +174,15 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         
         // Define different sizes for forward-facing and not forward-facing
         let width: CGFloat
+        let height: CGFloat
         if isForwardFacing {
             width = view.bounds.width * 0.5 // Example size for forward-facing, adjust as needed
+            height = width * 16 / 9 // Maintain 9:16 aspect ratio
         } else {
             width = view.bounds.width * 0.85 // Example size for not forward-facing, adjust as needed
+            height = width * 16 / 9 // Maintain 9:16 aspect ratio
         }
         
-        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
         let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
         bracketView.updateBracket(rect: rect)
     }
@@ -210,12 +210,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         configuration.planeDetection = [.horizontal]
         sceneView.session.run(configuration)
     }
-    
-    func startBodyTracking() {
-        let configuration = ARBodyTrackingConfiguration()
-        sceneView.session.run(configuration)
-    }
-    
+
     func detectOrientation(acceleration: CMAcceleration) -> Bool {
         return  acceleration.y < -0.8
     }
@@ -297,7 +292,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
         let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
         
-//        statusViewController.showMessage(message)
+        statusViewController.showMessage(message)
     }
     
     // MARK: - Tap gesture handler & ARSKViewDelegate
@@ -384,16 +379,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
         anchorLabels = [UUID: String]()
         
-        var configuration: ARConfiguration
-        if !isForwardFacing {
-            configuration = ARWorldTrackingConfiguration()
-        } else {
-            configuration = ARBodyTrackingConfiguration()
-        }
+        let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-        
-        // Update the bracket size based on the current state
-        updateBracketSize()
     }
     
     // MARK: - Error handling
