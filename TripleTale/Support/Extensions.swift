@@ -69,6 +69,40 @@ extension UIImage {
         return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
     }
     
+    func cropEllipse(centeredIn size: CGSize) -> UIImage? {
+         // Calculate the rectangle for the ellipse
+         let rect = CGRect(x: (self.size.width - size.width) / 2,
+                           y: (self.size.height - size.height) / 2,
+                           width: size.width,
+                           height: size.height)
+         
+         // Begin a new image context
+         UIGraphicsBeginImageContextWithOptions(rect.size, false, self.scale)
+         guard let context = UIGraphicsGetCurrentContext() else {
+             return nil
+         }
+         
+         // Translate context so that the ellipse is centered in the final image
+         context.translateBy(x: -rect.origin.x, y: -rect.origin.y)
+         
+         // Create the path for the ellipse
+         let ellipsePath = UIBezierPath(ovalIn: rect)
+         
+         // Clip the context to the ellipse path
+         ellipsePath.addClip()
+         
+         // Draw the image in the context
+         self.draw(at: .zero)
+         
+         // Get the new image from the context
+         let newImage = UIGraphicsGetImageFromCurrentImageContext()
+         
+         // End the image context
+         UIGraphicsEndImageContext()
+         
+         return newImage
+     }
+    
     func imageWithText(_ text: String, atPoint point: CGPoint, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize),
