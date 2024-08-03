@@ -15,6 +15,7 @@ import AVFoundation
 import Photos
 import CoreGraphics
 import CoreImage
+import Accelerate
 
 // MARK: - Image manipulations
 
@@ -112,6 +113,22 @@ func removeBackground(from image: UIImage) -> CGRect? {
         if let cgImage = context.createCGImage(maskImage, from: maskImage.extent) {
             // Convert the CGImage to a UIImage
             let maskUiImage = UIImage(cgImage: cgImage)
+            
+            if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
+                let width = cgImage.width
+                let height = cgImage.height
+
+                let contours = extractContours(from: pixelData, width: width, height: height)
+                if let ellipse = fitEllipse(to: contours, imageWidth: width, imageHeight: height) {
+                    let size = CGSize(width: ellipse.size.width*CGFloat(width)/4.0, height: ellipse.size.height*CGFloat(height)/4.0)
+                    
+                    if let resultImage = drawContoursAndEllipse(on: maskUiImage, contours: contours, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)) {
+                        // Use the resultImage, e.g., display it in an UIImageView or save it
+                        saveImageToGallery(resultImage)
+                    }
+                
+                }
+            }
             
 //            let boundingBox = boundingBoxForWhiteArea(in: maskUiImage)
             let boundingBox = boundingBoxForCenteredObject(in: maskUiImage)
@@ -349,3 +366,128 @@ func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: B
     }
     return nil
 }
+
+
+func convertCGImageToGrayscalePixelData(_ cgImage: CGImage) -> [UInt8]? {
+    let width = cgImage.width
+    let height = cgImage.height
+    let bitsPerComponent = 8
+    let bytesPerPixel = 1
+    let bytesPerRow = width * bytesPerPixel
+
+    var pixelData = [UInt8](repeating: 0, count: width * height)
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    guard let context = CGContext(data: &pixelData,
+                                  width: width,
+                                  height: height,
+                                  bitsPerComponent: bitsPerComponent,
+                                  bytesPerRow: bytesPerRow,
+                                  space: colorSpace,
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+        return nil
+    }
+
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+    return pixelData
+}
+
+func extractContours(from pixelData: [UInt8], width: Int, height: Int) -> [CGPoint] {
+    var contours = [CGPoint]()
+
+    for y in 0..<height {
+        for x in 0..<width {
+            if pixelData[y * width + x] == 255 {
+                contours.append(CGPoint(x: x, y: y))
+            }
+        }
+    }
+
+    return contours
+}
+
+func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
+    guard points.count >= 5 else { return nil }
+
+    var x = [Double]()
+    var y = [Double]()
+    
+    for point in points {
+        x.append(Double(point.x))
+        y.append(Double(point.y))
+    }
+
+    let meanX = x.reduce(0, +) / Double(x.count)
+    let meanY = y.reduce(0, +) / Double(y.count)
+    
+    var covXX = 0.0, covYY = 0.0, covXY = 0.0
+    
+    for i in 0..<x.count {
+        let dx = x[i] - meanX
+        let dy = y[i] - meanY
+        covXX += dx * dx
+        covYY += dy * dy
+        covXY += dx * dy
+    }
+    
+    covXX /= Double(x.count)
+    covYY /= Double(y.count)
+    covXY /= Double(x.count)
+    
+    let theta = 0.5 * atan2(2 * covXY, covXX - covYY)
+    let thetaInDegrees = theta * 180 / .pi
+    
+    let term1 = covXX + covYY
+    let term2 = sqrt(pow(covXX - covYY, 2) + 4 * covXY * covXY)
+    
+    let a = sqrt(2 * (term1 + term2) / Double(x.count))
+    let b = sqrt(2 * (term1 - term2) / Double(x.count))
+    
+    return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
+}
+
+func drawContoursAndEllipse(on image: UIImage, contours: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat)) -> UIImage? {
+    let renderer = UIGraphicsImageRenderer(size: image.size)
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+        
+        // Set the contour drawing properties
+        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
+        context.cgContext.setLineWidth(1.0)
+        
+        // Draw the contours
+        context.cgContext.beginPath()
+        for point in contours {
+            if point == contours.first {
+                context.cgContext.move(to: point)
+            } else {
+                context.cgContext.addLine(to: point)
+            }
+        }
+        context.cgContext.strokePath()
+        
+        // Set the ellipse drawing properties
+        context.cgContext.setStrokeColor(UIColor.red.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Save the context state
+        context.cgContext.saveGState()
+        
+        // Move to the ellipse center
+        context.cgContext.translateBy(x: ellipse.center.x, y: ellipse.center.y)
+        
+        // Rotate the context
+        context.cgContext.rotate(by: ellipse.rotation * CGFloat.pi / 180)
+        
+        // Draw the ellipse
+        let rect = CGRect(x: -ellipse.size.width, y: -ellipse.size.height, width: 2 * ellipse.size.width, height: 2 * ellipse.size.height)
+        context.cgContext.strokeEllipse(in: rect)
+        
+        // Restore the context state
+        context.cgContext.restoreGState()
+    }
+    
+    return renderedImage
+}
+
+
