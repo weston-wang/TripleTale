@@ -392,7 +392,7 @@ func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: B
             let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
             
             // add text/logo and save result to gallery
-            let combinedImage = processResult(inputImage, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, fishName)
+            let combinedImage = generateResultImage(inputImage, fishBoundingBox, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, fishName)
             
             // show popup to user
             return combinedImage
