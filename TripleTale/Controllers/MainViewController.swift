@@ -80,26 +80,21 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         inputImage = userImage.cropCenter(to: 50)!
                     }
                     
-                    
-                    
+                                    
                     if let normalizedVertices = findEllipseVertices(from: inputImage) {
-                        let verticesAnchors = getVertices(self.sceneView, normalizedVertices, inputImage.size)
+                        var verticesAnchors = getVertices(self.sceneView, normalizedVertices, inputImage.size)
                         
                         let centroidAnchor = getVerticesCenter(self.sceneView, normalizedVertices, inputImage.size)
 
                         let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.25, horizontalScaleFactor: 1.1)
                         let centroidUnderneathAnchor = createUnderneathCentroidAnchor(from: stretchedAnchors)
                         
-                        let testHeight = calculateDistanceBetweenAnchors(anchor1: centroidAnchor, anchor2: centroidUnderneathAnchor)
-                        let testHeightM = Measurement(value: Double(testHeight), unit: UnitLength.meters)
-                        let heightInIn = testHeightM.converted(to: .inches)
 
-                        print(verticesAnchors)
-                        print(stretchedAnchors)
-                        print(centroidAnchor)
-                        print(centroidUnderneathAnchor)
+                        let distanceToFish = calculateDistanceToObject(centroidAnchor)
+                        let distanceToGround = calculateDistanceToObject(centroidUnderneathAnchor)
+                        let scalingFactor = distanceToFish / distanceToGround
                         
-                        print("Height is \(heightInIn) inches")
+                        verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor, horizontalScaleFactor: scalingFactor)
                         
                         self.sceneView.session.add(anchor: verticesAnchors[0])
                         self.anchorLabels[verticesAnchors[0].identifier] = "left"
@@ -120,7 +115,13 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         
-                        print("RESULT: weight: \(weightInLb) lb, length: \(lengthInInches) in, width: \(widthInInches) in, height: \(heightInIn) in")
+                        print("RESULT: weight: \(weightInLb) lb, length: \(lengthInInches) in, width: \(widthInInches) in, height: \(heightInInches) in")
+                        
+                        if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
+                            self.showImagePopup(combinedImage: combinedImage)
+                        } else {
+                            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+                        }
                     }
                     
                     

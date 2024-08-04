@@ -63,8 +63,9 @@ func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     return UIImage(cgImage: cgImage)
 }
 
-func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
-    
+func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = nil, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
+    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
+
     let formattedLength = String(format: "%.2f", lengthInInches.value)
     let formattedWeight = String(format: "%.2f", weightInLb.value)
     let formattedWidth = String(format: "%.2f", widthInInches.value)
@@ -72,7 +73,7 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect, _ wi
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [inputBoundingBox])
+    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
 
     let weightTextImage = imageWithBox.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
     
