@@ -87,7 +87,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         let centroidAnchor = getVerticesCenter(self.sceneView, normalizedVertices, inputImage.size)
 
-                        let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.0, horizontalScaleFactor: 1.0)
+                        let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.25, horizontalScaleFactor: 1.1)
                         let centroidUnderneathAnchor = createUnderneathCentroidAnchor(from: stretchedAnchors)
                         
                         let testHeight = calculateDistanceBetweenAnchors(anchor1: centroidAnchor, anchor2: centroidUnderneathAnchor)
@@ -115,16 +115,22 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         self.sceneView.session.add(anchor: centroidAnchor)
                         self.anchorLabels[centroidAnchor.identifier] = "center"
+                        
+                        let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAnchor, centroidUnderneathAnchor)
+                        
+                        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
+                        
+                        print("RESULT: weight: \(weightInLb) lb, length: \(lengthInInches) in, width: \(widthInInches) in, height: \(heightInIn) in")
                     }
                     
                     
                     
                     
-                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString) {
-                        self.showImagePopup(combinedImage: resultImage)
-                    } else {
-                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-                    }
+//                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString) {
+//                        self.showImagePopup(combinedImage: resultImage)
+//                    } else {
+//                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+//                    }
                 }
                 
                 self.isFrozen.toggle()

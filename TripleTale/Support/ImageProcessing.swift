@@ -374,26 +374,6 @@ func nudgeBoundingBox(_ boundingBox: CGRect, _ nudgePercent: Float) -> CGRect {
 }
 
 func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String ) -> UIImage? {
-//    if let normalizedVertices = findEllipseVertices(from: inputImage) {
-//        let verticesAnchors = getVertices(currentView, normalizedVertices, inputImage.size)
-//        
-//        let centroidAnchor = getVerticesCenter(currentView, normalizedVertices, inputImage.size)
-//
-//        let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.0, horizontalScaleFactor: 1.0)
-//        let centroidUnderneathAnchor = createUnderneathCentroidAnchor(from: stretchedAnchors)
-//        
-//        let testHeight = calculateDistanceBetweenAnchors(anchor1: centroidAnchor, anchor2: centroidUnderneathAnchor)
-//        let testHeightM = Measurement(value: Double(testHeight), unit: UnitLength.meters)
-//        let heightInIn = testHeightM.converted(to: .inches)
-//
-//        print(verticesAnchors)
-//        print(stretchedAnchors)
-//        print(centroidAnchor)
-//        print(centroidUnderneathAnchor)
-//        
-//        print("Height is \(heightInIn) inches")
-//    }
-//    
     // isolate fish through foreground vs background separation
     if let fishBoundingBox = isolateFish(from: inputImage) {
         // define anchors for calculations
