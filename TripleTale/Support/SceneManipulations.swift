@@ -84,7 +84,9 @@ func getVerticesCenter(_ currentView: ARSKView, _ normalizedVertices: [CGPoint],
         y: (normalizedVertices[0].y + normalizedVertices[1].y + normalizedVertices[2].y + normalizedVertices[3].y) / 4
     )
     
-    let centroidAnchor = addAnchor(currentView, centroid)
+    let centroidOnScreen = getScreenPosition(currentView, centroid.x, centroid.y, capturedImageSize)
+
+    let centroidAnchor = addAnchor(currentView, centroidOnScreen)
 
     return centroidAnchor
 }
@@ -166,16 +168,17 @@ func transformHeightAnchor(ref refAnchor: ARAnchor, cen centerAnchor: ARAnchor) 
     return ARAnchor(transform: newTransform)
 }
 
+// Helper function to get the position from an anchor
+func position(from anchor: ARAnchor) -> SIMD3<Float> {
+    return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
+}
+
 func createNudgedCentroidAnchor(from cornerAnchors: [ARAnchor], nudgePercentage: Float) -> ARAnchor? {
     // Ensure there are at least 4 anchors
     guard cornerAnchors.count >= 4 else {
         return nil
     }
 
-    // Helper function to get the position from an anchor
-    func position(from anchor: ARAnchor) -> SIMD3<Float> {
-        return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
-    }
 
     // Get the positions of the anchors
     var lTPos = position(from: cornerAnchors[0])
@@ -280,4 +283,23 @@ func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Fl
     let vector = point - center
     let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
     return center + scaledVector
+}
+
+
+func createUnderneathCentroidAnchor(from stretchedVerticesAnchors: [ARAnchor]) -> ARAnchor {
+    // Get the positions of the anchors
+    var topPos = position(from: stretchedVerticesAnchors[0])
+    var rightPos = position(from: stretchedVerticesAnchors[1])
+    var bottomPos = position(from: stretchedVerticesAnchors[2])
+    var leftPos = position(from: stretchedVerticesAnchors[3])
+
+    // Calculate the centroid
+    let centroidUnderneath = (topPos + rightPos + bottomPos + leftPos) / 4.0
+
+    // Create a new transform with the centroid position
+    var centroidTransform = matrix_identity_float4x4
+    centroidTransform.columns.3 = SIMD4<Float>(centroidUnderneath.x, centroidUnderneath.y, centroidUnderneath.z, 1.0)
+
+    // Create and return a new ARAnchor at the centroid position
+    return ARAnchor(transform: centroidTransform)
 }

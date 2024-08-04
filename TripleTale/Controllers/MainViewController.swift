@@ -80,6 +80,46 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         inputImage = userImage.cropCenter(to: 50)!
                     }
                     
+                    
+                    
+                    if let normalizedVertices = findEllipseVertices(from: inputImage) {
+                        let verticesAnchors = getVertices(self.sceneView, normalizedVertices, inputImage.size)
+                        
+                        let centroidAnchor = getVerticesCenter(self.sceneView, normalizedVertices, inputImage.size)
+
+                        let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.0, horizontalScaleFactor: 1.0)
+                        let centroidUnderneathAnchor = createUnderneathCentroidAnchor(from: stretchedAnchors)
+                        
+                        let testHeight = calculateDistanceBetweenAnchors(anchor1: centroidAnchor, anchor2: centroidUnderneathAnchor)
+                        let testHeightM = Measurement(value: Double(testHeight), unit: UnitLength.meters)
+                        let heightInIn = testHeightM.converted(to: .inches)
+
+                        print(verticesAnchors)
+                        print(stretchedAnchors)
+                        print(centroidAnchor)
+                        print(centroidUnderneathAnchor)
+                        
+                        print("Height is \(heightInIn) inches")
+                        
+                        self.sceneView.session.add(anchor: verticesAnchors[0])
+                        self.anchorLabels[verticesAnchors[0].identifier] = "left"
+                        
+                        self.sceneView.session.add(anchor: verticesAnchors[1])
+                        self.anchorLabels[verticesAnchors[1].identifier] = "top"
+                        
+                        self.sceneView.session.add(anchor: verticesAnchors[2])
+                        self.anchorLabels[verticesAnchors[2].identifier] = "right"
+                        
+                        self.sceneView.session.add(anchor: verticesAnchors[3])
+                        self.anchorLabels[verticesAnchors[3].identifier] = "bottom"
+                        
+                        self.sceneView.session.add(anchor: centroidAnchor)
+                        self.anchorLabels[centroidAnchor.identifier] = "center"
+                    }
+                    
+                    
+                    
+                    
                     if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString) {
                         self.showImagePopup(combinedImage: resultImage)
                     } else {
