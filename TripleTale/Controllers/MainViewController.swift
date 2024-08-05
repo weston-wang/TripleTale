@@ -75,10 +75,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             feedbackGenerator.impactOccurred()
 
             if self.isFrozen {
-                if let userImage = self.saveImage {
-                    
-                    var inputImage = userImage
-                    
+                if let inputImage = self.saveImage {
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
                         var verticesAnchors = getVertices(self.sceneView, normalizedVertices, inputImage.size)
                         
