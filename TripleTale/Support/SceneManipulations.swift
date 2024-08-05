@@ -290,3 +290,18 @@ func createUnderneathCentroidAnchor(from stretchedVerticesAnchors: [ARAnchor]) -
     // Create and return a new ARAnchor at the centroid position
     return ARAnchor(transform: centroidTransform)
 }
+
+func buildCurvatureAnchors(_ startPos: CGPoint, _ endPos: CGPoint, _ currentView:ARSKView, _ capturedImageSize: CGSize) -> [ARAnchor] {
+    var curvatureAnchors: [ARAnchor] = []
+    
+    let heightPoints = generateEvenlySpacedPoints(from: startPos, to: endPos, count: 30)
+    
+    for point in heightPoints {
+        let pointOnScreen = getScreenPosition(currentView, point.x, point.y, capturedImageSize)
+        let placedAnchor = addAnchor(currentView, pointOnScreen)
+        
+        curvatureAnchors.append(placedAnchor)
+    }
+        
+    return curvatureAnchors
+}

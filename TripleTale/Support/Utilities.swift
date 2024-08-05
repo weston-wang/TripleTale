@@ -166,3 +166,26 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
     // Return the original bounding box
     return CGRect(x: correctedX, y: correctedY, width: correctedWidth, height: correctedHeight)
 }
+
+func generateEvenlySpacedPoints(from start: CGPoint, to end: CGPoint, count: Int) -> [CGPoint] {
+    guard count > 1 else {
+        return [start, end]
+    }
+
+    let deltaX = (end.x - start.x) / CGFloat(count - 1)
+    let deltaY = (end.y - start.y) / CGFloat(count - 1)
+    
+    var points = [CGPoint]()
+    for i in 0..<count {
+        let x = start.x + deltaX * CGFloat(i)
+        let y = start.y + deltaY * CGFloat(i)
+        points.append(CGPoint(x: x, y: y))
+    }
+    
+    return points
+}
+
+func extractXYCoordinates(from anchors: [ARAnchor]) -> [CGPoint] {
+    return anchors.map { CGPoint(x: CGFloat($0.transform.columns.3.x), y: CGFloat($0.transform.columns.3.y)) }
+}
+
