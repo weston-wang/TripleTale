@@ -272,7 +272,9 @@ func stretchVertices(_ anchors: [ARAnchor], verticalScaleFactor: Float, horizont
     return updatedVerticesAnchors
 }
 
-func createUnderneathCentroidAnchor(from stretchedVerticesAnchors: [ARAnchor]) -> ARAnchor {
+func createUnderneathCentroidAnchor(from verticesAnchors: [ARAnchor]) -> ARAnchor {
+    let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.35, horizontalScaleFactor: 1.35)
+    
     // Get the positions of the anchors
     let leftPos = position(from: stretchedVerticesAnchors[0])
     let topPos = position(from: stretchedVerticesAnchors[1])
