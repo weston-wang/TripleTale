@@ -77,42 +77,11 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             if self.isFrozen {
                 if let inputImage = self.saveImage {
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
-                        var verticesAnchors = getVertices(self.sceneView, normalizedVertices, inputImage.size)
+                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
-                        let centroidAnchor = getVerticesCenter(self.sceneView, normalizedVertices, inputImage.size)
-
-                        let centroidUnderneathAnchor = createUnderneathCentroidAnchor(from: verticesAnchors)
-                        
-
-                        let distanceToFish = calculateDistanceToObject(centroidAnchor)
-                        let distanceToGround = calculateDistanceToObject(centroidUnderneathAnchor)
-                        let scalingFactor = distanceToFish / distanceToGround
-                        
-                        verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor*1.1, horizontalScaleFactor: scalingFactor*1.1)
-                        
-                        self.sceneView.session.add(anchor: verticesAnchors[0])
-                        self.anchorLabels[verticesAnchors[0].identifier] = "left"
-                        
-                        self.sceneView.session.add(anchor: verticesAnchors[1])
-                        self.anchorLabels[verticesAnchors[1].identifier] = "top"
-                        
-                        self.sceneView.session.add(anchor: verticesAnchors[2])
-                        self.anchorLabels[verticesAnchors[2].identifier] = "right"
-                        
-                        self.sceneView.session.add(anchor: verticesAnchors[3])
-                        self.anchorLabels[verticesAnchors[3].identifier] = "bottom"
-                        
-                        self.sceneView.session.add(anchor: centroidAnchor)
-                        self.anchorLabels[centroidAnchor.identifier] = "above"
-                        
-                        self.sceneView.session.add(anchor: centroidUnderneathAnchor)
-                        self.anchorLabels[centroidUnderneathAnchor.identifier] = "under"
-                        
-                        let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAnchor, centroidUnderneathAnchor)
+                        let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
                         
                         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
-                        
-                        print("RESULT: weight: \(weightInLb) lb, length: \(lengthInInches) in, width: \(widthInInches) in, height: \(heightInInches) in")
                         
                         if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
                             self.showImagePopup(combinedImage: combinedImage)

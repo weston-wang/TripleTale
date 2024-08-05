@@ -276,10 +276,10 @@ func createUnderneathCentroidAnchor(from verticesAnchors: [ARAnchor]) -> ARAncho
     let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.35, horizontalScaleFactor: 1.35)
     
     // Get the positions of the anchors
-    let leftPos = position(from: stretchedVerticesAnchors[0])
-    let topPos = position(from: stretchedVerticesAnchors[1])
-    let rightPos = position(from: stretchedVerticesAnchors[2])
-    let bottomPos = position(from: stretchedVerticesAnchors[3])
+    let leftPos = position(from: stretchedAnchors[0])
+    let topPos = position(from: stretchedAnchors[1])
+    let rightPos = position(from: stretchedAnchors[2])
+    let bottomPos = position(from: stretchedAnchors[3])
 
     // Calculate the centroid
     let meanCoord = (topPos + rightPos + bottomPos + leftPos) / 4.0
@@ -306,4 +306,20 @@ func buildCurvatureAnchors(_ startPos: CGPoint, _ endPos: CGPoint, _ currentView
     }
         
     return curvatureAnchors
+}
+
+func buildRealWorldVerticesAnchors(_ currentView: ARSKView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], ARAnchor, ARAnchor) {
+    var verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
+    
+    let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize)
+    
+    let centroidBelowAnchor = createUnderneathCentroidAnchor(from: verticesAnchors)
+    
+    let distanceToFish = calculateDistanceToObject(centroidAboveAnchor)
+    let distanceToGround = calculateDistanceToObject(centroidBelowAnchor)
+    let scalingFactor = distanceToFish / distanceToGround
+    
+    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor*1.1, horizontalScaleFactor: scalingFactor*1.1)
+    
+    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
 }
