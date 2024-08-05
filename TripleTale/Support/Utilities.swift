@@ -185,7 +185,65 @@ func generateEvenlySpacedPoints(from start: CGPoint, to end: CGPoint, count: Int
     return points
 }
 
-func extractXYCoordinates(from anchors: [ARAnchor]) -> [CGPoint] {
-    return anchors.map { CGPoint(x: CGFloat($0.transform.columns.3.x), y: CGFloat($0.transform.columns.3.y)) }
+func extract2DCoordinates(from anchors: [ARAnchor]) -> [CGPoint] {
+    return anchors.map { CGPoint(x: CGFloat($0.transform.columns.3.x), y: CGFloat($0.transform.columns.3.z)) }
 }
 
+func transpose(_ matrix: [[Double]]) -> [[Double]] {
+    guard let firstRow = matrix.first else { return [] }
+    var transposed = [[Double]](repeating: [Double](repeating: 0.0, count: matrix.count), count: firstRow.count)
+    for (i, row) in matrix.enumerated() {
+        for (j, value) in row.enumerated() {
+            transposed[j][i] = value
+        }
+    }
+    return transposed
+}
+
+func multiply(_ matrixA: [[Double]], _ matrixB: [[Double]]) -> [[Double]] {
+    let rowsA = matrixA.count
+    let colsA = matrixA[0].count
+    let rowsB = matrixB.count
+    let colsB = matrixB[0].count
+
+    guard colsA == rowsB else { return [] }
+
+    var result = [[Double]](repeating: [Double](repeating: 0.0, count: colsB), count: rowsA)
+    for i in 0..<rowsA {
+        for j in 0..<colsB {
+            for k in 0..<colsA {
+                result[i][j] += matrixA[i][k] * matrixB[k][j]
+            }
+        }
+    }
+    return result
+}
+
+func inverse(_ matrix: [[Double]]) -> [[Double]]? {
+    let n = matrix.count
+    var a = matrix
+    var b = [[Double]](repeating: [Double](repeating: 0.0, count: n), count: n)
+
+    for i in 0..<n {
+        b[i][i] = 1.0
+    }
+
+    for i in 0..<n {
+        let pivot = a[i][i]
+        guard pivot != 0 else { return nil }
+        for j in 0..<n {
+            a[i][j] /= pivot
+            b[i][j] /= pivot
+        }
+        for k in 0..<n {
+            if k != i {
+                let factor = a[k][i]
+                for j in 0..<n {
+                    a[k][j] -= factor * a[i][j]
+                    b[k][j] -= factor * b[i][j]
+                }
+            }
+        }
+    }
+    return b
+}

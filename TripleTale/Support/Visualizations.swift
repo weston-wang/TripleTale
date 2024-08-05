@@ -201,3 +201,36 @@ func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
     
     return resultImage
 }
+
+func drawEllipseAndPoints(on image: UIImage, points: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat)) -> UIImage? {
+    let renderer = UIGraphicsImageRenderer(size: image.size)
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+        
+        // Set the points drawing properties
+        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
+        context.cgContext.setFillColor(UIColor.blue.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Draw the points
+        for point in points {
+            let rect = CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4)
+            context.cgContext.fillEllipse(in: rect)
+        }
+        
+        // Set the ellipse drawing properties
+        context.cgContext.setStrokeColor(UIColor.red.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Draw the ellipse
+        context.cgContext.saveGState()
+        context.cgContext.translateBy(x: ellipse.center.x, y: ellipse.center.y)
+        context.cgContext.rotate(by: ellipse.rotation)
+        let ellipseRect = CGRect(x: -ellipse.size.width, y: -ellipse.size.height, width: 2 * ellipse.size.width, height: 2 * ellipse.size.height)
+        context.cgContext.strokeEllipse(in: ellipseRect)
+        context.cgContext.restoreGState()
+    }
+    
+    return renderedImage
+}

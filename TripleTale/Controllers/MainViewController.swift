@@ -115,6 +115,31 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         print("RESULT: weight: \(weightInLb) lb, length: \(lengthInInches) in, width: \(widthInInches) in, height: \(heightInInches) in")
                         
+                        let curveAnchors = buildCurvatureAnchors(normalizedVertices[0], normalizedVertices[2], self.sceneView, inputImage.size)
+                        
+                        let projectedPoints = extract2DCoordinates(from: curveAnchors)
+                        print("all points: \(projectedPoints)")
+                        
+                        // Create a blank image for demonstration purposes
+                        let size = CGSize(width: 500, height: 500)
+                        UIGraphicsBeginImageContext(size)
+                        let context = UIGraphicsGetCurrentContext()!
+                        context.setFillColor(UIColor.white.cgColor)
+                        context.fill(CGRect(origin: .zero, size: size))
+                        let blankImage = UIGraphicsGetImageFromCurrentImageContext()!
+                        UIGraphicsEndImageContext()
+
+                        
+                        let result = fitEllipseLeastSquares(to: projectedPoints, on: blankImage)
+                        if let circumference = result.circumference, let resultImage = result.resultImage {
+                            print("Circumference of the fitted ellipse: \(circumference)")
+                            
+                            saveImageToGallery(resultImage)
+                            // Display resultImage in an UIImageView or save it
+                        } else {
+                            print("Could not fit an ellipse to the points.")
+                        }
+                        
                         if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
                             self.showImagePopup(combinedImage: combinedImage)
                         } else {

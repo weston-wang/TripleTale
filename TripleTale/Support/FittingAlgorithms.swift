@@ -142,3 +142,93 @@ func fitEllipseMinimax(to points: [CGPoint], imageWidth: Int, imageHeight: Int) 
 
     return (center, size, rotationInDegrees)
 }
+
+func fitEllipseLeastSquares(to points: [CGPoint], on image: UIImage) -> (circumference: Double?, resultImage: UIImage?) {
+    guard points.count >= 5 else { return (nil, nil) }
+
+    // Formulate the design matrix
+    var designMatrix = [[Double]]()
+    for point in points {
+        let x = Double(point.x)
+        let y = Double(point.y)
+        designMatrix.append([x * x, x * y, y * y, x, y, 1.0])
+    }
+
+    // Calculate scatter matrix S
+    let designMatrixTransposed = transpose(designMatrix)
+    let scatterMatrix = multiply(designMatrixTransposed, designMatrix)
+    
+    // Check if scatterMatrix is invertible
+    guard let scatterMatrixInverse = inverse(scatterMatrix) else {
+        print("Scatter matrix is not invertible")
+        return (nil, nil)
+    }
+    
+    // Solve the generalized eigenvalue problem
+    let A = scatterMatrixInverse[0][0]
+    let B = scatterMatrixInverse[1][0] / 2
+    let C = scatterMatrixInverse[2][0]
+    let D = scatterMatrixInverse[3][0] / 2
+    let E = scatterMatrixInverse[4][0] / 2
+    let F = scatterMatrixInverse[5][0]
+    
+    // Calculate the center, axes, and orientation of the ellipse
+    let denom = B * B - A * C
+    guard denom != 0 else {
+        print("Denominator is zero")
+        return (nil, nil)
+    }
+    
+    let x0 = (C * D - B * E) / denom
+    let y0 = (A * E - B * D) / denom
+    
+    // Calculate semi-major and semi-minor axes
+    let term1 = 2 * (A * E * E + C * D * D + F * B * B - 2 * B * D * E - A * C * F)
+    let term2 = sqrt(pow(A - C, 2) + 4 * B * B)
+    
+    guard term1 > 0, term2 > 0 else {
+        print("Invalid values for term1 or term2")
+        return (nil, nil)
+    }
+    
+    let a = sqrt(term1 / (denom * (term2 - (A + C))))
+    let b = sqrt(term1 / (denom * (-term2 - (A + C))))
+    
+    // Calculate the rotation angle
+    let rotation = atan2(2 * B, A - C) / 2
+    
+    // Ramanujan's approximation for the circumference of an ellipse
+    let circumference = Double.pi * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
+    
+    // Draw the points and ellipse on the image
+    let renderer = UIGraphicsImageRenderer(size: image.size)
+    let resultImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+        
+        // Set the points drawing properties
+        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
+        context.cgContext.setFillColor(UIColor.blue.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Draw the points
+        for point in points {
+            let rect = CGRect(x: point.x * CGFloat(image.size.width) + CGFloat(image.size.width) / 2 - 2, y: -point.y * CGFloat(image.size.height) + CGFloat(image.size.height) / 2 - 2, width: 4, height: 4)
+            context.cgContext.fillEllipse(in: rect)
+        }
+        
+        // Set the ellipse drawing properties
+        context.cgContext.setStrokeColor(UIColor.red.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Draw the ellipse
+        context.cgContext.saveGState()
+        context.cgContext.translateBy(x: CGFloat(x0) * CGFloat(image.size.width) + CGFloat(image.size.width) / 2, y: -CGFloat(y0) * CGFloat(image.size.height) + CGFloat(image.size.height) / 2)
+        context.cgContext.rotate(by: rotation)
+        let ellipseRect = CGRect(x: -a * CGFloat(image.size.width), y: -b * CGFloat(image.size.height), width: 2 * a * CGFloat(image.size.width), height: 2 * b * CGFloat(image.size.height))
+        context.cgContext.strokeEllipse(in: ellipseRect)
+        context.cgContext.restoreGState()
+    }
+    
+    return (circumference, resultImage)
+}
