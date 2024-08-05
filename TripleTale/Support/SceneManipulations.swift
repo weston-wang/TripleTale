@@ -294,12 +294,12 @@ func createUnderneathCentroidAnchor(from stretchedVerticesAnchors: [ARAnchor]) -
     let bottomPos = position(from: stretchedVerticesAnchors[3])
 
     // Calculate the centroid
-//    let centroidUnderneath = (topPos + rightPos + bottomPos + leftPos) / 4.0
-    let centroidUnderneath = (rightPos + leftPos) / 2.0
-
+    let meanCoord = (topPos + rightPos + bottomPos + leftPos) / 4.0
+    let minY =  [leftPos.y, topPos.y, rightPos.y, bottomPos.y].min()
+    
     // Create a new transform with the centroid position
     var centroidTransform = matrix_identity_float4x4
-    centroidTransform.columns.3 = SIMD4<Float>(centroidUnderneath.x, centroidUnderneath.y, centroidUnderneath.z, 1.0)
+    centroidTransform.columns.3 = SIMD4<Float>(meanCoord.x, minY!, meanCoord.z, 1.0)
 
     // Create and return a new ARAnchor at the centroid position
     return ARAnchor(transform: centroidTransform)

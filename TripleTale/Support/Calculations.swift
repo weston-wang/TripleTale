@@ -33,6 +33,22 @@ func calculateLengthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Floa
     let position2 = anchor2.transform.columns.3
     return abs(position1.x - position2.x)
 }
+
+func calculateDistanceBetweenAnchors2D(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+    // Retrieve the positions
+    let position1 = anchor1.transform.columns.3
+    let position2 = anchor2.transform.columns.3
+    
+    // Calculate the differences in x and z directions
+    let deltaX = position2.x - position1.x
+    let deltaZ = position2.z - position1.z
+    
+    // Compute the distance in the x and z directions
+    let distance = sqrt(deltaX * deltaX + deltaZ * deltaZ)
+    
+    return distance
+}
+
 /// Calculates the circumference of an oval, adjusting for a 'roundness' factor.
 /// - Parameters:
 ///   - a: Semi-major axis of the oval.
@@ -109,8 +125,8 @@ func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor
 
 func measureVertices(_ verticesAnchors: [ARAnchor], _ aboveAnchor: ARAnchor, _ belowAnchor: ARAnchor) ->  (Float, Float, Float, Float) {
     let height = calculateDistanceBetweenAnchors(anchor1: aboveAnchor, anchor2: belowAnchor)
-    let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
-    let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
+    let width = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
+    let length = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
     
     let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
 

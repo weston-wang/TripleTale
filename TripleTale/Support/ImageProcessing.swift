@@ -521,6 +521,28 @@ func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (cen
     return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
 }
 
+func fitEllipseMinimax(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat) {
+    guard !points.isEmpty else { return (CGPoint.zero, CGSize.zero, 0) }
+
+    var minX = CGFloat.greatestFiniteMagnitude
+    var minY = CGFloat.greatestFiniteMagnitude
+    var maxX = CGFloat.leastNormalMagnitude
+    var maxY = CGFloat.leastNormalMagnitude
+
+    for point in points {
+        if point.x < minX { minX = point.x }
+        if point.y < minY { minY = point.y }
+        if point.x > maxX { maxX = point.x }
+        if point.y > maxY { maxY = point.y }
+    }
+
+    let center = CGPoint(x: (minX + maxX) / 2, y: (minY + maxY) / 2)
+    let size = CGSize(width: maxX - minX, height: maxY - minY)
+    let rotationInDegrees: CGFloat = 0 // No rotation for a bounding box approach
+
+    return (center, size, rotationInDegrees)
+}
+
 func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [CGPoint] {
     let rotationRadians = rotation * CGFloat.pi / 180
     let cosTheta = cos(rotationRadians)

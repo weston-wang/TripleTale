@@ -86,7 +86,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         let centroidAnchor = getVerticesCenter(self.sceneView, normalizedVertices, inputImage.size)
 
-                        let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.25, horizontalScaleFactor: 1.1)
+                        let stretchedAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: 1.35, horizontalScaleFactor: 1.35)
                         let centroidUnderneathAnchor = createUnderneathCentroidAnchor(from: stretchedAnchors)
                         
 
@@ -94,7 +94,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         let distanceToGround = calculateDistanceToObject(centroidUnderneathAnchor)
                         let scalingFactor = distanceToFish / distanceToGround
                         
-                        verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor, horizontalScaleFactor: scalingFactor)
+                        verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor*1.1, horizontalScaleFactor: scalingFactor*1.1)
                         
                         self.sceneView.session.add(anchor: verticesAnchors[0])
                         self.anchorLabels[verticesAnchors[0].identifier] = "left"
@@ -109,7 +109,10 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         self.anchorLabels[verticesAnchors[3].identifier] = "bottom"
                         
                         self.sceneView.session.add(anchor: centroidAnchor)
-                        self.anchorLabels[centroidAnchor.identifier] = "center"
+                        self.anchorLabels[centroidAnchor.identifier] = "above"
+                        
+                        self.sceneView.session.add(anchor: centroidUnderneathAnchor)
+                        self.anchorLabels[centroidUnderneathAnchor.identifier] = "under"
                         
                         let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAnchor, centroidUnderneathAnchor)
                         
