@@ -21,6 +21,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     
     let motionManager = CMMotionManager()
     private var isForwardFacing = false
+    
+    private var imagePortion: CGFloat = 1.0
 
     private var freezeButton: UIButton?
     private var isFrozen = false
@@ -76,12 +78,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                 if let userImage = self.saveImage {
                     
                     var inputImage = userImage
-                    if self.isForwardFacing {
-                        inputImage = userImage.cropCenter(to: 50)!
-                    }
                     
-                                    
-                    if let normalizedVertices = findEllipseVertices(from: inputImage) {
+                    if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
                         var verticesAnchors = getVertices(self.sceneView, normalizedVertices, inputImage.size)
                         
                         let centroidAnchor = getVerticesCenter(self.sceneView, normalizedVertices, inputImage.size)
@@ -130,7 +128,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                     
                     
                     
-//                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString) {
+//                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString, 0.85) {
 //                        self.showImagePopup(combinedImage: resultImage)
 //                    } else {
 //                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -226,10 +224,14 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         let width: CGFloat
         let height: CGFloat
         if isForwardFacing {
-            width = view.bounds.width * 0.5 // Example size for forward-facing, adjust as needed
+            imagePortion = 0.5
+            
+            width = view.bounds.width * imagePortion // Example size for forward-facing, adjust as needed
             height = width * 16 / 9 // Maintain 9:16 aspect ratio
         } else {
-            width = view.bounds.width * 0.85 // Example size for not forward-facing, adjust as needed
+            imagePortion = 0.85
+            
+            width = view.bounds.width * imagePortion // Example size for not forward-facing, adjust as needed
             height = width * 16 / 9 // Maintain 9:16 aspect ratio
         }
         

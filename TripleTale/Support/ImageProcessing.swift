@@ -101,9 +101,9 @@ func cropImage(_ image: UIImage, withNormalizedRect normalizedRect: CGRect) -> U
     return UIImage(cgImage: croppedCgImage, scale: image.scale, orientation: image.imageOrientation)
 }
 
-func findEllipseVertices(from image: UIImage) -> [CGPoint]? {
+func findEllipseVertices(from image: UIImage, for portion: CGFloat) -> [CGPoint]? {
     guard let ciImage = CIImage(image: image) else { return nil }
-    if let maskImage = generateMaskImage(from: ciImage) {
+    if let maskImage = generateMaskImage(from: ciImage, for: portion) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
         
         // Create a CIContext
@@ -146,9 +146,9 @@ func findEllipseVertices(from image: UIImage) -> [CGPoint]? {
     return nil
 }
 
-func isolateFish(from image: UIImage) -> CGRect? {
+func isolateFish(from image: UIImage, for portion: CGFloat) -> CGRect? {
     guard let ciImage = CIImage(image: image) else { return nil }
-    if let maskImage = generateMaskImage(from: ciImage) {
+    if let maskImage = generateMaskImage(from: ciImage, for: portion) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
         
         // Create a CIContext
@@ -183,10 +183,13 @@ func applyMask(_ mask: CIImage?, to image: CIImage) -> UIImage? {
     return nil
 }
 
-func generateMaskImage(from ciImage: CIImage) -> CIImage? {
+func generateMaskImage(from ciImage: CIImage, for portion: CGFloat) -> CIImage? {
     let request = VNGenerateForegroundInstanceMaskRequest()
     let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
     
+    let roiRect = centerROI(for: ciImage, portion: portion)
+    request.regionOfInterest = roiRect
+
     do {
         try handler.perform([request])
         if let result = request.results?.first {
@@ -373,9 +376,9 @@ func nudgeBoundingBox(_ boundingBox: CGRect, _ nudgePercent: Float) -> CGRect {
     return newBoundingBox
 }
 
-func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String ) -> UIImage? {
+func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String, _ portion: CGFloat ) -> UIImage? {
     // isolate fish through foreground vs background separation
-    if let fishBoundingBox = isolateFish(from: inputImage) {
+    if let fishBoundingBox = isolateFish(from: inputImage, for: portion) {
         // define anchors for calculations
         let (centroidAnchor,midpointAnchors,nudgeRate) =  findAnchors(fishBoundingBox, inputImage.size, currentView, isForward)
         
@@ -619,4 +622,20 @@ func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closes
     }
     
     return renderedImage
+}
+
+func centerROI(for image: CIImage, portion: CGFloat) -> CGRect {
+    let imageWidth = image.extent.width
+    let imageHeight = image.extent.height
+    
+    // Calculate the dimensions of the ROI
+    let roiWidth = imageWidth * portion
+    let roiHeight = imageHeight * portion
+    
+    // Calculate the position to center the ROI
+    let roiX = (imageWidth - roiWidth) / 2 / roiWidth
+    let roiY = (imageHeight - roiHeight) / 2 / roiHeight
+    
+    // Create and return the CGRect for the ROI
+    return CGRect(x: roiX, y: roiY, width: portion, height: portion)
 }
