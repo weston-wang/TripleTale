@@ -63,6 +63,29 @@ func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     return UIImage(cgImage: cgImage)
 }
 
+func convertCGImageToGrayscalePixelData(_ cgImage: CGImage) -> [UInt8]? {
+    let width = cgImage.width
+    let height = cgImage.height
+    let bitsPerComponent = 8
+    let bytesPerPixel = 1
+    let bytesPerRow = width * bytesPerPixel
+
+    var pixelData = [UInt8](repeating: 0, count: width * height)
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    guard let context = CGContext(data: &pixelData,
+                                  width: width,
+                                  height: height,
+                                  bitsPerComponent: bitsPerComponent,
+                                  bytesPerRow: bytesPerRow,
+                                  space: colorSpace,
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+        return nil
+    }
+
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+    return pixelData
+}
+
 func processObservations(for request: VNRequest, error: Error?) -> (identifierString: String, confidence: VNConfidence, boundingBox: CGRect?)? {
     guard let results = request.results else {
         print("Unable to process image.\n\(error?.localizedDescription ?? "Unknown error")")
@@ -110,3 +133,17 @@ func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Fl
 func position(from anchor: ARAnchor) -> SIMD3<Float> {
     return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
 }
+
+func centerROI(for image: CIImage, portion: CGFloat) -> CGRect {
+    // Calculate the dimensions of the ROI
+    let roiWidth = portion
+    let roiHeight = portion
+    
+    // Calculate the position to center the ROI
+    let roiX = (1.0 - roiWidth) / 2.0
+    let roiY = (1.0 - roiHeight) / 2.0
+    
+    // Create and return the CGRect for the ROI
+    return CGRect(x: roiX, y: roiY, width: roiWidth, height: roiHeight)
+}
+
