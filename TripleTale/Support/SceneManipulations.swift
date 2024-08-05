@@ -168,11 +168,6 @@ func transformHeightAnchor(ref refAnchor: ARAnchor, cen centerAnchor: ARAnchor) 
     return ARAnchor(transform: newTransform)
 }
 
-// Helper function to get the position from an anchor
-func position(from anchor: ARAnchor) -> SIMD3<Float> {
-    return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
-}
-
 func createNudgedCentroidAnchor(from cornerAnchors: [ARAnchor], nudgePercentage: Float) -> ARAnchor? {
     // Ensure there are at least 4 anchors
     guard cornerAnchors.count >= 4 else {

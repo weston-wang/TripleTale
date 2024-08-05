@@ -63,33 +63,6 @@ func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     return UIImage(cgImage: cgImage)
 }
 
-func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = nil, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
-    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
-
-    let formattedLength = String(format: "%.2f", lengthInInches.value)
-    let formattedWeight = String(format: "%.2f", weightInLb.value)
-    let formattedWidth = String(format: "%.2f", widthInInches.value)
-    let formattedHeight = String(format: "%.2f", heightInInches.value)
-    let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
-
-//        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
-
-    let weightTextImage = imageWithBox.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    
-    let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
-
-    let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
-    
-
-    let overlayImage = UIImage(named: "shimano_logo")!
-    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-    
-    saveImageToGallery(combinedImage!)
-    
-    return combinedImage!
-}
-
 func processObservations(for request: VNRequest, error: Error?) -> (identifierString: String, confidence: VNConfidence, boundingBox: CGRect?)? {
     guard let results = request.results else {
         print("Unable to process image.\n\(error?.localizedDescription ?? "Unknown error")")
@@ -131,4 +104,9 @@ func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Fl
     let vector = point - center
     let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
     return center + scaledVector
+}
+
+// Helper function to get the position from an anchor
+func position(from anchor: ARAnchor) -> SIMD3<Float> {
+    return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
 }
