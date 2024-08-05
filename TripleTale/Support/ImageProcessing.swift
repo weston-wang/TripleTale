@@ -187,15 +187,33 @@ func generateMaskImage(from ciImage: CIImage, for portion: CGFloat) -> CIImage? 
     let request = VNGenerateForegroundInstanceMaskRequest()
     let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
     
-//    let roiRect = centerROI(for: ciImage, portion: portion)
-//    request.regionOfInterest = roiRect
+    let roiRect = centerROI(for: ciImage, portion: portion)
+    request.regionOfInterest = roiRect
 
     do {
         try handler.perform([request])
         if let result = request.results?.first {
             let maskPixelBuffer = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
 
-            return CIImage(cvPixelBuffer: maskPixelBuffer)
+//            return CIImage(cvPixelBuffer: maskPixelBuffer)
+            
+            
+
+            // Create a blank image of the original size
+            let maskCIImage = CIImage(cvPixelBuffer: maskPixelBuffer)
+            let blankImage = CIImage(color: .black).cropped(to: ciImage.extent)
+
+            // Calculate the translation for the mask
+            let translateX = roiRect.origin.x * ciImage.extent.width
+            let translateY = roiRect.origin.y * ciImage.extent.height
+
+            // Apply translation to the mask
+            let transformedMaskCIImage = maskCIImage.transformed(by: CGAffineTransform(translationX: translateX, y: translateY))
+
+            // Composite the mask onto the blank image
+            let finalImage = transformedMaskCIImage.composited(over: blankImage)
+
+            return finalImage
         }
     } catch {
         print(error.localizedDescription)
@@ -631,15 +649,15 @@ func centerROI(for image: CIImage, portion: CGFloat) -> CGRect {
     let imageHeight = image.extent.height
     
     // Calculate the dimensions of the ROI
-    let roiWidth = imageWidth * portion
-    let roiHeight = imageHeight * portion
+    let roiWidth = portion
+    let roiHeight = portion
     
     // Calculate the position to center the ROI
-    let roiX = (imageWidth - roiWidth) / 2 / roiWidth
-    let roiY = (imageHeight - roiHeight) / 2 / roiHeight
+    let roiX = (1.0 - roiWidth) / 2.0
+    let roiY = (1.0 - roiHeight) / 2.0
     
     // Create and return the CGRect for the ROI
-    return CGRect(x: roiX, y: roiY, width: portion, height: portion)
+    return CGRect(x: roiX, y: roiY, width: roiWidth, height: roiHeight)
 }
 
 func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
