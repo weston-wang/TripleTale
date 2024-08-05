@@ -14,6 +14,7 @@
 		4E1ABA032C4A35CE001EB711 /* TripleTaleV1.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E1ABA022C4A35CE001EB711 /* TripleTaleV1.mlmodel */; };
 		4E754AF12C5AEF1900D3CE21 /* BracketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E754AF02C5AEF1900D3CE21 /* BracketView.swift */; };
 		4E754AF32C5AFC4300D3CE21 /* TripleTaleV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E754AF22C5AFC4300D3CE21 /* TripleTaleV2.mlmodel */; };
+		4E7E63322C617C17009E7702 /* Measurements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7E63312C617C17009E7702 /* Measurements.swift */; };
 		4E97242B2BED648F004A73D2 /* Calculations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E97242A2BED648F004A73D2 /* Calculations.swift */; };
 		68612C321F7B0746002209A3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68612C311F7B0746002209A3 /* AppDelegate.swift */; };
 		68612C361F7B0746002209A3 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68612C351F7B0746002209A3 /* MainViewController.swift */; };
@@ -34,6 +35,7 @@
 		4E1ABA022C4A35CE001EB711 /* TripleTaleV1.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV1.mlmodel; sourceTree = "<group>"; };
 		4E754AF02C5AEF1900D3CE21 /* BracketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BracketView.swift; sourceTree = "<group>"; };
 		4E754AF22C5AFC4300D3CE21 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
+		4E7E63312C617C17009E7702 /* Measurements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Measurements.swift; sourceTree = "<group>"; };
 		4E97242A2BED648F004A73D2 /* Calculations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Calculations.swift; sourceTree = "<group>"; };
 		68612C2E1F7B0746002209A3 /* TripleTale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripleTale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		68612C311F7B0746002209A3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -113,6 +115,7 @@
 				68612C311F7B0746002209A3 /* AppDelegate.swift */,
 				68A81B53200FDD8A00A4ABCA /* Utilities.swift */,
 				4E97242A2BED648F004A73D2 /* Calculations.swift */,
+				4E7E63312C617C17009E7702 /* Measurements.swift */,
 				4E187F1A2C580209000AB86B /* Extensions.swift */,
 				4E187F1C2C58025C000AB86B /* ImageProcessing.swift */,
 				4E187F1F2C580408000AB86B /* SceneManipulations.swift */,
@@ -229,6 +232,7 @@
 				4E97242B2BED648F004A73D2 /* Calculations.swift in Sources */,
 				4E1ABA032C4A35CE001EB711 /* TripleTaleV1.mlmodel in Sources */,
 				68612C321F7B0746002209A3 /* AppDelegate.swift in Sources */,
+				4E7E63322C617C17009E7702 /* Measurements.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

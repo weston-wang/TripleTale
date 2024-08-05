@@ -124,3 +124,11 @@ func processObservations(for request: VNRequest, error: Error?) -> (identifierSt
 
     return (identifierString, confidence, boundingBox)
 }
+
+
+// Function to scale a point around the center with different scale factors for each direction
+func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Float, horizontalScaleFactor: Float) -> simd_float3 {
+    let vector = point - center
+    let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
+    return center + scaledVector
+}
