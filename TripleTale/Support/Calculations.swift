@@ -87,3 +87,26 @@ func calculateDistanceToObject(_ inputAnchor: ARAnchor) -> Float {
     
     return distance
 }
+
+func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [CGPoint] {
+    let rotationRadians = rotation * CGFloat.pi / 180
+    let cosTheta = cos(rotationRadians)
+    let sinTheta = sin(rotationRadians)
+
+    let semiMajorAxis = size.height
+    let semiMinorAxis = size.width
+
+    // Define the tips in the ellipse's local coordinate system
+    let top = CGPoint(x: 0, y: -semiMajorAxis)
+    let right = CGPoint(x: semiMinorAxis, y: 0)
+    let bottom = CGPoint(x: 0, y: semiMajorAxis)
+    let left = CGPoint(x: -semiMinorAxis, y: 0)
+
+    // Rotate and translate the points to the image coordinate system
+    let topRotated = CGPoint(x: center.x + cosTheta * top.x - sinTheta * top.y, y: center.y + sinTheta * top.x + cosTheta * top.y)
+    let rightRotated = CGPoint(x: center.x + cosTheta * right.x - sinTheta * right.y, y: center.y + sinTheta * right.x + cosTheta * right.y)
+    let bottomRotated = CGPoint(x: center.x + cosTheta * bottom.x - sinTheta * bottom.y, y: center.y + sinTheta * bottom.x + cosTheta * bottom.y)
+    let leftRotated = CGPoint(x: center.x + cosTheta * left.x - sinTheta * left.y, y: center.y + sinTheta * left.x + cosTheta * left.y)
+
+    return [topRotated, rightRotated, bottomRotated, leftRotated]
+}
