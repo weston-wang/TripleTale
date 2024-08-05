@@ -79,19 +79,33 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
                         let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
-                        let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+//                        self.sceneView.session.add(anchor: verticesAnchors[0])
+//                        self.anchorLabels[verticesAnchors[0].identifier] = "left"
                         
-                        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
+                        var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
+                        var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                        var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                        var heightInInches = Measurement(value: 0, unit: UnitLength.inches)
+                        var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
+
+                        if !self.isForwardFacing {
+                            let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+                            
+                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
+                        } else {
+                            let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
+                            let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
+                            let forkLenght = [length, width].max()
+                        
+                            (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght!, self.identifierString)
+                        }
                         
                         if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
                             self.showImagePopup(combinedImage: combinedImage)
                         } else {
                             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                         }
-                    }
-                    
-                    
-                    
+                    }  
                     
 //                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString, 0.85) {
 //                        self.showImagePopup(combinedImage: resultImage)

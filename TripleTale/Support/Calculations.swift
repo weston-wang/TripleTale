@@ -9,6 +9,16 @@
 import Foundation
 import ARKit
 
+// Define a type alias for the constants tuple
+typealias LengthWeightConstants = (a: Double, b: Double)
+
+// Create the lookup table as a dictionary
+let lengthWeightLookupTable: [String: LengthWeightConstants] = [
+    "CalicoBass": (a: 0.000012, b: 3.1),
+    "BluefinTuna": (a: 0.000153, b: 3.124)
+    // Add more species as needed
+]
+
 func calculateDistanceBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
     let position1 = SIMD3<Float>(anchor1.transform.columns.3.x, anchor1.transform.columns.3.y, anchor1.transform.columns.3.z)
     let position2 = SIMD3<Float>(anchor2.transform.columns.3.x, anchor2.transform.columns.3.y, anchor2.transform.columns.3.z)
@@ -80,6 +90,24 @@ func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumf
     let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
     
     return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)
+}
+
+func calculateWeightFromFork(_ fork: Float, _ species: String) -> (Measurement<UnitMass>, Measurement<UnitLength>) {
+//    let a = 0.000153    // for bft
+//    let b = 3.124       // for bft
+    
+    let constants = lengthWeightLookupTable["CalicoBass"]
+
+    let forkInMeters = Measurement(value: Double(fork), unit: UnitLength.meters)
+    let forkInInches = forkInMeters.converted(to: .inches)
+    
+    let weight = constants!.a * pow(forkInInches.value, constants!.b)
+    
+    print("Found weight \(weight)")
+
+    let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
+    
+    return (weightInLb, forkInInches)
 }
 
 func calculateDistanceToObject(_ inputAnchor: ARAnchor) -> Float {
