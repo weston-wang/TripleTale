@@ -203,7 +203,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         let width: CGFloat
         let height: CGFloat
         if isForwardFacing {
-            imagePortion = 0.5
+            imagePortion = 0.6
             
             width = view.bounds.width * imagePortion // Example size for forward-facing, adjust as needed
             height = width * 16 / 9 // Maintain 9:16 aspect ratio
