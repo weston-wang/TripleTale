@@ -187,8 +187,8 @@ func generateMaskImage(from ciImage: CIImage, for portion: CGFloat) -> CIImage? 
     let request = VNGenerateForegroundInstanceMaskRequest()
     let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
     
-    let roiRect = centerROI(for: ciImage, portion: portion)
-    request.regionOfInterest = roiRect
+//    let roiRect = centerROI(for: ciImage, portion: portion)
+//    request.regionOfInterest = roiRect
 
     do {
         try handler.perform([request])
@@ -524,8 +524,8 @@ func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (cen
     return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
 }
 
-func fitEllipseMinimax(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat) {
-    guard !points.isEmpty else { return (CGPoint.zero, CGSize.zero, 0) }
+func fitEllipseMinimax(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
+    guard points.count >= 5 else { return nil }
 
     var minX = CGFloat.greatestFiniteMagnitude
     var minY = CGFloat.greatestFiniteMagnitude
@@ -538,9 +538,11 @@ func fitEllipseMinimax(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, 
         if point.x > maxX { maxX = point.x }
         if point.y > maxY { maxY = point.y }
     }
-
+    
+    
     let center = CGPoint(x: (minX + maxX) / 2, y: (minY + maxY) / 2)
-    let size = CGSize(width: maxX - minX, height: maxY - minY)
+//    let size = CGSize(width: (maxX - minX) / 2 * 4 / imageWidth, height: (maxY - minY) / 2 * 4 / imageHeight)
+    let size = CGSize(width: (maxX - minX) * 2.0 / CGFloat(imageWidth), height: (maxY - minY) * 2.0 / CGFloat(imageHeight))
     let rotationInDegrees: CGFloat = 0 // No rotation for a bounding box approach
 
     return (center, size, rotationInDegrees)
@@ -638,4 +640,43 @@ func centerROI(for image: CIImage, portion: CGFloat) -> CGRect {
     
     // Create and return the CGRect for the ROI
     return CGRect(x: roiX, y: roiY, width: portion, height: portion)
+}
+
+func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
+    let imageWidth = ciImage.extent.width
+    let imageHeight = ciImage.extent.height
+    
+    // Calculate the dimensions of the ROI
+    let roiWidth = imageWidth * portion
+    let roiHeight = imageHeight * portion
+    
+    // Calculate the position to center the ROI
+    let roiX = (imageWidth - roiWidth) / 2
+    let roiY = (imageHeight - roiHeight) / 2
+    
+    // Create the CGRect for the ROI
+    let roiRect = CGRect(x: roiX, y: roiY, width: roiWidth, height: roiHeight)
+    
+    // Convert CIImage to UIImage
+    let context = CIContext(options: nil)
+    guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+        return nil
+    }
+    let uiImage = UIImage(cgImage: cgImage)
+    
+    // Begin drawing on the UIImage
+    UIGraphicsBeginImageContextWithOptions(uiImage.size, false, uiImage.scale)
+    uiImage.draw(at: .zero)
+    
+    // Draw the ROI rectangle
+    let path = UIBezierPath(rect: roiRect)
+    UIColor.red.setStroke()  // You can change the color as needed
+    path.lineWidth = 2  // You can adjust the line width as needed
+    path.stroke()
+    
+    // Get the resulting image
+    let resultImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    
+    return resultImage
 }
