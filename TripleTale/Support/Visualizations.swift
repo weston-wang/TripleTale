@@ -39,7 +39,8 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
     let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
     
     saveImageToGallery(combinedImage!)
-    
+    saveImageToGallery(inputImage)
+
     return combinedImage!
 }
 

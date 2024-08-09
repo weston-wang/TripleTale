@@ -121,26 +121,56 @@ func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (cen
 
 func fitEllipseMinimax(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
     guard points.count >= 5 else { return nil }
-
-    var minX = CGFloat.greatestFiniteMagnitude
-    var minY = CGFloat.greatestFiniteMagnitude
-    var maxX = CGFloat.leastNormalMagnitude
-    var maxY = CGFloat.leastNormalMagnitude
-
+    // Step 1: Calculate the centroid (mean values)
+    var meanX: CGFloat = 0
+    var meanY: CGFloat = 0
     for point in points {
-        if point.x < minX { minX = point.x }
-        if point.y < minY { minY = point.y }
-        if point.x > maxX { maxX = point.x }
-        if point.y > maxY { maxY = point.y }
+        meanX += point.x
+        meanY += point.y
     }
+    meanX /= CGFloat(points.count)
+    meanY /= CGFloat(points.count)
     
+    // Step 2: Calculate the covariance matrix elements
+    var covXX: CGFloat = 0
+    var covYY: CGFloat = 0
+    var covXY: CGFloat = 0
+    for point in points {
+        let dx = point.x - meanX
+        let dy = point.y - meanY
+        covXX += dx * dx
+        covYY += dy * dy
+        covXY += dx * dy
+    }
+    covXX /= CGFloat(points.count)
+    covYY /= CGFloat(points.count)
+    covXY /= CGFloat(points.count)
     
-    let center = CGPoint(x: (minX + maxX) / 2, y: (minY + maxY) / 2)
-//    let size = CGSize(width: (maxX - minX) / 2 * 4 / imageWidth, height: (maxY - minY) / 2 * 4 / imageHeight)
-    let size = CGSize(width: (maxX - minX) * 2.0 / CGFloat(imageWidth), height: (maxY - minY) * 2.0 / CGFloat(imageHeight))
-    let rotationInDegrees: CGFloat = 0 // No rotation for a bounding box approach
-
-    return (center, size, rotationInDegrees)
+    // Step 3: Calculate the orientation angle using the Rayleigh quotient
+    let theta = 0.5 * atan2(2 * covXY, covXX - covYY)
+    
+    // Step 4: Calculate eigenvalues (semi-major and semi-minor axis lengths)
+    let term1 = covXX + covYY
+    let term2 = sqrt(pow(covXX - covYY, 2) + 4 * covXY * covXY)
+    
+    // Compute the maximum eigenvalue for semi-major axis (a)
+    let maxEigenvalue = (term1 + term2) / 2
+    // Compute the minimum eigenvalue for semi-minor axis (b)
+    let minEigenvalue = (term1 - term2) / 2
+    
+    let a = sqrt(2 * maxEigenvalue)
+    let b = sqrt(2 * minEigenvalue)
+    
+    // No scaling applied here to match the raw values from the Least Squares method
+    let size = CGSize(width: CGFloat(a), height: CGFloat(b))
+    
+    // Center of the ellipse
+    let center = CGPoint(x: meanX, y: meanY)
+    
+    // Rotation in degrees
+    let rotationInDegrees = theta * 180 / .pi
+    
+    return (center: center, size: size, rotationInDegrees: rotationInDegrees)
 }
 
 func fitEllipseLeastSquares(to points: [CGPoint], on image: UIImage) -> (circumference: Double?, resultImage: UIImage?) {
