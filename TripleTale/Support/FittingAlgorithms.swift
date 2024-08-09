@@ -79,7 +79,7 @@ func findContourClosestToCenter(contours: [[CGPoint]], imageWidth: Int, imageHei
     return closestContour
 }
 
-func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
+func fitEllipse(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
     guard points.count >= 5 else { return nil }
 
     var x = [Double]()
@@ -119,7 +119,7 @@ func fitEllipse(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (cen
     return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
 }
 
-func fitEllipseMinimax(to points: [CGPoint], imageWidth: Int, imageHeight: Int) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
+func fitEllipseMinimax(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)? {
     guard points.count >= 5 else { return nil }
     // Step 1: Calculate the centroid (mean values)
     var meanX: CGFloat = 0
@@ -154,9 +154,9 @@ func fitEllipseMinimax(to points: [CGPoint], imageWidth: Int, imageHeight: Int) 
     let term2 = sqrt(pow(covXX - covYY, 2) + 4 * covXY * covXY)
     
     // Compute the maximum eigenvalue for semi-major axis (a)
-    let maxEigenvalue = (term1 + term2) / 2
+    let maxEigenvalue = (term1 + term2) / 2 / CGFloat(points.count)
     // Compute the minimum eigenvalue for semi-minor axis (b)
-    let minEigenvalue = (term1 - term2) / 2
+    let minEigenvalue = (term1 - term2) / 2 / CGFloat(points.count)
     
     let a = sqrt(2 * maxEigenvalue)
     let b = sqrt(2 * minEigenvalue)

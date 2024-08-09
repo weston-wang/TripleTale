@@ -35,18 +35,16 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat) -> [CGPoint]
                     let height = cgImage.height
                     let contours = extractContours(from: pixelData, width: width, height: height)
                     if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
-                        if let ellipse = fitEllipse(to: closestContour, imageWidth: width, imageHeight: height) {
-//                        if let ellipse = fitEllipseMinimax(to: closestContour, imageWidth: width, imageHeight: height) {
-//                            let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+//                        if let ellipse = fitEllipse(to: closestContour) {
+                        if let ellipse = fitEllipseMinimax(to: closestContour) {
                             let size = CGSize(width: ellipse.size.width*CGFloat(width)/4.0, height: ellipse.size.height*CGFloat(height)/4.0)
 
-                            let ellipseTest = fitEllipseMinimax(to: closestContour, imageWidth: width, imageHeight: height)
-                            
+                            let ellipseTest = fitEllipseMinimax(to: closestContour)
                             
                             // Printing the values
                             print("Center: (\(ellipse.center.x), \(ellipse.center.y))")
-                            print("Semi-major axis length (scaled width): \(ellipse.size.width*CGFloat(width)/4.0)")
-                            print("Semi-minor axis length (scaled height): \(ellipse.size.height*CGFloat(height)/4.0)")
+                            print("Semi-major axis length (scaled width): \(ellipse.size.width)")
+                            print("Semi-minor axis length (scaled height): \(ellipse.size.height)")
                             print("Rotation Angle (degrees): \(ellipse.rotationInDegrees)")
                             
                             // Printing the values
