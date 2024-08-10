@@ -140,25 +140,35 @@ func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [
     return [topRotated, rightRotated, bottomRotated, leftRotated]
 }
 
-func calculateRectangleCorners(fromMidpoints midpoints: [CGPoint]) -> [CGPoint] {
-    guard midpoints.count == 4 else {
-        fatalError("Midpoints array must contain exactly 4 points.")
+func calculateRectangleCorners(_ vertices: [CGPoint], _ dither: CGFloat) -> [CGPoint] {
+    guard vertices.count == 4 else {
+        fatalError("There must be exactly 4 vertices.")
     }
 
-    let A = midpoints[0] // Midpoint between corners 1 and 2
-    let B = midpoints[1] // Midpoint between corners 2 and 3
-    let C = midpoints[2] // Midpoint between corners 3 and 4
-    let D = midpoints[3] // Midpoint between corners 4 and 1
+    // Calculate the center
+    let centerX = (vertices[0].x + vertices[1].x + vertices[2].x + vertices[3].x) / 4
+    let centerY = (vertices[0].y + vertices[1].y + vertices[2].y + vertices[3].y) / 4
+    let center = CGPoint(x: centerX, y: centerY)
 
-    // Calculate vectors representing half-diagonals
-    let vectorAC = CGPoint(x: C.x - A.x, y: C.y - A.y)
-    let vectorBD = CGPoint(x: D.x - B.x, y: D.y - B.y)
-
-    // Calculate the correct corners using vector addition/subtraction
-    let corner1 = CGPoint(x: A.x - vectorBD.x / 2, y: A.y - vectorBD.y / 2)
-    let corner2 = CGPoint(x: B.x + vectorAC.x / 2, y: B.y + vectorAC.y / 2)
-    let corner3 = CGPoint(x: C.x + vectorBD.x / 2, y: C.y + vectorBD.y / 2)
-    let corner4 = CGPoint(x: D.x - vectorAC.x / 2, y: D.y - vectorAC.y / 2)
+    // Calculate the angle of rotation
+    let angle = atan2(vertices[2].y - vertices[0].y, vertices[2].x - vertices[0].x)
+    
+    // Calculate the semi-major and semi-minor axes lengths
+    let a = sqrt(pow(vertices[2].x - vertices[0].x, 2) + pow(vertices[2].y - vertices[0].y, 2)) / 2 * (1.0 + dither)
+    let b = sqrt(pow(vertices[3].x - vertices[1].x, 2) + pow(vertices[3].y - vertices[1].y, 2)) / 2 * (1.0 + dither)
+    
+    // Calculate the corners
+    let corner1 = CGPoint(x: center.x + a * cos(angle) - b * sin(angle),
+                          y: center.y + a * sin(angle) + b * cos(angle))
+    
+    let corner2 = CGPoint(x: center.x - a * cos(angle) - b * sin(angle),
+                          y: center.y - a * sin(angle) + b * cos(angle))
+    
+    let corner3 = CGPoint(x: center.x - a * cos(angle) + b * sin(angle),
+                          y: center.y - a * sin(angle) - b * cos(angle))
+    
+    let corner4 = CGPoint(x: center.x + a * cos(angle) + b * sin(angle),
+                          y: center.y + a * sin(angle) - b * cos(angle))
 
     return [corner1, corner2, corner3, corner4]
 }

@@ -341,9 +341,9 @@ func buildRealWorldVerticesAnchors(_ currentView: ARSKView, _ normalizedVertices
     
 //    let centroidBelowAnchor = createUnderneathCentroidAnchor(from: verticesAnchors)
 
-    let corners = calculateRectangleCorners(fromMidpoints: normalizedVertices)
+    let corners = calculateRectangleCorners(normalizedVertices, 0.2)
     let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
-    let centroidBelowAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.5)
+    let centroidBelowAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.0)
 
     print("vertices: \(normalizedVertices)")
     print("corners: \(corners)")

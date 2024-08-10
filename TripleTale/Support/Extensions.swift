@@ -106,7 +106,8 @@ extension UIImage {
     func imageWithText(_ text: String, atPoint point: CGPoint, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize),
-            .foregroundColor: textColor
+            .foregroundColor: textColor,
+            .backgroundColor: UIColor.black
         ]
         
         // Start drawing image context
