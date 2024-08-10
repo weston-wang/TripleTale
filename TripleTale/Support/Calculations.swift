@@ -140,7 +140,7 @@ func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [
     return [topRotated, rightRotated, bottomRotated, leftRotated]
 }
 
-func calculateRectangleCorners(_ vertices: [CGPoint], _ dither: CGFloat) -> [CGPoint] {
+func calculateRectangleCorners(_ vertices: [CGPoint], _ ditherX: CGFloat, _ ditherY: CGFloat) -> [CGPoint] {
     guard vertices.count == 4 else {
         fatalError("There must be exactly 4 vertices.")
     }
@@ -154,8 +154,8 @@ func calculateRectangleCorners(_ vertices: [CGPoint], _ dither: CGFloat) -> [CGP
     let angle = atan2(vertices[2].y - vertices[0].y, vertices[2].x - vertices[0].x)
     
     // Calculate the semi-major and semi-minor axes lengths
-    let a = sqrt(pow(vertices[2].x - vertices[0].x, 2) + pow(vertices[2].y - vertices[0].y, 2)) / 2 * (1.0 + dither)
-    let b = sqrt(pow(vertices[3].x - vertices[1].x, 2) + pow(vertices[3].y - vertices[1].y, 2)) / 2 * (1.0 + dither)
+    let a = sqrt(pow(vertices[2].x - vertices[0].x, 2) + pow(vertices[2].y - vertices[0].y, 2)) / 2 * (1.0 + ditherY)
+    let b = sqrt(pow(vertices[3].x - vertices[1].x, 2) + pow(vertices[3].y - vertices[1].y, 2)) / 2 * (1.0 + ditherX)
     
     // Calculate the corners
     let corner1 = CGPoint(x: center.x + a * cos(angle) - b * sin(angle),
