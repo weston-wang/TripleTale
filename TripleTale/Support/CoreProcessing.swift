@@ -35,37 +35,19 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat) -> [CGPoint]
                     let height = cgImage.height
                     let contours = extractContours(from: pixelData, width: width, height: height)
                     if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
-//                        if let ellipse = fitEllipse(to: closestContour) {
                         if let ellipse = fitEllipseMinimax(to: closestContour) {
                             let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
 
-//                            let ellipseTest = fitEllipseMinimax(to: closestContour)
-//                            
-//                            // Printing the values
-//                            print("Center: (\(ellipse.center.x), \(ellipse.center.y))")
-//                            print("Semi-major axis length (scaled width): \(ellipse.size.width)")
-//                            print("Semi-minor axis length (scaled height): \(ellipse.size.height)")
-//                            print("Rotation Angle (degrees): \(ellipse.rotationInDegrees)")
-//                            
-//                            // Printing the values
-//                            print("Center: (\(ellipseTest!.center.x), \(ellipseTest!.center.y))")
-//                            print("Semi-major axis length (scaled width): \(ellipseTest!.size.width)")
-//                            print("Semi-minor axis length (scaled height): \(ellipseTest!.size.height)")
-//                            print("Rotation Angle (degrees): \(ellipseTest!.rotationInDegrees)")
-                            
-                            
                             let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
                             
                             let tipsNormalized = tips.map { point in
                                 CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
                             }
 
-                            
                             if let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
                                 // Use the resultImage, e.g., display it in an UIImageView or save it
                                 saveImageToGallery(resultImage)
                             }
-                            
                             
                             return tipsNormalized
 
