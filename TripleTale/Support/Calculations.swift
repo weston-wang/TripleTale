@@ -122,8 +122,8 @@ func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [
     let cosTheta = cos(rotationRadians)
     let sinTheta = sin(rotationRadians)
 
-    let semiMajorAxis = [size.height, size.width].max()
-    let semiMinorAxis = [size.height, size.width].min()
+    let semiMajorAxis = [size.height, size.width].min()
+    let semiMinorAxis = [size.height, size.width].max()
 
     // Define the tips in the ellipse's local coordinate system
     let top = CGPoint(x: 0, y: -semiMajorAxis!)
