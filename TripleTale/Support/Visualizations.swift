@@ -110,8 +110,19 @@ func drawBracketsOnImage(image: UIImage, boundingBoxes: [CGRect], bracketLength:
 }
 
 func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat), tips: [CGPoint]) -> UIImage? {
-    let renderer = UIGraphicsImageRenderer(size: image.size)
+    // Create a renderer format with the appropriate scale
+    let format = UIGraphicsImageRendererFormat()
+    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+    
+    // Print the scale of the renderer format
+    print("UIGraphicsImageRenderer scale: \(format.scale)")
+    
+    
     let renderedImage = renderer.image { context in
+        // Print the scale of the context
+        let contextScale = context.currentImage.scale
+        print("Context scale: \(contextScale)")
+        
         // Draw the original image
         image.draw(at: .zero)
         

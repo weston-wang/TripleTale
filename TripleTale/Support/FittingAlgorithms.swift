@@ -113,8 +113,11 @@ func fitEllipse(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, rotatio
     let term1 = covXX + covYY
     let term2 = sqrt(pow(covXX - covYY, 2) + 4 * covXY * covXY)
     
-    let a = sqrt(2 * (term1 + term2) / Double(x.count))
-    let b = sqrt(2 * (term1 - term2) / Double(x.count))
+//    let a = sqrt(2 * (term1 + term2) / Double(x.count))
+//    let b = sqrt(2 * (term1 - term2) / Double(x.count))
+    
+    let a = sqrt(2 * (term1 + term2))
+    let b = sqrt(2 * (term1 - term2))
     
     return (center: CGPoint(x: meanX, y: meanY), size: CGSize(width: CGFloat(a), height: CGFloat(b)), rotationInDegrees: CGFloat(thetaInDegrees))
 }
@@ -154,9 +157,9 @@ func fitEllipseMinimax(to points: [CGPoint]) -> (center: CGPoint, size: CGSize, 
     let term2 = sqrt(pow(covXX - covYY, 2) + 4 * covXY * covXY)
     
     // Compute the maximum eigenvalue for semi-major axis (a)
-    let maxEigenvalue = (term1 + term2) / 2 / CGFloat(points.count)
+    let maxEigenvalue = (term1 + term2) / 2
     // Compute the minimum eigenvalue for semi-minor axis (b)
-    let minEigenvalue = (term1 - term2) / 2 / CGFloat(points.count)
+    let minEigenvalue = (term1 - term2) / 2
     
     let a = sqrt(2 * maxEigenvalue)
     let b = sqrt(2 * minEigenvalue)
