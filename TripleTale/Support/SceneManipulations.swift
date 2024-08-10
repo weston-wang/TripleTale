@@ -145,6 +145,29 @@ func getCorners(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageS
     return cornerAnchors
 }
 
+func getAngledCorners(_ currentView: ARSKView, _ corners: [CGPoint], _ capturedImageSize: CGSize) -> [ARAnchor] {
+    var cornerAnchors: [ARAnchor] = []
+    
+    let leftTop = getScreenPosition(currentView, corners[0].x, corners[0].y, capturedImageSize)
+    let anchorLT = addAnchor(currentView, leftTop)
+
+    let rightTop = getScreenPosition(currentView, corners[1].x, corners[1].y, capturedImageSize)
+    let anchorRT = addAnchor(currentView, rightTop)
+    
+    let leftBottom = getScreenPosition(currentView, corners[2].x, corners[2].y, capturedImageSize)
+    let anchorLB = addAnchor(currentView, leftBottom)
+    
+    let rightBottom = getScreenPosition(currentView, corners[3].x, corners[3].y, capturedImageSize)
+    let anchorRB = addAnchor(currentView, rightBottom)
+    
+    cornerAnchors.append(anchorLT)
+    cornerAnchors.append(anchorRT)
+    cornerAnchors.append(anchorLB)
+    cornerAnchors.append(anchorRB)
+
+    return cornerAnchors
+}
+
 func getTailAnchor(_ currentView: ARSKView, _ boundingBox: CGRect, _ capturedImageSize: CGSize) -> ARAnchor {
     
     let bottomMiddle = getScreenPosition(currentView, boundingBox.origin.x + boundingBox.size.width / 2, boundingBox.origin.y + boundingBox.size.height * CGFloat(0.1), capturedImageSize)
@@ -174,37 +197,40 @@ func createNudgedCentroidAnchor(from cornerAnchors: [ARAnchor], nudgePercentage:
         return nil
     }
 
-
     // Get the positions of the anchors
     var lTPos = position(from: cornerAnchors[0])
     var rTPos = position(from: cornerAnchors[1])
     var lBPos = position(from: cornerAnchors[2])
     var rBPos = position(from: cornerAnchors[3])
-
-    // Calculate the width and height based on anchor positions
-    let width = simd_length(rTPos - lTPos)
-    let height = simd_length(rTPos - rBPos)
-
-    // Nudge each position by the specified percentage
-    lTPos.x -= width * nudgePercentage
-    lTPos.y += height * nudgePercentage
     
-    rTPos.x += width * nudgePercentage
-    rTPos.y += height * nudgePercentage
+    // Calculate the center of the rectangle
+    let center = (lTPos + rTPos + lBPos + rBPos) / 4.0
     
-    lBPos.x -= width * nudgePercentage
-    lBPos.y -= height * nudgePercentage
+    // Calculate vectors from the center to each corner
+    var lTVec = lTPos - center
+    var rTVec = rTPos - center
+    var lBVec = lBPos - center
+    var rBVec = rBPos - center
     
-    rBPos.x += width * nudgePercentage
-    rBPos.y -= height * nudgePercentage
-
-    // Calculate the centroid
+    // Nudge each vector by the specified percentage
+    lTVec *= (1.0 + nudgePercentage)
+    rTVec *= (1.0 + nudgePercentage)
+    lBVec *= (1.0 + nudgePercentage)
+    rBVec *= (1.0 + nudgePercentage)
+    
+    // Recalculate positions based on the nudged vectors
+    lTPos = center + lTVec
+    rTPos = center + rTVec
+    lBPos = center + lBVec
+    rBPos = center + rBVec
+    
+    // Calculate the centroid of the nudged positions
     let centroid = (lTPos + rTPos + lBPos + rBPos) / 4.0
-
+    
     // Create a new transform with the centroid position
     var centroidTransform = matrix_identity_float4x4
     centroidTransform.columns.3 = SIMD4<Float>(centroid.x, centroid.y, centroid.z, 1.0)
-
+    
     // Create and return a new ARAnchor at the centroid position
     return ARAnchor(transform: centroidTransform)
 }
@@ -308,18 +334,26 @@ func buildCurvatureAnchors(_ startPos: CGPoint, _ endPos: CGPoint, _ currentView
     return curvatureAnchors
 }
 
-func buildRealWorldVerticesAnchors(_ currentView: ARSKView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], ARAnchor, ARAnchor) {
+func buildRealWorldVerticesAnchors(_ currentView: ARSKView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], ARAnchor, ARAnchor, [ARAnchor]) {
     var verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
     
     let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize)
     
-    let centroidBelowAnchor = createUnderneathCentroidAnchor(from: verticesAnchors)
+//    let centroidBelowAnchor = createUnderneathCentroidAnchor(from: verticesAnchors)
+
+    let corners = calculateRectangleCorners(fromMidpoints: normalizedVertices)
+    let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
+    let centroidBelowAnchor = createNudgedCentroidAnchor(from: cornerAnchors, nudgePercentage: 0.5)
+
+    print("vertices: \(normalizedVertices)")
+    print("corners: \(corners)")
+
     
     let distanceToFish = calculateDistanceToObject(centroidAboveAnchor)
-    let distanceToGround = calculateDistanceToObject(centroidBelowAnchor)
+    let distanceToGround = calculateDistanceToObject(centroidBelowAnchor!)
     let scalingFactor = distanceToFish / distanceToGround
     
     verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor*1.1, horizontalScaleFactor: scalingFactor*1.1)
     
-    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor!, cornerAnchors)
 }

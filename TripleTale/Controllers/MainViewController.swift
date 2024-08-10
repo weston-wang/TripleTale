@@ -77,10 +77,22 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             if self.isFrozen {
                 if let inputImage = self.saveImage {
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
-                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
+                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
-//                        self.sceneView.session.add(anchor: verticesAnchors[0])
-//                        self.anchorLabels[verticesAnchors[0].identifier] = "left"
+                        self.sceneView.session.add(anchor: centroidAboveAnchor)
+                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
+                        
+                        self.sceneView.session.add(anchor: centroidBelowAnchor)
+                        self.anchorLabels[centroidBelowAnchor.identifier] = "below"
+                        
+                        self.sceneView.session.add(anchor: cornerAnchors[0])
+                        self.anchorLabels[cornerAnchors[0].identifier] = "lt"
+                        self.sceneView.session.add(anchor: cornerAnchors[1])
+                        self.anchorLabels[cornerAnchors[1].identifier] = "rt"
+                        self.sceneView.session.add(anchor: cornerAnchors[2])
+                        self.anchorLabels[cornerAnchors[2].identifier] = "lb"
+                        self.sceneView.session.add(anchor: cornerAnchors[3])
+                        self.anchorLabels[cornerAnchors[3].identifier] = "rb"
                         
                         var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
                         var widthInInches = Measurement(value: 0, unit: UnitLength.inches)

@@ -139,3 +139,26 @@ func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [
 
     return [topRotated, rightRotated, bottomRotated, leftRotated]
 }
+
+func calculateRectangleCorners(fromMidpoints midpoints: [CGPoint]) -> [CGPoint] {
+    guard midpoints.count == 4 else {
+        fatalError("Midpoints array must contain exactly 4 points.")
+    }
+
+    let A = midpoints[0] // Midpoint between corners 1 and 2
+    let B = midpoints[1] // Midpoint between corners 2 and 3
+    let C = midpoints[2] // Midpoint between corners 3 and 4
+    let D = midpoints[3] // Midpoint between corners 4 and 1
+
+    // Calculate vectors representing half-diagonals
+    let vectorAC = CGPoint(x: C.x - A.x, y: C.y - A.y)
+    let vectorBD = CGPoint(x: D.x - B.x, y: D.y - B.y)
+
+    // Calculate the correct corners using vector addition/subtraction
+    let corner1 = CGPoint(x: A.x - vectorBD.x / 2, y: A.y - vectorBD.y / 2)
+    let corner2 = CGPoint(x: B.x + vectorAC.x / 2, y: B.y + vectorAC.y / 2)
+    let corner3 = CGPoint(x: C.x + vectorBD.x / 2, y: C.y + vectorBD.y / 2)
+    let corner4 = CGPoint(x: D.x - vectorAC.x / 2, y: D.y - vectorAC.y / 2)
+
+    return [corner1, corner2, corner3, corner4]
+}
