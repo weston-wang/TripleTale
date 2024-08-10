@@ -122,14 +122,14 @@ func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [
     let cosTheta = cos(rotationRadians)
     let sinTheta = sin(rotationRadians)
 
-    let semiMajorAxis = size.height
-    let semiMinorAxis = size.width
+    let semiMajorAxis = [size.height, size.width].max()
+    let semiMinorAxis = [size.height, size.width].min()
 
     // Define the tips in the ellipse's local coordinate system
-    let top = CGPoint(x: 0, y: -semiMajorAxis)
-    let right = CGPoint(x: semiMinorAxis, y: 0)
-    let bottom = CGPoint(x: 0, y: semiMajorAxis)
-    let left = CGPoint(x: -semiMinorAxis, y: 0)
+    let top = CGPoint(x: 0, y: -semiMajorAxis!)
+    let right = CGPoint(x: semiMinorAxis!, y: 0)
+    let bottom = CGPoint(x: 0, y: semiMajorAxis!)
+    let left = CGPoint(x: -semiMinorAxis!, y: 0)
 
     // Rotate and translate the points to the image coordinate system
     let topRotated = CGPoint(x: center.x + cosTheta * top.x - sinTheta * top.y, y: center.y + sinTheta * top.x + cosTheta * top.y)
