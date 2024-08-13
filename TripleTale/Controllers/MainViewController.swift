@@ -28,6 +28,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     private var isFrozen = false
     
     private var saveImage: UIImage?
+    private var rotationMatrix: simd_float4x4?
     
     // Labels for classified objects by ARAnchor UUID
     private var anchorLabels = [UUID: String]()
@@ -76,8 +77,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
             if self.isFrozen {
                 if let inputImage = self.saveImage {
-                    if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
-                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
+                    if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!) {
+                        var (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
 //                        self.sceneView.session.add(anchor: centroidAboveAnchor)
 //                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
@@ -113,6 +114,14 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             
                             let normVector = normalVector(from: cornerAnchors)
                             let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
+                            
+                            let objDistance = distanceAlongNormalVector(from: centroidAboveAnchor, normal: normVector!)
+                            
+                            let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
+                            
+                            
+                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
+
 
                             let point1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
                             let point2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
@@ -285,6 +294,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Retain the image buffer for Vision processing.
         self.currentBuffer = frame.capturedImage
         
+        // Retain rotation information
+        self.rotationMatrix = frame.camera.transform
+                
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
         
         detectCurrentImage()
