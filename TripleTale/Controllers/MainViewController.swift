@@ -131,12 +131,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                         }
                     }  
-                    
-//                    if let resultImage = processImage(inputImage, self.sceneView, self.isForwardFacing, self.identifierString, 0.85) {
-//                        self.showImagePopup(combinedImage: resultImage)
-//                    } else {
-//                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-//                    }
                 }
                 
                 self.isFrozen.toggle()
