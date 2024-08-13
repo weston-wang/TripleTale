@@ -79,13 +79,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
                         let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
-                        
-                        let normVector = normalVector(from: cornerAnchors)
-                        let heightTest = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
-                        
-                        var heightTestInM = Measurement(value: Double(heightTest), unit: UnitLength.meters)
-                        let heightTestInIn = heightTestInM.converted(to: .inches)
-
                         self.sceneView.session.add(anchor: centroidAboveAnchor)
                         self.anchorLabels[centroidAboveAnchor.identifier] = "above"
                         
@@ -110,6 +103,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         if !self.isForwardFacing {
                             var (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
                             
+                            let normVector = normalVector(from: cornerAnchors)
+                            height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
+                            
                             width = width * 1.4
                             length = length * 1.5
                             
@@ -124,13 +120,10 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
                             self.showImagePopup(combinedImage: combinedImage)
-                            
-                            self.view.showToast(message: "Vector Height: \(heightTestInIn) in")
-
                         } else {
                             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                         }
-                    }  
+                    }
                 }
                 
                 self.isFrozen.toggle()
