@@ -79,20 +79,20 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
                         let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
-                        self.sceneView.session.add(anchor: centroidAboveAnchor)
-                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
+//                        self.sceneView.session.add(anchor: centroidAboveAnchor)
+//                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
+//                        
+//                        self.sceneView.session.add(anchor: centroidBelowAnchor)
+//                        self.anchorLabels[centroidBelowAnchor.identifier] = "below"
                         
-                        self.sceneView.session.add(anchor: centroidBelowAnchor)
-                        self.anchorLabels[centroidBelowAnchor.identifier] = "below"
-                        
-                        self.sceneView.session.add(anchor: cornerAnchors[0])
-                        self.anchorLabels[cornerAnchors[0].identifier] = "lt"
-                        self.sceneView.session.add(anchor: cornerAnchors[1])
-                        self.anchorLabels[cornerAnchors[1].identifier] = "rt"
-                        self.sceneView.session.add(anchor: cornerAnchors[2])
-                        self.anchorLabels[cornerAnchors[2].identifier] = "lb"
-                        self.sceneView.session.add(anchor: cornerAnchors[3])
-                        self.anchorLabels[cornerAnchors[3].identifier] = "rb"
+                        self.sceneView.session.add(anchor: verticesAnchors[0])
+                        self.anchorLabels[verticesAnchors[0].identifier] = "A"
+                        self.sceneView.session.add(anchor: verticesAnchors[1])
+                        self.anchorLabels[verticesAnchors[1].identifier] = "B"
+                        self.sceneView.session.add(anchor: verticesAnchors[2])
+                        self.anchorLabels[verticesAnchors[2].identifier] = "C"
+                        self.sceneView.session.add(anchor: verticesAnchors[3])
+                        self.anchorLabels[verticesAnchors[3].identifier] = "D"
                         
                         var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
                         var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
@@ -101,15 +101,25 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
                         if !self.isForwardFacing {
-                            var (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+//                            var (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+                            
+                            let widthTemp = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
+                            let lengthTemp = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[1], anchor2: cornerAnchors[2])
+                            
+                            let width = [widthTemp, lengthTemp].min()
+                            let length = [widthTemp, lengthTemp].max()
+
                             
                             let normVector = normalVector(from: cornerAnchors)
-                            height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
+                            let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
                             
-                            width = width * 1.4
-                            length = length * 1.5
+                            let circumference = calculateCircumference(majorAxis: width!, minorAxis: height)
+
                             
-                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
+//                            width = width * 1.4
+//                            length = length * 1.5
+                            
+                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width!, length!, height, circumference)
                         } else {
                             let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
