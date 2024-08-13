@@ -79,6 +79,13 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
                         let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
+                        
+                        let normVector = normalVector(from: cornerAnchors)
+                        let heightTest = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
+                        
+                        var heightTestInM = Measurement(value: Double(heightTest), unit: UnitLength.meters)
+                        let heightTestInIn = heightTestInM.converted(to: .inches)
+
                         self.sceneView.session.add(anchor: centroidAboveAnchor)
                         self.anchorLabels[centroidAboveAnchor.identifier] = "above"
                         
@@ -101,7 +108,10 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
                         if !self.isForwardFacing {
-                            let (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+                            var (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+                            
+                            width = width * 1.4
+                            length = length * 1.5
                             
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
@@ -114,6 +124,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
                         if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
                             self.showImagePopup(combinedImage: combinedImage)
+                            
+                            self.view.showToast(message: "Vector Height: \(heightTestInIn) in")
+
                         } else {
                             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                         }

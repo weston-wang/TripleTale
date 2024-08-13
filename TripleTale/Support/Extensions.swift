@@ -18,7 +18,7 @@ import CoreImage
 
 /// - Tag: UIView
 extension UIView {
-    func showToast(message: String, duration: TimeInterval = 8.0) {
+    func showToast(message: String, duration: TimeInterval = 10.0) {
         let toastLabel = UILabel(frame: CGRect(x: self.frame.size.width / 2 - 150, y: 40, width: 300, height: 35)) // Adjusted y coordinate
         toastLabel.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         toastLabel.textColor = UIColor.white
