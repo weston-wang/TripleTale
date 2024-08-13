@@ -167,6 +167,23 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
     return CGRect(x: correctedX, y: correctedY, width: correctedWidth, height: correctedHeight)
 }
 
+func reversePerspectiveEffectOnPoints(points: [CGPoint], distanceToPhone: Float, totalDistance: Float) -> [CGPoint] {
+    // Calculate the inverse scaling factor for dimensions
+    let scalingFactor = distanceToPhone / totalDistance
+
+    // Apply the correction to each point
+    let correctedPoints = points.map { point -> CGPoint in
+        // Scale the x and y coordinates
+        let correctedX = point.x * CGFloat(scalingFactor)
+        let correctedY = point.y * CGFloat(scalingFactor)
+
+        // Return the corrected point
+        return CGPoint(x: correctedX, y: correctedY)
+    }
+
+    return correctedPoints
+}
+
 func generateEvenlySpacedPoints(from start: CGPoint, to end: CGPoint, count: Int) -> [CGPoint] {
     guard count > 1 else {
         return [start, end]

@@ -94,6 +94,15 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         self.sceneView.session.add(anchor: verticesAnchors[3])
                         self.anchorLabels[verticesAnchors[3].identifier] = "D"
                         
+                        self.sceneView.session.add(anchor: cornerAnchors[0])
+                        self.anchorLabels[cornerAnchors[0].identifier] = "1"
+                        self.sceneView.session.add(anchor: cornerAnchors[1])
+                        self.anchorLabels[cornerAnchors[1].identifier] = "2"
+                        self.sceneView.session.add(anchor: cornerAnchors[2])
+                        self.anchorLabels[cornerAnchors[2].identifier] = "3"
+                        self.sceneView.session.add(anchor: cornerAnchors[3])
+                        self.anchorLabels[cornerAnchors[3].identifier] = "4"
+                        
                         var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
                         var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
                         var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
@@ -101,25 +110,19 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
                         if !self.isForwardFacing {
-//                            var (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
-                            
-                            let widthTemp = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[1])
-                            let lengthTemp = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[1], anchor2: cornerAnchors[2])
-                            
-                            let width = [widthTemp, lengthTemp].min()
-                            let length = [widthTemp, lengthTemp].max()
-
                             
                             let normVector = normalVector(from: cornerAnchors)
                             let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
-                            
-                            let circumference = calculateCircumference(majorAxis: width!, minorAxis: height)
 
+                            let point1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
+                            let point2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
                             
-//                            width = width * 1.4
-//                            length = length * 1.5
+                            let width = [point1, point2].min()!
+                            let length = [point1, point2].max()!
                             
-                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width!, length!, height, circumference)
+                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+                            
+                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
                             let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
