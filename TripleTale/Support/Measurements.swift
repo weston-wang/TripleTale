@@ -46,8 +46,8 @@ func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor
 
 func measureVertices(_ verticesAnchors: [ARAnchor], _ aboveAnchor: ARAnchor, _ belowAnchor: ARAnchor) ->  (Float, Float, Float, Float) {
     let height = calculateDistanceBetweenAnchors(anchor1: aboveAnchor, anchor2: belowAnchor)
-    let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
-    let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
+    let width = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
+    let length = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
     
     let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
 

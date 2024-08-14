@@ -33,6 +33,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     // Labels for classified objects by ARAnchor UUID
     private var anchorLabels = [UUID: String]()
     
+    private var anglesString: String?
+
     // Classification results
     private var identifierString = ""
     private var confidence: VNConfidence = 0.0
@@ -112,6 +114,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
                         if !self.isForwardFacing {
                             
+                            var (width, length, _, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
+
                             let normVector = normalVector(from: cornerAnchors)
                             let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
                             
@@ -120,16 +124,16 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
                             
                             
-                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
+//                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
 
 
                             let point1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
                             let point2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
                             
-                            let width = [point1, point2].min()!
-                            let length = [point1, point2].max()!
+//                            let width = [point1, point2].min()!
+//                            let length = [point1, point2].max()!
                             
-                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+//                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
                             
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
@@ -159,28 +163,34 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         super.viewDidLoad()
         
         // Check if the accelerometer is available
-        guard motionManager.isAccelerometerAvailable else {
-            print("Accelerometer is not available")
+        guard motionManager.isDeviceMotionAvailable else {
+            print("Motion Sensor is not available")
             return
         }
         
-        // Set the update interval for accelerometer data
-        motionManager.accelerometerUpdateInterval = 0.1
-        
-        // Start receiving accelerometer updates
-        motionManager.startAccelerometerUpdates(to: OperationQueue.main) { [weak self] (data, error) in
-            guard let data = data, error == nil else {
-                return
-            }
+        // Start Device Motion Updates
+        motionManager.startDeviceMotionUpdates(to: .main) { (motion, error) in
+            guard let motion = motion else { return }
             
-            // Determine the device orientation based on accelerometer data
-            let previousFacing = self!.isForwardFacing
-            self!.isForwardFacing = self!.detectOrientation(acceleration: data.acceleration)
+            // Access device motion data (includes attitude, gravity, etc.)
+            let roll = motion.attitude.roll
+            let pitch = motion.attitude.pitch
+            let yaw = motion.attitude.yaw
             
-            if self!.isForwardFacing != previousFacing {
+            // Convert to degrees if needed
+            let rollDegrees = roll * 180 / .pi
+            let pitchDegrees = pitch * 180 / .pi
+            let yawDegrees = yaw * 180 / .pi
+            
+            self.anglesString = "Device Motion - Roll: \(rollDegrees)°, Pitch: \(pitchDegrees)°, Yaw: \(yawDegrees)°"
+            
+            let previousFacing = self.isForwardFacing
+            self.isForwardFacing = self.detectOrientation(attitude: motion.attitude)
+            
+            if self.isForwardFacing != previousFacing {
                 
                 // Update the bracket size based on the current state
-                self!.updateBracketSize()
+                self.updateBracketSize()
             }
         }
         
@@ -276,8 +286,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         sceneView.session.run(configuration)
     }
 
-    func detectOrientation(acceleration: CMAcceleration) -> Bool {
-        return  acceleration.y < -0.8
+    func detectOrientation(attitude: CMAttitude) -> Bool {
+        return  attitude.pitch * 180 / .pi > 60.0
     }
     
     // MARK: - ARSessionDelegate
@@ -358,9 +368,11 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         }
         freezeButton?.isHidden = false
 
-        let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
+//        let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
+//        statusViewController.showMessage(message)
         
-        statusViewController.showMessage(message)
+        statusViewController.showMessage(self.anglesString!)
+
     }
     
     // MARK: - Tap gesture handler & ARSKViewDelegate
