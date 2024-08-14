@@ -17,7 +17,7 @@ import CoreGraphics
 import CoreImage
 import Accelerate
 
-func findEllipseVertices(from image: UIImage, for portion: CGFloat) -> [CGPoint]? {
+func findEllipseVertices(from image: UIImage, for portion: CGFloat, with rotationMatrix: simd_float4x4) -> [CGPoint]? {
     guard let ciImage = CIImage(image: image) else { return nil }
     if let maskImage = generateMaskImage(from: ciImage, for: portion) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
@@ -29,6 +29,15 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat) -> [CGPoint]
         if let cgImage = context.createCGImage(maskImage, from: maskImage.extent) {
             // Convert the CGImage to a UIImage
             let maskUiImage = UIImage(cgImage: cgImage)
+            
+            saveImageToGallery(maskUiImage)
+
+            // Correct the rotation of the UIImage based on the phone's orientation
+            if let correctedImage = correctImagePerspective(cameraTransform: rotationMatrix, image: maskUiImage) {
+                // Use the corrected image
+                saveImageToGallery(correctedImage)
+
+            }
             
             if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
                     let width = cgImage.width

@@ -46,7 +46,7 @@ func calculateLengthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Floa
 }
 
 func calculateDistanceBetweenAnchors2D(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
-    // Retrieve the positions
+        // Retrieve the positions
     let position1 = anchor1.transform.columns.3
     let position2 = anchor2.transform.columns.3
     
@@ -206,6 +206,16 @@ func distanceToPlane(from newAnchor: ARAnchor, planeAnchor: ARAnchor, normal: si
     
     // Project vectorAP onto the normal vector to get the distance in the "up" direction
     let distance = simd_dot(vectorAP, normal)
+    
+    return distance
+}
+
+func distanceAlongNormalVector(from anchor: ARAnchor, normal: simd_float3) -> Float {
+    // Get the position of the anchor
+    let anchorPosition = simd_float3(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
+    
+    // Project the anchor's position onto the normal vector
+    let distance = simd_dot(anchorPosition, normal)
     
     return distance
 }

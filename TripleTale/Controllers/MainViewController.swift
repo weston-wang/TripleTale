@@ -28,6 +28,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     private var isFrozen = false
     
     private var saveImage: UIImage?
+    private var rotationMatrix: simd_float4x4?
     
     // Labels for classified objects by ARAnchor UUID
     private var anchorLabels = [UUID: String]()
@@ -76,23 +77,32 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
             if self.isFrozen {
                 if let inputImage = self.saveImage {
-                    if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion) {
-                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
+                    if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!) {
+                        var (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
-                        self.sceneView.session.add(anchor: centroidAboveAnchor)
-                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
+//                        self.sceneView.session.add(anchor: centroidAboveAnchor)
+//                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
+//                        
+//                        self.sceneView.session.add(anchor: centroidBelowAnchor)
+//                        self.anchorLabels[centroidBelowAnchor.identifier] = "below"
                         
-                        self.sceneView.session.add(anchor: centroidBelowAnchor)
-                        self.anchorLabels[centroidBelowAnchor.identifier] = "below"
+                        self.sceneView.session.add(anchor: verticesAnchors[0])
+                        self.anchorLabels[verticesAnchors[0].identifier] = "A"
+                        self.sceneView.session.add(anchor: verticesAnchors[1])
+                        self.anchorLabels[verticesAnchors[1].identifier] = "B"
+                        self.sceneView.session.add(anchor: verticesAnchors[2])
+                        self.anchorLabels[verticesAnchors[2].identifier] = "C"
+                        self.sceneView.session.add(anchor: verticesAnchors[3])
+                        self.anchorLabels[verticesAnchors[3].identifier] = "D"
                         
                         self.sceneView.session.add(anchor: cornerAnchors[0])
-                        self.anchorLabels[cornerAnchors[0].identifier] = "lt"
+                        self.anchorLabels[cornerAnchors[0].identifier] = "1"
                         self.sceneView.session.add(anchor: cornerAnchors[1])
-                        self.anchorLabels[cornerAnchors[1].identifier] = "rt"
+                        self.anchorLabels[cornerAnchors[1].identifier] = "2"
                         self.sceneView.session.add(anchor: cornerAnchors[2])
-                        self.anchorLabels[cornerAnchors[2].identifier] = "lb"
+                        self.anchorLabels[cornerAnchors[2].identifier] = "3"
                         self.sceneView.session.add(anchor: cornerAnchors[3])
-                        self.anchorLabels[cornerAnchors[3].identifier] = "rb"
+                        self.anchorLabels[cornerAnchors[3].identifier] = "4"
                         
                         var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
                         var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
@@ -101,13 +111,25 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
                         if !self.isForwardFacing {
-                            var (width, length, height, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
                             
                             let normVector = normalVector(from: cornerAnchors)
-                            height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
+                            let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
                             
-                            width = width * 1.4
-                            length = length * 1.5
+                            let objDistance = distanceAlongNormalVector(from: centroidAboveAnchor, normal: normVector!)
+                            
+                            let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
+                            
+                            
+                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
+
+
+                            let point1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
+                            let point2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
+                            
+                            let width = [point1, point2].min()!
+                            let length = [point1, point2].max()!
+                            
+                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
                             
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
@@ -272,6 +294,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Retain the image buffer for Vision processing.
         self.currentBuffer = frame.capturedImage
         
+        // Retain rotation information
+        self.rotationMatrix = frame.camera.transform
+                
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
         
         detectCurrentImage()

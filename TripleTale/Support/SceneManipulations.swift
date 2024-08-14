@@ -353,7 +353,7 @@ func buildRealWorldVerticesAnchors(_ currentView: ARSKView, _ normalizedVertices
     let distanceToGround = calculateDistanceToObject(centroidBelowAnchor!)
     let scalingFactor = distanceToFish / distanceToGround
     
-    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor*1.1, horizontalScaleFactor: scalingFactor*1.1)
+//    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor*1.0, horizontalScaleFactor: scalingFactor*1.0)
     
     return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor!, cornerAnchors)
 }

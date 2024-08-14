@@ -14,6 +14,7 @@ import AVFoundation
 import Photos
 import CoreGraphics
 import CoreImage
+import SceneKit
 
 func saveImageToGallery(_ image: UIImage) {
     // Request authorization
@@ -167,6 +168,23 @@ func reversePerspectiveEffectOnBoundingBox(boundingBox: CGRect, distanceToPhone:
     return CGRect(x: correctedX, y: correctedY, width: correctedWidth, height: correctedHeight)
 }
 
+func reversePerspectiveEffectOnPoints(points: [CGPoint], distanceToPhone: Float, totalDistance: Float) -> [CGPoint] {
+    // Calculate the inverse scaling factor for dimensions
+    let scalingFactor = distanceToPhone / totalDistance
+
+    // Apply the correction to each point
+    let correctedPoints = points.map { point -> CGPoint in
+        // Scale the x and y coordinates
+        let correctedX = point.x * CGFloat(scalingFactor)
+        let correctedY = point.y * CGFloat(scalingFactor)
+
+        // Return the corrected point
+        return CGPoint(x: correctedX, y: correctedY)
+    }
+
+    return correctedPoints
+}
+
 func generateEvenlySpacedPoints(from start: CGPoint, to end: CGPoint, count: Int) -> [CGPoint] {
     guard count > 1 else {
         return [start, end]
@@ -247,3 +265,82 @@ func inverse(_ matrix: [[Double]]) -> [[Double]]? {
     }
     return b
 }
+
+func getTopDownHomographyMatrix(cameraTransform: simd_float4x4) -> matrix_float4x4 {
+    // Extract rotation (the upper-left 3x3 part of the 4x4 matrix)
+    let rotationMatrix = matrix_float3x3(columns: (
+        simd_make_float3(cameraTransform.columns.0.x, cameraTransform.columns.0.y, cameraTransform.columns.0.z),
+        simd_make_float3(cameraTransform.columns.1.x, cameraTransform.columns.1.y, cameraTransform.columns.1.z),
+        simd_make_float3(cameraTransform.columns.2.x, cameraTransform.columns.2.y, cameraTransform.columns.2.z)
+    ))
+    
+    print("rot mat: \(rotationMatrix)")
+    
+    // Invert the rotation matrix to reverse the current rotation
+    let inverseRotationMatrix = rotationMatrix.inverse
+    
+    // Convert to a 4x4 matrix for homogeneous coordinates
+    var topDownTransform = matrix_identity_float4x4
+    topDownTransform.columns.0 = vector_float4(inverseRotationMatrix.columns.0, 0)
+    topDownTransform.columns.1 = vector_float4(inverseRotationMatrix.columns.1, 0)
+    topDownTransform.columns.2 = vector_float4(inverseRotationMatrix.columns.2, 0)
+    topDownTransform.columns.3 = vector_float4(0, 0, 0, 1) // No translation
+    
+    // Optionally, apply an additional rotation for portrait mode
+    let portraitModeMatrix = matrix_float4x4([
+        [0, -1,  0, 0],
+        [1,  0,  0, 0],
+        [0,  0,  1, 0],
+        [0,  0,  0, 1]
+    ])
+    
+    // Combine the transformations
+    let finalMatrix = portraitModeMatrix * topDownTransform
+    
+    return finalMatrix
+}
+
+func convertToHomographyMatrix(_ matrix: matrix_float4x4) -> matrix_float3x3 {
+    let homographyMatrix = matrix_float3x3([
+        vector_float3(matrix.columns.0.x, matrix.columns.0.y, matrix.columns.0.z),
+        vector_float3(matrix.columns.1.x, matrix.columns.1.y, matrix.columns.1.z),
+        vector_float3(matrix.columns.3.x, matrix.columns.3.y, 1)
+    ])
+    
+    return homographyMatrix
+}
+
+func applyHomography(to image: UIImage, using homographyMatrix: matrix_float3x3) -> UIImage? {
+    let ciImage = CIImage(image: image)
+    
+    // Convert matrix_float3x3 to a format compatible with Core Image
+    let homography = CIFilter(name: "CIPerspectiveTransform")
+    
+    // Set the corners of the quadrilateral in the original image
+    homography?.setValue(ciImage, forKey: kCIInputImageKey)
+    homography?.setValue(CIVector(x: 0, y: 0), forKey: "inputTopLeft")
+    homography?.setValue(CIVector(x: image.size.width, y: 0), forKey: "inputTopRight")
+    homography?.setValue(CIVector(x: 0, y: image.size.height), forKey: "inputBottomLeft")
+    homography?.setValue(CIVector(x: image.size.width, y: image.size.height), forKey: "inputBottomRight")
+    
+    // Apply the transformation
+    let context = CIContext()
+    if let outputImage = homography?.outputImage,
+       let cgImage = context.createCGImage(outputImage, from: outputImage.extent) {
+        return UIImage(cgImage: cgImage)
+    }
+    
+    return nil
+}
+
+func correctImagePerspective(cameraTransform: simd_float4x4, image: UIImage) -> UIImage? {
+    // Step 1: Get the top-down homography matrix
+    let topDownMatrix = getTopDownHomographyMatrix(cameraTransform: cameraTransform)
+    
+    // Step 2: Convert to a 3x3 homography matrix
+    let homographyMatrix = convertToHomographyMatrix(topDownMatrix)
+    
+    // Step 3: Apply the homography to the image
+    return applyHomography(to: image, using: homographyMatrix)
+}
+
