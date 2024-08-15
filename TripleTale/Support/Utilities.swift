@@ -360,7 +360,7 @@ func depthMapToBinaryMask(depthPixelBuffer: CVPixelBuffer) -> UIImage? {
     let centerDepthValue = buffer[centerY * width + centerX]
     
     // Define a threshold around the center depth value
-    let depthThreshold: Float32 = 0.05 // Adjust based on your needs
+    let depthThreshold: Float32 = 0.02 // Adjust based on your needs
     
     // Create a binary mask
     var maskBuffer = [UInt8](repeating: 0, count: width * height)

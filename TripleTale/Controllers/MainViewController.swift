@@ -148,7 +148,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             
                             saveImageToGallery(self.depthImage!)
                             
-//                            let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, for: self.imagePortion, with: self.rotationMatrix!)
+                            let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, on: self.saveImage!, for: self.imagePortion, with: self.rotationMatrix!)
                             
                             let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
@@ -335,8 +335,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 //            let depthMap = applyNonLinearDepthTransformation(depthMap: sceneDepth.depthMap)
 
             // You could store or process the depth data here if needed
-//            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
-            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
+//            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
         }
         
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
