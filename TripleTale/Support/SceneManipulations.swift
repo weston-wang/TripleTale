@@ -319,7 +319,7 @@ func createUnderneathCentroidAnchor(from verticesAnchors: [ARAnchor]) -> ARAncho
     return ARAnchor(transform: centroidTransform)
 }
 
-func buildCurvatureAnchors(_ startPos: CGPoint, _ endPos: CGPoint, _ currentView:ARSKView, _ capturedImageSize: CGSize) -> [ARAnchor] {
+func buildLineAnchors(_ startPos: CGPoint, _ endPos: CGPoint, _ currentView:ARSKView, _ capturedImageSize: CGSize) -> [ARAnchor] {
     var curvatureAnchors: [ARAnchor] = []
     
     let heightPoints = generateEvenlySpacedPoints(from: startPos, to: endPos, count: 30)

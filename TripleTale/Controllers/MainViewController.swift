@@ -119,27 +119,37 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             let normVector = normalVector(from: cornerAnchors)
                             let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
                             
-                            let objDistance = distanceAlongNormalVector(from: centroidAboveAnchor, normal: normVector!)
-                            
-                            let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
-                            
-                            
+//                            let objDistance = distanceAlongNormalVector(from: centroidAboveAnchor, normal: normVector!)
+//                            let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
 //                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
 
-
-                            let point1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
-                            let point2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
+                            let measurement1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
+                            let measurement2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
                             
-//                            let width = [point1, point2].min()!
-//                            let length = [point1, point2].max()!
+                            width = [measurement1, measurement2].min()!
+                            length = [measurement1, measurement2].max()!
                             
-//                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+                            circumference = calculateCircumference(majorAxis: width, minorAxis: height)
                             
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
-                            let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
-                            let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
-                            let forkLenght = [length, width].max()
+                            let searchWidth = self.view.bounds.width * self.imagePortion // Example size for not forward-facing, adjust as needed
+                            let searchHeight = searchWidth * 16 / 9 // Maintain 9:16 aspect ratio
+                            
+                            let startPosTop = CGPoint(x: self.view.bounds.midX - searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + searchHeight / 4)
+                            let endPosTop = CGPoint(x: self.view.bounds.midX + searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + searchHeight / 4)
+
+                            let startPosBot = CGPoint(x: self.view.bounds.midX - searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4)
+                            let endPosBot = CGPoint(x: self.view.bounds.midX + searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4)
+
+                            let topLineAnchors = buildLineAnchors(startPosTop, endPosTop, self.sceneView, inputImage.size)
+                            let botLineAnchors = buildLineAnchors(startPosBot, endPosBot, self.sceneView, inputImage.size)
+
+                            print("Top Line: \(topLineAnchors)")
+                            
+                            let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
+                            let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
+                            let forkLenght = [measurement1, measurement2].max()
                         
                             (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght!, self.identifierString)
                         }
