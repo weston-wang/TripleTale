@@ -139,8 +139,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             let startPosTop = CGPoint(x: self.view.bounds.midX - searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + searchHeight / 4)
                             let endPosTop = CGPoint(x: self.view.bounds.midX + searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + searchHeight / 4)
 
-                            let startPosBot = CGPoint(x: self.view.bounds.midX - searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4)
-                            let endPosBot = CGPoint(x: self.view.bounds.midX + searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4)
+                            let startPosBot = CGPoint(x: (self.view.bounds.midX - searchWidth / 2) / self.view.bounds.width, (y: self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4) / self.view.bounds.height)
+                            let endPosBot = CGPoint(x: (self.view.bounds.midX + searchWidth / 2) / self.view.bounds.width, y: (self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4) / self.view.bounds.height)
 
                             let topLineAnchors = buildLineAnchors(startPosTop, endPosTop, self.sceneView, inputImage.size)
                             let botLineAnchors = buildLineAnchors(startPosBot, endPosBot, self.sceneView, inputImage.size)
