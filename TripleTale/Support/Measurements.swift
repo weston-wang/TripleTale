@@ -44,12 +44,12 @@ func measureDimensions(_ midpointAnchors: [ARAnchor], _ centroidAnchor: ARAnchor
     return (width, length, height, circumference)
 }
 
-func measureVertices(_ verticesAnchors: [ARAnchor], _ aboveAnchor: ARAnchor, _ belowAnchor: ARAnchor) ->  (Float, Float, Float, Float) {
-    let height = calculateDistanceBetweenAnchors(anchor1: aboveAnchor, anchor2: belowAnchor)
+func measureVertices(_ verticesAnchors: [ARAnchor], _ cornersAnchors: [ARAnchor], _ aboveAnchor: ARAnchor, _ belowAnchor: ARAnchor) ->  (Float, Float, Float) {
     let width = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
     let length = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
     
-    let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-
-    return (width, length, height, circumference)
+    let normVector = normalVector(from: cornersAnchors)
+    let height = distanceToPlane(from: aboveAnchor, planeAnchor: belowAnchor, normal: normVector!)
+    
+    return (width, length, height)
 }

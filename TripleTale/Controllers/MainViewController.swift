@@ -17,7 +17,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     
     var bracketView: BracketView?
     
-    let scaleFactor: Double = 500.0
+    var scaleFactor: Double = 500.0
+    var lengthNudge: Double = 1.2
+    var widthNudge: Double = 1.2
 
     let isMLDetection = false
     
@@ -82,27 +84,21 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             
             // Show the input popup
             showInputPopup(title: "Developer Mode", message: "Update Values Below", placeholders: [
-                "Value 1",
-                "Value 2",
-                "Value 3"
+                "Weight Scale: \(self.scaleFactor)",
+                "Length Scale: \(self.lengthNudge)",
+                "Width Scale: \(self.widthNudge)"
             ]) { inputs in
                 // Handle the user inputs here
                 if let value1 = inputs[0] {
-                    print("Value 1:", value1)
-                } else {
-                    print("Value 1 is not a valid double")
+                    self.scaleFactor = value1
                 }
                 
                 if let value2 = inputs[1] {
-                    print("Value 2:", value2)
-                } else {
-                    print("Value 2 is not a valid double")
+                    self.lengthNudge = value2
                 }
                 
                 if let value3 = inputs[2] {
-                    print("Value 3:", value3)
-                } else {
-                    print("Value 3 is not a valid double")
+                    self.widthNudge = value3
                 }
             }
         }
@@ -124,28 +120,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         
 //                        self.sceneView.session.add(anchor: centroidAboveAnchor)
 //                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
-//                        
-//                        self.sceneView.session.add(anchor: centroidBelowAnchor)
-//                        self.anchorLabels[centroidBelowAnchor.identifier] = "below"
-                        
-                        self.sceneView.session.add(anchor: verticesAnchors[0])
-                        self.anchorLabels[verticesAnchors[0].identifier] = "A"
-                        self.sceneView.session.add(anchor: verticesAnchors[1])
-                        self.anchorLabels[verticesAnchors[1].identifier] = "B"
-                        self.sceneView.session.add(anchor: verticesAnchors[2])
-                        self.anchorLabels[verticesAnchors[2].identifier] = "C"
-                        self.sceneView.session.add(anchor: verticesAnchors[3])
-                        self.anchorLabels[verticesAnchors[3].identifier] = "D"
-                        
-                        self.sceneView.session.add(anchor: cornerAnchors[0])
-                        self.anchorLabels[cornerAnchors[0].identifier] = "1"
-                        self.sceneView.session.add(anchor: cornerAnchors[1])
-                        self.anchorLabels[cornerAnchors[1].identifier] = "2"
-                        self.sceneView.session.add(anchor: cornerAnchors[2])
-                        self.anchorLabels[cornerAnchors[2].identifier] = "3"
-                        self.sceneView.session.add(anchor: cornerAnchors[3])
-                        self.anchorLabels[cornerAnchors[3].identifier] = "4"
-                        
+
                         var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
                         var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
                         var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
@@ -154,28 +129,18 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
                         if !self.isForwardFacing {
                             
-                            var (width, length, _, circumference) = measureVertices(verticesAnchors, centroidAboveAnchor, centroidBelowAnchor)
-
-                            let normVector = normalVector(from: cornerAnchors)
-                            let height = distanceToPlane(from: centroidAboveAnchor, planeAnchor: centroidBelowAnchor, normal: normVector!)
+                            var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor, centroidBelowAnchor)
                             
-//                            let objDistance = distanceAlongNormalVector(from: centroidAboveAnchor, normal: normVector!)
-//                            let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
-//                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
+                            length = length * Float(self.lengthNudge)
+                            width = width * Float(self.widthNudge)
 
-//                            let measurement1 = calculateDistanceBetweenAnchors2D(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
-//                            let measurement2 = calculateDistanceBetweenAnchors2D(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
-//                            
-//                            width = [measurement1, measurement2].min()!
-//                            length = [measurement1, measurement2].max()!
-//                            
-//                            circumference = calculateCircumference(majorAxis: height, minorAxis: width)
-                            
+                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
                         } else {
                             saveImageToGallery(self.depthImage!)
                             
-                            let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, on: self.saveImage!, for: self.imagePortion, with: self.rotationMatrix!)
+//                            let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, on: self.saveImage!, for: self.imagePortion, with: self.rotationMatrix!)
                             
                             let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
@@ -380,8 +345,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 //            let depthMap = applyNonLinearDepthTransformation(depthMap: sceneDepth.depthMap)
 
             // You could store or process the depth data here if needed
-            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
-//            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+//            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
+            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
         }
         
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
