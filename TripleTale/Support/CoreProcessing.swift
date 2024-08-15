@@ -69,6 +69,44 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, with rotatio
     return nil
 }
 
+
+func findEllipseVerticesUsingDepth(from depthImage: UIImage, for portion: CGFloat, with rotationMatrix: simd_float4x4) -> [CGPoint]? {
+    guard let ciImage = CIImage(image: depthImage) else { return nil }
+    
+    // Create a CIContext
+    let context = CIContext()
+
+    // Create a CGImage from the CIImage
+    if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
+        if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
+                let width = cgImage.width
+                let height = cgImage.height
+                let contours = extractContours(from: pixelData, width: width, height: height)
+                if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
+                    if let ellipse = fitEllipseMinimax(to: closestContour) {
+                        let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+
+                        let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
+                        
+                        let tipsNormalized = tips.map { point in
+                            CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
+                        }
+
+                        if let resultImage = drawContoursEllipseAndTips(on: depthImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
+                            // Use the resultImage, e.g., display it in an UIImageView or save it
+                            saveImageToGallery(resultImage)
+                        }
+                        
+                        return tipsNormalized
+
+                    }
+                }
+            }
+    }
+    
+    return nil
+}
+
 func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String, _ portion: CGFloat ) -> UIImage? {
     // isolate fish through foreground vs background separation
     if let fishBoundingBox = isolateFish(from: inputImage, for: portion) {

@@ -147,6 +147,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             
                             saveImageToGallery(self.depthImage!)
                             
+                            let testVertices = findEllipseVertices(from: self.depthImage!, for: self.imagePortion, with: self.rotationMatrix!)
+                            
                             let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
                             let forkLenght = [measurement1, measurement2].max()
@@ -295,8 +297,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         configuration.planeDetection = [.horizontal]
         
         // Enable depth data (only works on LiDAR-equipped devices)
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
         } else {
             print("Device does not support scene depth")
         }
@@ -325,8 +327,9 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Retain rotation information
         self.rotationMatrix = frame.camera.transform
                 
+        
         // Optional: Process depth data if available
-        if let sceneDepth = frame.smoothedSceneDepth {
+        if let sceneDepth = frame.sceneDepth {
             // Convert the depth map to a UIImage
             let depthMap = sceneDepth.depthMap
 
@@ -489,8 +492,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         let configuration = ARWorldTrackingConfiguration()
         
         // Enable depth data (only works on LiDAR-equipped devices)
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
         }
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
