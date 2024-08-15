@@ -202,6 +202,33 @@ extension UIImage {
         
         return combinedImage
     }
+    
+    func rotated(byDegrees degrees: CGFloat) -> UIImage? {
+        let radians = degrees * (.pi / 180)
+        
+        var newSize = CGRect(origin: .zero, size: self.size)
+            .applying(CGAffineTransform(rotationAngle: radians))
+            .integral.size
+        newSize.width = round(newSize.width)
+        newSize.height = round(newSize.height)
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, self.scale)
+        let context = UIGraphicsGetCurrentContext()!
+        
+        // Move the origin to the middle of the image so we can rotate around the center.
+        context.translateBy(x: newSize.width / 2, y: newSize.height / 2)
+        
+        // Rotate the image context
+        context.rotate(by: radians)
+        
+        // Now, draw the rotated/scaled image into the context.
+        self.draw(in: CGRect(x: -self.size.width / 2, y: -self.size.height / 2, width: self.size.width, height: self.size.height))
+        
+        let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return rotatedImage
+    }
 }
 
 /// - Tag: UIViewController

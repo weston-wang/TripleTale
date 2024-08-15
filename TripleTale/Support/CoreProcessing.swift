@@ -30,14 +30,14 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, with rotatio
             // Convert the CGImage to a UIImage
             let maskUiImage = UIImage(cgImage: cgImage)
             
-            saveImageToGallery(maskUiImage)
+//            saveImageToGallery(maskUiImage)
 
             // Correct the rotation of the UIImage based on the phone's orientation
-            if let correctedImage = correctImagePerspective(cameraTransform: rotationMatrix, image: maskUiImage) {
-                // Use the corrected image
-                saveImageToGallery(correctedImage)
-
-            }
+//            if let correctedImage = correctImagePerspective(cameraTransform: rotationMatrix, image: maskUiImage) {
+//                // Use the corrected image
+//                saveImageToGallery(correctedImage)
+//
+//            }
             
             if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
                     let width = cgImage.width

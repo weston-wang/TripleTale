@@ -28,6 +28,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     private var isFrozen = false
     
     private var saveImage: UIImage?
+    private var depthImage: UIImage?
+    
     private var rotationMatrix: simd_float4x4?
     
     // Labels for classified objects by ARAnchor UUID
@@ -133,19 +135,17 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
-                            let searchWidth = self.view.bounds.width * self.imagePortion // Example size for not forward-facing, adjust as needed
-                            let searchHeight = searchWidth * 16 / 9 // Maintain 9:16 aspect ratio
+//                            let searchWidth = self.imagePortion
+//                            let searchHeight = searchWidth * 16 / 9
+//                            
+//                            let startPosTop = CGPoint(x: (1.0 - searchWidth) / 2.0, y: (1.0 - searchHeight) / 2.0 + 0.2)
+//                            let endPosTop = CGPoint(x: searchWidth + (1.0 - searchWidth) / 2.0, y: (1.0 - searchHeight) / 2.0 + 0.2)
+//
+//                            let topLineAnchors = buildLineAnchors(startPosTop, endPosTop, self.sceneView, inputImage.size)
+//
+//                            print("Top Line: \(topLineAnchors)")
                             
-                            let startPosTop = CGPoint(x: self.view.bounds.midX - searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + searchHeight / 4)
-                            let endPosTop = CGPoint(x: self.view.bounds.midX + searchWidth / 2, y: self.view.bounds.midY - searchHeight / 2 + searchHeight / 4)
-
-                            let startPosBot = CGPoint(x: (self.view.bounds.midX - searchWidth / 2) / self.view.bounds.width, (y: self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4) / self.view.bounds.height)
-                            let endPosBot = CGPoint(x: (self.view.bounds.midX + searchWidth / 2) / self.view.bounds.width, y: (self.view.bounds.midY - searchHeight / 2 + 3*searchHeight / 4) / self.view.bounds.height)
-
-                            let topLineAnchors = buildLineAnchors(startPosTop, endPosTop, self.sceneView, inputImage.size)
-                            let botLineAnchors = buildLineAnchors(startPosBot, endPosBot, self.sceneView, inputImage.size)
-
-                            print("Top Line: \(topLineAnchors)")
+                            saveImageToGallery(self.depthImage!)
                             
                             let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
@@ -293,6 +293,14 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     func startPlaneDetection() {
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
+        
+        // Enable depth data (only works on LiDAR-equipped devices)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        } else {
+            print("Device does not support scene depth")
+        }
+        
         sceneView.session.run(configuration)
     }
 
@@ -317,6 +325,15 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Retain rotation information
         self.rotationMatrix = frame.camera.transform
                 
+        // Optional: Process depth data if available
+        if let sceneDepth = frame.smoothedSceneDepth {
+            // Convert the depth map to a UIImage
+            let depthMap = sceneDepth.depthMap
+
+            // You could store or process the depth data here if needed
+            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: depthMap)
+        }
+        
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
         
         detectCurrentImage()
@@ -470,6 +487,12 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         anchorLabels = [UUID: String]()
         
         let configuration = ARWorldTrackingConfiguration()
+        
+        // Enable depth data (only works on LiDAR-equipped devices)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        }
+
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     

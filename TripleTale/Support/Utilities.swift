@@ -344,3 +344,65 @@ func correctImagePerspective(cameraTransform: simd_float4x4, image: UIImage) -> 
     return applyHomography(to: image, using: homographyMatrix)
 }
 
+func depthMapToBinaryMask(depthPixelBuffer: CVPixelBuffer) -> UIImage? {
+    CVPixelBufferLockBaseAddress(depthPixelBuffer, .readOnly)
+    
+    let width = CVPixelBufferGetWidth(depthPixelBuffer)
+    let height = CVPixelBufferGetHeight(depthPixelBuffer)
+    
+    // Access the depth data
+    let baseAddress = CVPixelBufferGetBaseAddress(depthPixelBuffer)
+    let buffer = baseAddress!.assumingMemoryBound(to: Float32.self)
+    
+    // Find the depth value at the center of the image
+    let centerX = width / 2
+    let centerY = height / 2
+    let centerDepthValue = buffer[centerY * width + centerX]
+    
+    // Define a threshold around the center depth value
+    let depthThreshold: Float32 = 0.05 // Adjust based on your needs
+    
+    // Create a binary mask
+    var maskBuffer = [UInt8](repeating: 0, count: width * height)
+    for y in 0..<height {
+        for x in 0..<width {
+            let index = y * width + x
+            let depthValue = buffer[index]
+            
+            if abs(depthValue - centerDepthValue) < depthThreshold {
+                maskBuffer[index] = 255 // Object region
+            } else {
+                maskBuffer[index] = 0   // Background
+            }
+        }
+    }
+    
+    CVPixelBufferUnlockBaseAddress(depthPixelBuffer, .readOnly)
+    
+    // Convert the mask buffer to a UIImage
+    let maskData = Data(maskBuffer)
+    let providerRef = CGDataProvider(data: maskData as CFData)
+    
+    guard let maskCGImage = CGImage(
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bitsPerPixel: 8,
+        bytesPerRow: width,
+        space: CGColorSpaceCreateDeviceGray(),
+        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+        provider: providerRef!,
+        decode: nil,
+        shouldInterpolate: false,
+        intent: .defaultIntent
+    ) else {
+        return nil
+    }
+    
+    let binaryMaskImage = UIImage(cgImage: maskCGImage)
+    
+    // Rotate the binary mask by 90 degrees (adjust the direction as needed)
+    let rotatedMaskImage = binaryMaskImage.rotated(byDegrees: 90) // Use 90 or -90 depending on the rotation direction
+    
+    return rotatedMaskImage
+}
