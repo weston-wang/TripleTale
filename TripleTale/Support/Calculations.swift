@@ -75,7 +75,7 @@ func calculateCircumference(majorAxis: Float, minorAxis: Float) -> Float {
     return Float(Double.pi) * (term1 - term2)
 }
 
-func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
+func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float, _ scale: Double) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
     
     let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
     let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
@@ -87,7 +87,7 @@ func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumf
     let heightInInches = heightInMeters.converted(to: .inches)
     let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
     
-    let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / 500
+    let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / scale
     let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
     
     return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)

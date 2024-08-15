@@ -16,6 +16,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
     @IBOutlet weak var sceneView: ARSKView!
     
     var bracketView: BracketView?
+    
+    let scaleFactor: Double = 500.0
 
     let isMLDetection = false
     
@@ -26,6 +28,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
     private var freezeButton: UIButton?
     private var isFrozen = false
+    
+    private var tapCounter = 0
     
     private var saveImage: UIImage?
     private var depthImage: UIImage?
@@ -70,6 +74,40 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         return children.lazy.compactMap({ $0 as? StatusViewController }).first!
     }()
     
+    @objc private func handleTapGesture() {
+        tapCounter += 1
+        
+        if tapCounter == 3 {
+            tapCounter = 0 // Reset counter after showing the popup
+            
+            // Show the input popup
+            showInputPopup(title: "Developer Mode", message: "Update Values Below", placeholders: [
+                "Value 1",
+                "Value 2",
+                "Value 3"
+            ]) { inputs in
+                // Handle the user inputs here
+                if let value1 = inputs[0] {
+                    print("Value 1:", value1)
+                } else {
+                    print("Value 1 is not a valid double")
+                }
+                
+                if let value2 = inputs[1] {
+                    print("Value 2:", value2)
+                } else {
+                    print("Value 2 is not a valid double")
+                }
+                
+                if let value3 = inputs[2] {
+                    print("Value 3:", value3)
+                } else {
+                    print("Value 3 is not a valid double")
+                }
+            }
+        }
+    }
+    
     // MARK: - Main logic
     @objc func toggleFreeze() {
         DispatchQueue.main.async {
@@ -82,7 +120,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
             if self.isFrozen {
                 if let inputImage = self.saveImage {
                     if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!) {
-                        var (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
+                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
                         
 //                        self.sceneView.session.add(anchor: centroidAboveAnchor)
 //                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
@@ -125,27 +163,16 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 //                            let correctedVertices = reversePerspectiveEffectOnPoints(points: normalizedVertices, distanceToPhone: objDistance, totalDistance: objDistance + height)
 //                            (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, correctedVertices, inputImage.size)
 
-                            let measurement1 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
-                            let measurement2 = calculateDistanceBetweenAnchors(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
-                            
-                            width = [measurement1, measurement2].min()!
-                            length = [measurement1, measurement2].max()!
-                            
-                            circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-                            
-                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
-                        } else {
-                            
-//                            let searchWidth = self.imagePortion
-//                            let searchHeight = searchWidth * 16 / 9
+//                            let measurement1 = calculateDistanceBetweenAnchors2D(anchor1: cornerAnchors[0], anchor2: cornerAnchors[2])
+//                            let measurement2 = calculateDistanceBetweenAnchors2D(anchor1: cornerAnchors[2], anchor2: cornerAnchors[3])
 //                            
-//                            let startPosTop = CGPoint(x: (1.0 - searchWidth) / 2.0, y: (1.0 - searchHeight) / 2.0 + 0.2)
-//                            let endPosTop = CGPoint(x: searchWidth + (1.0 - searchWidth) / 2.0, y: (1.0 - searchHeight) / 2.0 + 0.2)
-//
-//                            let topLineAnchors = buildLineAnchors(startPosTop, endPosTop, self.sceneView, inputImage.size)
-//
-//                            print("Top Line: \(topLineAnchors)")
+//                            width = [measurement1, measurement2].min()!
+//                            length = [measurement1, measurement2].max()!
+//                            
+//                            circumference = calculateCircumference(majorAxis: height, minorAxis: width)
                             
+                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
+                        } else {
                             saveImageToGallery(self.depthImage!)
                             
                             let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, on: self.saveImage!, for: self.imagePortion, with: self.rotationMatrix!)
@@ -230,6 +257,24 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         
         // Initial bracket update
         updateBracketSize()
+        
+        // Create a transparent view for the bottom left corner
+        let cornerView = UIView()
+        cornerView.translatesAutoresizingMaskIntoConstraints = false
+        cornerView.backgroundColor = UIColor.clear
+        view.addSubview(cornerView)
+        
+        // Set constraints to position the view in the bottom left corner
+        NSLayoutConstraint.activate([
+            cornerView.widthAnchor.constraint(equalToConstant: 100), // Adjust size as needed
+            cornerView.heightAnchor.constraint(equalToConstant: 100), // Adjust size as needed
+            cornerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            cornerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
+        ])
+        
+        // Add tap gesture recognizer to the corner view
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture))
+        cornerView.addGestureRecognizer(tapGesture)
     }
     
     override func viewWillAppear(_ animated: Bool) {

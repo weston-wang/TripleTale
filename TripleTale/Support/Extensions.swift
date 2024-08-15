@@ -289,4 +289,35 @@ extension UIViewController {
         // Present the alert controller
         present(alert, animated: true, completion: nil)
     }
+    
+    func showInputPopup(title: String?, message: String?, placeholders: [String], completion: @escaping ([Double?]) -> Void) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        
+        // Add text fields to the alert based on the provided placeholders
+        for placeholder in placeholders {
+            alert.addTextField { textField in
+                textField.placeholder = placeholder
+                textField.keyboardType = .decimalPad // Set keyboard type to decimal pad for double values
+            }
+        }
+        
+        // Add an action to submit the input
+        let submitAction = UIAlertAction(title: "Submit", style: .default) { _ in
+            let inputs = alert.textFields?.map { textField -> Double? in
+                guard let text = textField.text, !text.isEmpty else {
+                    return nil
+                }
+                return Double(text)
+            }
+            completion(inputs ?? [])
+        }
+        alert.addAction(submitAction)
+        
+        // Add a cancel action
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alert.addAction(cancelAction)
+        
+        // Present the alert controller
+        present(alert, animated: true, completion: nil)
+    }
 }
