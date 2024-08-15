@@ -406,3 +406,64 @@ func depthMapToBinaryMask(depthPixelBuffer: CVPixelBuffer) -> UIImage? {
     
     return rotatedMaskImage
 }
+
+func applyNonLinearDepthTransformation(depthMap: CVPixelBuffer) -> CVPixelBuffer? {
+    CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+    
+    let width = CVPixelBufferGetWidth(depthMap)
+    let height = CVPixelBufferGetHeight(depthMap)
+    let pixelFormatType = CVPixelBufferGetPixelFormatType(depthMap)
+    
+    guard pixelFormatType == kCVPixelFormatType_DepthFloat32 else {
+        // Ensure the pixel format is 32-bit float (as depth maps typically are)
+        CVPixelBufferUnlockBaseAddress(depthMap, .readOnly)
+        return nil
+    }
+    
+    let baseAddress = CVPixelBufferGetBaseAddress(depthMap)
+    let buffer = baseAddress!.assumingMemoryBound(to: Float32.self)
+    
+    var transformedDepthMap = [Float32](repeating: 0.0, count: width * height)
+    
+    // Apply a non-linear transformation to each depth value
+    for y in 0..<height {
+        for x in 0..<width {
+            let index = y * width + x
+            let depthValue = buffer[index]
+            
+            // Apply an example transformation (e.g., exponential)
+            let transformedValue = exp(depthValue)
+            transformedDepthMap[index] = transformedValue
+        }
+    }
+    
+    CVPixelBufferUnlockBaseAddress(depthMap, .readOnly)
+    
+    // Create a new CVPixelBuffer to hold the transformed data
+    var newPixelBuffer: CVPixelBuffer?
+    let status = CVPixelBufferCreate(
+        kCFAllocatorDefault,
+        width,
+        height,
+        pixelFormatType,
+        nil,
+        &newPixelBuffer
+    )
+    
+    guard status == kCVReturnSuccess, let newBuffer = newPixelBuffer else {
+        return nil
+    }
+    
+    // Copy the transformed data into the new CVPixelBuffer
+    CVPixelBufferLockBaseAddress(newBuffer, [])
+    let newBaseAddress = CVPixelBufferGetBaseAddress(newBuffer)
+    let newBufferPointer = newBaseAddress!.assumingMemoryBound(to: Float32.self)
+    
+    for i in 0..<(width * height) {
+        newBufferPointer[i] = transformedDepthMap[i]
+    }
+    
+    CVPixelBufferUnlockBaseAddress(newBuffer, [])
+    
+    return newBuffer
+}

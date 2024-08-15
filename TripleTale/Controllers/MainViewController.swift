@@ -135,6 +135,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference)
                         } else {
+                            
 //                            let searchWidth = self.imagePortion
 //                            let searchHeight = searchWidth * 16 / 9
 //                            
@@ -147,7 +148,7 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             
                             saveImageToGallery(self.depthImage!)
                             
-                            let testVertices = findEllipseVertices(from: self.depthImage!, for: self.imagePortion, with: self.rotationMatrix!)
+//                            let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, for: self.imagePortion, with: self.rotationMatrix!)
                             
                             let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
                             let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
@@ -331,10 +332,11 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Optional: Process depth data if available
         if let sceneDepth = frame.sceneDepth {
             // Convert the depth map to a UIImage
-            let depthMap = sceneDepth.depthMap
+//            let depthMap = applyNonLinearDepthTransformation(depthMap: sceneDepth.depthMap)
 
             // You could store or process the depth data here if needed
-            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: depthMap)
+//            self.depthImage = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
+            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
         }
         
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
