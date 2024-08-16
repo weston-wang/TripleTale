@@ -281,18 +281,18 @@ extension UIImage {
         return resultImage
     }
         
-        func applyingBlurWithRadius(_ radius: CGFloat) -> UIImage? {
-            guard let ciImage = CIImage(image: self) else { return nil }
-            let filter = CIFilter(name: "CIGaussianBlur")
-            filter?.setValue(ciImage, forKey: kCIInputImageKey)
-            filter?.setValue(radius, forKey: kCIInputRadiusKey)
-            
-            guard let outputImage = filter?.outputImage else { return nil }
-            let context = CIContext(options: nil)
-            guard let cgImage = context.createCGImage(outputImage, from: ciImage.extent) else { return nil }
-            
-            return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
-        }
+    func applyingBlurWithRadius(_ radius: CGFloat) -> UIImage? {
+        guard let ciImage = CIImage(image: self) else { return nil }
+        let filter = CIFilter(name: "CIGaussianBlur")
+        filter?.setValue(ciImage, forKey: kCIInputImageKey)
+        filter?.setValue(radius, forKey: kCIInputRadiusKey)
+        
+        guard let outputImage = filter?.outputImage else { return nil }
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(outputImage, from: ciImage.extent) else { return nil }
+        
+        return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
+    }
 }
 
 /// - Tag: UIViewController
