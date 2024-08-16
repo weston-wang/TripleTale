@@ -134,3 +134,123 @@ func centerEllipseROI(for ciImage: CIImage, portion: CGFloat, widthMultiplier: C
 
     return CGRect(x: roiX / imageSize.width, y: roiY / imageSize.height, width: ellipseWidth / imageSize.width, height: ellipseHeight / imageSize.height)
 }
+
+func detectContours(in image: UIImage, for portion: CGFloat) -> UIImage? {
+    guard let ciImage = CIImage(image: image) else { return nil }
+    
+    let roiRect = centerROI(for: ciImage, portion: portion)
+    
+    // Step 2: Create the request
+    let request = VNDetectContoursRequest()
+    request.contrastAdjustment = 1.0
+    request.detectsDarkOnLight = true
+    request.regionOfInterest = roiRect
+    
+    // Step 3: Perform the request
+    let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+    do {
+        try handler.perform([request])
+    } catch {
+        print("Failed to perform contour detection: \(error)")
+        return nil
+    }
+    
+    guard let contoursObservation = request.results?.first as? VNContoursObservation else {
+        print("No contours detected")
+        return nil
+    }
+    
+    // Step 4: Draw the contours on a new image
+    let size = image.size
+    UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+    guard let context = UIGraphicsGetCurrentContext() else { return nil }
+    
+    // Draw the original image as the background
+    image.draw(at: .zero)
+    
+    // Set up the drawing context
+    context.setStrokeColor(UIColor.red.cgColor)
+    context.setLineWidth(2.0)
+    
+    // Draw each contour within the ROI
+    for i in 0..<contoursObservation.contourCount {
+        if let contour = try? contoursObservation.contour(at: i) {
+            let path = CGMutablePath()
+            
+            let points = contour.normalizedPoints
+            if points.isEmpty { continue }
+            
+            // Convert normalized points to image space within the ROI and flip y-coordinate
+            let firstPoint = CGPoint(
+                x: roiRect.minX * size.width + roiRect.width * size.width * CGFloat(points[0].x),
+                y: size.height - (roiRect.minY * size.height + roiRect.height * size.height * CGFloat(points[0].y))
+            )
+            path.move(to: firstPoint)
+            
+            for point in points.dropFirst() {
+                let convertedPoint = CGPoint(
+                    x: roiRect.minX * size.width + roiRect.width * size.width * CGFloat(point.x),
+                    y: size.height - (roiRect.minY * size.height + roiRect.height * size.height * CGFloat(point.y))
+                )
+                path.addLine(to: convertedPoint)
+            }
+            path.closeSubpath()
+            
+            context.addPath(path)
+            context.strokePath()
+        }
+    }
+    
+    // Step 5: Get the resulting image
+    let resultImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    
+    return resultImage
+}
+
+func detectSalientRegion(in image: UIImage, for portion: CGFloat) -> UIImage? {
+    guard let ciImage = CIImage(image: image) else { return nil }
+
+    let request = VNGenerateAttentionBasedSaliencyImageRequest()
+
+    let roiRect = centerROI(for: ciImage, portion: portion)
+
+    // If ROI is provided, we set it to the request
+    request.regionOfInterest = roiRect
+
+    let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+    do {
+        try handler.perform([request])
+    } catch {
+        print("Failed to perform saliency detection: \(error)")
+        return nil
+    }
+
+    guard let observation = request.results?.first as? VNSaliencyImageObservation else {
+        print("No saliency detected")
+        return nil
+    }
+
+    // Get the salient region from the saliency observation
+    guard let salientRegion = observation.salientObjects?.first else {
+        print("No salient region detected")
+        return nil
+    }
+
+    let size = image.size
+    UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+    guard let context = UIGraphicsGetCurrentContext() else { return nil }
+
+    // Draw the original image as the background
+    image.draw(at: .zero)
+
+    // Draw the detected salient region (the bounding box)
+    context.setStrokeColor(UIColor.red.cgColor)
+    context.setLineWidth(2.0)
+    context.stroke(salientRegion.boundingBox.applying(CGAffineTransform(scaleX: size.width, y: size.height)))
+
+    let resultImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    return resultImage
+}

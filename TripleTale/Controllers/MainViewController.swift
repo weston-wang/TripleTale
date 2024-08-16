@@ -138,10 +138,15 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
                         }
                     } else {
-                        let testVertices = findEllipseVerticesVertical(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!)
+                        let blurredImage = inputImage.applyBlurOutsideEllipse(portion: self.imagePortion)
+//                        saveImageToGallery(blurredImage!)
+//                        let contourImage = detectSalientRegion(in: blurredImage!, for: self.imagePortion)
+//                        saveImageToGallery(contourImage!)
+
+                        let testVertices = findEllipseVerticesVertical(from: blurredImage!, for: self.imagePortion, with: self.rotationMatrix!)
                         let (testVerticesAnchors, _, _, _) = buildRealWorldVerticesAnchors(self.sceneView, testVertices!, inputImage.size)
                         
-                        let forkLenght = calculateDistanceBetweenAnchors2DVert(anchor1: testVerticesAnchors[1], anchor2: testVerticesAnchors[3])
+                        let forkLenght = calculateDistanceBetweenAnchors2DVert(anchor1: testVerticesAnchors[0], anchor2: testVerticesAnchors[2])
 
                         (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght, self.identifierString)
                     }

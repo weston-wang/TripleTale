@@ -72,7 +72,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, with rotatio
 
 func findEllipseVerticesVertical(from image: UIImage, for portion: CGFloat, with rotationMatrix: simd_float4x4) -> [CGPoint]? {
     guard let ciImage = CIImage(image: image) else { return nil }
-    if let maskImage = generateMaskImage(from: ciImage, for: portion, widthMultiplier: 1.0) {
+    if let maskImage = generateMaskImage(from: ciImage, for: portion) {
 //        let outputImage = applyMask(maskImage, to: ciImage)
         
         // Create a CIContext
