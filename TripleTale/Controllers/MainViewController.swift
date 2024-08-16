@@ -115,41 +115,41 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
             if self.isFrozen {
                 if let inputImage = self.saveImage {
-                    if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!) {
-                        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
-                        
-//                        self.sceneView.session.add(anchor: centroidAboveAnchor)
-//                        self.anchorLabels[centroidAboveAnchor.identifier] = "above"
+//                    self.sceneView.session.add(anchor: centroidAboveAnchor)
+//                    self.anchorLabels[centroidAboveAnchor.identifier] = "above"
 
-                        var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
-                        var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
-                        var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
-                        var heightInInches = Measurement(value: 0, unit: UnitLength.inches)
-                        var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
+                    var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    var heightInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
-                        if !self.isForwardFacing {
+                    if !self.isForwardFacing {
+                        if let normalizedVertices = findEllipseVertices(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!) {
+                            let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, inputImage.size)
+                            
                             var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor, centroidBelowAnchor)
                             
                             length = length * Float(self.lengthNudge)
                             width = width * Float(self.widthNudge)
-
-                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-
-                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
-                        } else {
-                            let testVertices = findEllipseVerticesVertical(from: self.depthImage!, for: self.imagePortion, with: self.rotationMatrix!)
-                            let (testVerticesAnchors, _, _, _) = buildRealWorldVerticesAnchors(self.sceneView, testVertices!, inputImage.size)
                             
-                            let forkLenght = calculateDistanceBetweenAnchors2DVert(anchor1: testVerticesAnchors[0], anchor2: testVerticesAnchors[2])
-
-                            (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght, self.identifierString)
+                            let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+                            
+                            (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
                         }
+                    } else {
+                        let testVertices = findEllipseVerticesVertical(from: inputImage, for: self.imagePortion, with: self.rotationMatrix!)
+                        let (testVerticesAnchors, _, _, _) = buildRealWorldVerticesAnchors(self.sceneView, testVertices!, inputImage.size)
                         
-                        if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
-                            self.showImagePopup(combinedImage: combinedImage)
-                        } else {
-                            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-                        }
+                        let forkLenght = calculateDistanceBetweenAnchors2DVert(anchor1: testVerticesAnchors[1], anchor2: testVerticesAnchors[3])
+
+                        (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght, self.identifierString)
+                    }
+                    
+                    if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
+                        self.showImagePopup(combinedImage: combinedImage)
+                    } else {
+                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                     }
                 }
                 
