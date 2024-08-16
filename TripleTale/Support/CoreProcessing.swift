@@ -70,79 +70,49 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, with rotatio
 }
 
 
-func findEllipseVerticesUsingDepth(from depthImage: UIImage, on inputImage: UIImage, for portion: CGFloat, with rotationMatrix: simd_float4x4) -> [CGPoint]? {
-    guard let depthCIImage = CIImage(image: depthImage) else { return nil }
-    guard let inputCIImage = CIImage(image: inputImage) else { return nil }
-
-    // Calculate the scale factors based on the size difference
-    let scaleX = inputCIImage.extent.width / depthCIImage.extent.width
-    let scaleY = inputCIImage.extent.height / depthCIImage.extent.height
-
-    // Apply the scaling
-    let resizedDepthMask = depthCIImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-    
-    let maskFilter = CIFilter(name: "CIMultiplyCompositing")!
-    maskFilter.setValue(inputCIImage, forKey: kCIInputImageKey)
-    maskFilter.setValue(resizedDepthMask, forKey: kCIInputBackgroundImageKey)
-
-    guard let maskedCIImage = maskFilter.outputImage else {
-        fatalError("Unable to mask input image with depth map")
-    }
-    
-    // Create a CIContext
-    let context = CIContext()
-    
-    guard let cgImage = context.createCGImage(maskedCIImage, from: maskedCIImage.extent) else {
-        fatalError("Unable to create CGImage from masked CIImage")
-    }
-
-    let maskedUIImage = UIImage(cgImage: cgImage)
-    
-    guard let maskedCIImage = CIImage(image: maskedUIImage) else { return nil }
-    guard let maskImage = generateMaskImage(from: maskedCIImage, for: portion) else { return nil }
-
-    // Create a CGImage from the CIImage
-    if let cgImage = context.createCGImage(maskImage, from: maskImage.extent) {
-        // Convert the CGImage to a UIImage
-        let maskUiImage = UIImage(cgImage: cgImage)
+func findEllipseVerticesVertical(from image: UIImage, for portion: CGFloat, with rotationMatrix: simd_float4x4) -> [CGPoint]? {
+    guard let ciImage = CIImage(image: image) else { return nil }
+    if let maskImage = generateMaskImage(from: ciImage, for: portion, widthMultiplier: 1.0) {
+//        let outputImage = applyMask(maskImage, to: ciImage)
         
-//            saveImageToGallery(maskUiImage)
+        // Create a CIContext
+        let context = CIContext()
 
-        // Correct the rotation of the UIImage based on the phone's orientation
-//            if let correctedImage = correctImagePerspective(cameraTransform: rotationMatrix, image: maskUiImage) {
-//                // Use the corrected image
-//                saveImageToGallery(correctedImage)
-//
-//            }
-        
-        if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
-                let width = cgImage.width
-                let height = cgImage.height
-                let contours = extractContours(from: pixelData, width: width, height: height)
-                if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
-                    if let ellipse = fitEllipseMinimax(to: closestContour) {
-                        let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+        // Create a CGImage from the CIImage
+        if let cgImage = context.createCGImage(maskImage, from: maskImage.extent) {
+            // Convert the CGImage to a UIImage
+            let maskUiImage = UIImage(cgImage: cgImage)
+            
+            if let pixelData = convertCGImageToGrayscalePixelData(cgImage) {
+                    let width = cgImage.width
+                    let height = cgImage.height
+                    let contours = extractContours(from: pixelData, width: width, height: height)
+                    if let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) {
+                        if let ellipse = fitEllipseMinimax(to: closestContour) {
+                            let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
 
-                        let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
-                        
-                        let tipsNormalized = tips.map { point in
-                            CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
+                            let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
+                            
+                            let tipsNormalized = tips.map { point in
+                                CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
+                            }
+
+                            if let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
+                                // Use the resultImage, e.g., display it in an UIImageView or save it
+                                saveImageToGallery(resultImage)
+                            }
+                            
+                            return tipsNormalized
+
                         }
-
-                        if let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips) {
-                            // Use the resultImage, e.g., display it in an UIImageView or save it
-                            saveImageToGallery(resultImage)
-                        }
-                        
-                        return tipsNormalized
-
                     }
                 }
-            }
+        }
+        
     }
-    
     return nil
 }
+
 
 func processImage(_ inputImage: UIImage, _ currentView: ARSKView, _ isForward: Bool, _ fishName: String, _ portion: CGFloat ) -> UIImage? {
     // isolate fish through foreground vs background separation

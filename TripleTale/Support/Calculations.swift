@@ -60,6 +60,21 @@ func calculateDistanceBetweenAnchors2D(anchor1: ARAnchor, anchor2: ARAnchor) -> 
     return distance
 }
 
+func calculateDistanceBetweenAnchors2DVert(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+        // Retrieve the positions
+    let position1 = anchor1.transform.columns.3
+    let position2 = anchor2.transform.columns.3
+    
+    // Calculate the differences in x and z directions
+    let deltaX = position2.x - position1.x
+    let deltaZ = position2.y - position1.y
+    
+    // Compute the distance in the x and z directions
+    let distance = sqrt(deltaX * deltaX + deltaZ * deltaZ)
+    
+    return distance
+}
+
 /// Calculates the circumference of an oval, adjusting for a 'roundness' factor.
 /// - Parameters:
 ///   - a: Semi-major axis of the oval.

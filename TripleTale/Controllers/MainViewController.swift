@@ -128,7 +128,6 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                         var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
                         if !self.isForwardFacing {
-                            
                             var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor, centroidBelowAnchor)
                             
                             length = length * Float(self.lengthNudge)
@@ -138,15 +137,12 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
 
                             (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
                         } else {
-                            saveImageToGallery(self.depthImage!)
+                            let testVertices = findEllipseVerticesVertical(from: self.depthImage!, for: self.imagePortion, with: self.rotationMatrix!)
+                            let (testVerticesAnchors, _, _, _) = buildRealWorldVerticesAnchors(self.sceneView, testVertices!, inputImage.size)
                             
-//                            let testVertices = findEllipseVerticesUsingDepth(from: self.depthImage!, on: self.saveImage!, for: self.imagePortion, with: self.rotationMatrix!)
-                            
-                            let measurement1 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
-                            let measurement2 = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
-                            let forkLenght = [measurement1, measurement2].max()
-                        
-                            (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght!, self.identifierString)
+                            let forkLenght = calculateDistanceBetweenAnchors2DVert(anchor1: testVerticesAnchors[0], anchor2: testVerticesAnchors[2])
+
+                            (weightInLb, lengthInInches) = calculateWeightFromFork(forkLenght, self.identifierString)
                         }
                         
                         if let combinedImage = generateResultImage(inputImage, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
