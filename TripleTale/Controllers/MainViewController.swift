@@ -311,6 +311,8 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
         // Enable depth data (only works on LiDAR-equipped devices)
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            configuration.frameSemantics.insert(.personSegmentationWithDepth)
         } else {
             print("Device does not support scene depth")
         }
@@ -341,14 +343,19 @@ class MainViewController: UIViewController, ARSKViewDelegate, ARSessionDelegate 
                 
         
         // Optional: Process depth data if available
-        if let sceneDepth = frame.sceneDepth {
-            // Convert the depth map to a UIImage
-//            let depthMap = applyNonLinearDepthTransformation(depthMap: sceneDepth.depthMap)
-
-            // You could store or process the depth data here if needed
-//            self.depthMask = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
-            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
-        }
+//        if let sceneDepth = frame.sceneDepth {
+//            // Convert the depth map to a UIImage
+////            let depthMap = applyNonLinearDepthTransformation(depthMap: sceneDepth.depthMap)
+//
+//            // You could store or process the depth data here if needed
+////            self.depthMask = depthMapToBinaryMask(depthPixelBuffer: sceneDepth.depthMap)
+//            self.depthImage = pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+//        }     // Use person segmentation with depth for non-LiDAR devices
+//        
+//        else if let segmentationBuffer = frame.estimatedDepthData {
+//            self.depthImage = pixelBufferToUIImage(pixelBuffer: segmentationBuffer)
+//        }
+        
         
         self.saveImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
         
