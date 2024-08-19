@@ -28,7 +28,48 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
 
     let motionManager = CMMotionManager()
     private var isForwardFacing = false
+    
+    // Classification results
+    private var identifierString = ""
+    private var confidence: VNConfidence = 0.0
+    private var boundingBox: CGRect?
+    
+    // The pixel buffer being held for analysis; used to serialize Vision requests.
+    private var currentBuffer: CVPixelBuffer?
+    private var visionQueue = DispatchQueue(label: "visionQueue")
 
+    /// The ML model to be used for detection of fish
+    private var tripleTaleModel: TripleTaleV2 = {
+        do {
+            let configuration = MLModelConfiguration()
+            return try TripleTaleV2(configuration: configuration)
+        } catch {
+            fatalError("Couldn't create TripleTaleV2 due to: \(error)")
+        }
+    }()
+    
+    private lazy var mlRequest: VNCoreMLRequest = {
+        do {
+            // Instantiate the model from its generated Swift class.
+            let model = try VNCoreMLModel(for: tripleTaleModel.model)
+            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
+                if let result = processObservations(for: request, error: error) {
+                    DispatchQueue.main.async {
+                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
+                    }
+                }
+            })
+
+            return request
+        } catch {
+            fatalError("Failed to load Vision ML model: \(error)")
+        }
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -134,6 +175,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
                     // Save the image to the photo album
                     saveImageToGallery(image)
+                    
+                    let testImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
+                    saveImageToGallery(testImage!)
                 }
                 
                 self.isFrozen.toggle()
@@ -190,4 +234,34 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         let image = arSCNView.snapshot()
         return image
     }
+    
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        guard let currentFrame = sceneView.session.currentFrame else { return }
+
+        // Get the pixel buffer from the current ARFrame
+        currentBuffer = currentFrame.capturedImage
+
+        // Perform the ML request on the visionQueue
+        let orientation = CGImagePropertyOrientation(rawValue: UInt32(UIDevice.current.orientation.rawValue))!
+        let requestHandler = VNImageRequestHandler(cvPixelBuffer: currentBuffer!, orientation: orientation)
+        
+        visionQueue.async {
+            do {
+                // Release the pixel buffer when done, allowing the next buffer to be processed.
+                defer { self.currentBuffer = nil }
+                try requestHandler.perform([self.mlRequest])
+            } catch {
+                print("Error: Vision request failed with error \"\(error)\"")
+            }
+        }
+    }
+    
+    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
+        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
+        self.identifierString = identifier
+        self.confidence = confidence
+        self.boundingBox = boundingBox ?? .zero        
+    }
 }
+
+
