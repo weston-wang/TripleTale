@@ -85,6 +85,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         // Add the freeze button and other UI elements
         freezeButton = createFreezeButton()
         view.addSubview(freezeButton!)
+        
+        // Create a transparent view for the bottom left corner
+        let cornerView = createCornerView(withSize: 100)
+        view.addSubview(cornerView)
 
         let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration)
@@ -114,23 +118,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         }
         
         
-        // Create a transparent view for the bottom left corner
-        let cornerView = UIView()
-        cornerView.translatesAutoresizingMaskIntoConstraints = false
-        cornerView.backgroundColor = UIColor.clear
-        view.addSubview(cornerView)
-        
-        // Set constraints to position the view in the bottom left corner
-        NSLayoutConstraint.activate([
-            cornerView.widthAnchor.constraint(equalToConstant: 100), // Adjust size as needed
-            cornerView.heightAnchor.constraint(equalToConstant: 100), // Adjust size as needed
-            cornerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            cornerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
-        ])
-        
-        // Add tap gesture recognizer to the corner view
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture))
-        cornerView.addGestureRecognizer(tapGesture)
         
     }
 
@@ -203,6 +190,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         return button
     }
     
+    func createCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) -> UIView {
+        let cornerView = UIView()
+        cornerView.backgroundColor = backgroundColor
+        
+        // Set the frame to place the view near the bottom left corner
+        let xPosition: CGFloat = 20 // Adjust as needed
+        let yPosition: CGFloat = view.bounds.height - size - 20 // Adjust as needed
+        cornerView.frame = CGRect(x: xPosition, y: yPosition, width: size, height: size)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture))
+        cornerView.addGestureRecognizer(tapGesture)
+
+        return cornerView
+    }
+    
     func updateBracketSize() {
         guard let bracketView = bracketView else { return }
         
@@ -260,7 +262,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         // Update your UI or perform other actions with the identifier, confidence, and boundingBox
         self.identifierString = identifier
         self.confidence = confidence
-        self.boundingBox = boundingBox ?? .zero        
+        self.boundingBox = boundingBox ?? .zero
     }
 }
 
