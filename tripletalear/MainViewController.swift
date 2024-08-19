@@ -96,29 +96,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         // Initial bracket update
         updateBracketSize()
         
-        
-        // Check if the motion is available
-        guard motionManager.isDeviceMotionAvailable else {
-            print("Motion Sensor is not available")
-            return
-        }
-        
         // Start Device Motion Updates
-        motionManager.startDeviceMotionUpdates(to: .main) { (motion, error) in
-            guard let motion = motion else { return }
-            
-            let previousFacing = self.isForwardFacing
-            self.isForwardFacing = self.detectOrientation(attitude: motion.attitude)
-            
-            if self.isForwardFacing != previousFacing {
-                
-                // Update the bracket size based on the current state
-                self.updateBracketSize()
-            }
-        }
-        
-        
-        
+        startDeviceMotionUpdates()
     }
 
     
@@ -203,6 +182,28 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         cornerView.addGestureRecognizer(tapGesture)
 
         return cornerView
+    }
+    
+    func startDeviceMotionUpdates() {
+        // Check if the motion is available
+        guard motionManager.isDeviceMotionAvailable else {
+            print("Motion Sensor is not available")
+            return
+        }
+
+        // Start Device Motion Updates
+        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
+            guard let self = self else { return }
+            guard let motion = motion else { return }
+
+            let previousFacing = self.isForwardFacing
+            self.isForwardFacing = self.detectOrientation(attitude: motion.attitude)
+
+            if self.isForwardFacing != previousFacing {
+                // Update the bracket size based on the current state
+                self.updateBracketSize()
+            }
+        }
     }
     
     func updateBracketSize() {
