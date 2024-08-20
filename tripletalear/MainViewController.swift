@@ -138,7 +138,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
             let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
             feedbackGenerator.prepare()
             feedbackGenerator.impactOccurred()
-
             
             if self.isFrozen {
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
@@ -290,24 +289,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
-    
-    
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        // Create a visual representation of the anchor (e.g., a sphere)
-        let sphere = SCNSphere(radius: 0.005) // 0.5 cm sphere
-        
-        var setColor = UIColor.red
-        if anchor is ARPlaneAnchor {
-            setColor = UIColor.green
+        if !(anchor is ARPlaneAnchor) {
+            // Create a visual representation of the anchor (e.g., a sphere)
+            let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
+            
+            sphere.firstMaterial?.diffuse.contents = UIColor.red // Example color
+
+            // Create a node with this geometry
+            let sphereNode = SCNNode(geometry: sphere)
+
+            // Attach the node to the anchor's node
+            node.addChildNode(sphereNode)
         }
-        sphere.firstMaterial?.diffuse.contents = setColor // Example color
-
-        // Create a node with this geometry
-        let sphereNode = SCNNode(geometry: sphere)
-
-        // Attach the node to the anchor's node
-        node.addChildNode(sphereNode)
     }
     
     func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
