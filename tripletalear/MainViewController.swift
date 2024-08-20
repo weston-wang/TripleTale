@@ -263,27 +263,40 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         let image = arSCNView.snapshot()
         return image
     }
-    
+ 
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         guard let currentFrame = sceneView.session.currentFrame else { return }
 
         // Get the pixel buffer from the current ARFrame
         currentBuffer = currentFrame.capturedImage
-
+        
+        // Lock the pixel buffer base address
+        CVPixelBufferLockBaseAddress(currentBuffer!, .readOnly)
+        
         // Perform the ML request on the visionQueue
         let orientation = CGImagePropertyOrientation(rawValue: UInt32(UIDevice.current.orientation.rawValue))!
         let requestHandler = VNImageRequestHandler(cvPixelBuffer: currentBuffer!, orientation: orientation)
         
         visionQueue.async {
+            defer {
+                // Unlock the pixel buffer when done, allowing the next buffer to be processed
+                CVPixelBufferUnlockBaseAddress(self.currentBuffer!, .readOnly)
+            }
+            
             do {
-                // Release the pixel buffer when done, allowing the next buffer to be processed.
-                defer { self.currentBuffer = nil }
+                // Perform the ML request
                 try requestHandler.perform([self.mlRequest])
+                
+                // Convert the pixel buffer to UIImage
+                self.currentImage = pixelBufferToUIImage(pixelBuffer: self.self.currentBuffer!)
+                
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")
             }
         }
     }
+    
+    
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
