@@ -92,6 +92,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         view.addSubview(cornerView)
 
         let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical] // Detect both horizontal and vertical planes
         sceneView.session.run(configuration)
         
         // Initial bracket update
@@ -140,35 +141,33 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
 
             
             if self.isFrozen {
-                var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
-                var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
-                var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
-                var heightInInches = Measurement(value: 0, unit: UnitLength.inches)
-                var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
-
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
-                    let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
-
-                    let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
-                    
-                    var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
-                    
-                    length = length * Float(self.lengthNudge)
-                    width = width * Float(self.widthNudge)
-                    
-                    let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-                    
-                    (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
-                                      
-                    if let combinedImage = generateResultImage(self.currentImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
-                        self.showImagePopup(combinedImage: combinedImage)
-                    } else {
-                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-                    }
+                    self.calculateAndDisplayWeight(with: image, at: self.imagePortion)
                 }
                 
                 self.isFrozen.toggle()
             }
+        }
+    }
+    
+    func calculateAndDisplayWeight(with image: UIImage, at portion: CGFloat) {
+        let normalizedVertices = findEllipseVertices(from: image, for: portion, debug: true)!
+
+        let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+        
+        var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
+        
+        length = length * Float(self.lengthNudge)
+        width = width * Float(self.widthNudge)
+        
+        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+        
+        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
+                          
+        if let combinedImage = generateResultImage(self.currentImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
+            self.showImagePopup(combinedImage: combinedImage)
+        } else {
+            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
         }
     }
     
@@ -302,7 +301,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         if anchor is ARPlaneAnchor {
             setColor = UIColor.green
         }
-        
         sphere.firstMaterial?.diffuse.contents = setColor // Example color
 
         // Create a node with this geometry
