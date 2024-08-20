@@ -141,21 +141,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
                     saveImageToGallery(image)
                     
+                    // get foreground mask
                     let maskImage = generateMaskImage(from: image, for: self.imagePortion)
                     let maskUiImage = maskImage!.toUIImage()!
                     
+                    // turn into gray scale pixel data
                     let context = CIContext()
                     let cgImage = context.createCGImage(maskImage!, from: maskImage!.extent)
                     let pixelData = convertCGImageToGrayscalePixelData(cgImage!)
 
+                    // find all contours
                     let width = cgImage!.width
                     let height = cgImage!.height
                     let contours = extractContours(from: pixelData!, width: width, height: height)
                     
+                    // find center contour
                     let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height)
                     
+                    // fit ellipse
                     let ellipse = fitEllipseMinimax(to: closestContour!)
                     
+                    // find ellipse tips to use for measurements
                     let size = CGSize(width: ellipse!.size.width, height: ellipse!.size.height)
                     let tips = calculateEllipseTips(center: ellipse!.center, size: size, rotation: ellipse!.rotationInDegrees)
                     
@@ -163,6 +169,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                         CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
                     }
 
+                    // for display only
                     let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour!, ellipse: (center: ellipse!.center, size: size, rotation: ellipse!.rotationInDegrees), tips: tips)
                     
                     saveImageToGallery(resultImage!)
