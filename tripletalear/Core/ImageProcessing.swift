@@ -195,3 +195,36 @@ func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closes
 
     return renderedImage
 }
+
+func calculateRectangleCorners(_ vertices: [CGPoint], _ ditherX: CGFloat, _ ditherY: CGFloat) -> [CGPoint] {
+    guard vertices.count == 4 else {
+        fatalError("There must be exactly 4 vertices.")
+    }
+
+    // Calculate the center
+    let centerX = (vertices[0].x + vertices[1].x + vertices[2].x + vertices[3].x) / 4
+    let centerY = (vertices[0].y + vertices[1].y + vertices[2].y + vertices[3].y) / 4
+    let center = CGPoint(x: centerX, y: centerY)
+
+    // Calculate the angle of rotation
+    let angle = atan2(vertices[2].y - vertices[0].y, vertices[2].x - vertices[0].x)
+    
+    // Calculate the semi-major and semi-minor axes lengths
+    let a = sqrt(pow(vertices[2].x - vertices[0].x, 2) + pow(vertices[2].y - vertices[0].y, 2)) / 2 * (1.0 + ditherY)
+    let b = sqrt(pow(vertices[3].x - vertices[1].x, 2) + pow(vertices[3].y - vertices[1].y, 2)) / 2 * (1.0 + ditherX)
+    
+    // Calculate the corners
+    let corner1 = CGPoint(x: center.x + a * cos(angle) - b * sin(angle),
+                          y: center.y + a * sin(angle) + b * cos(angle))
+    
+    let corner2 = CGPoint(x: center.x - a * cos(angle) - b * sin(angle),
+                          y: center.y - a * sin(angle) + b * cos(angle))
+    
+    let corner3 = CGPoint(x: center.x - a * cos(angle) + b * sin(angle),
+                          y: center.y - a * sin(angle) - b * cos(angle))
+    
+    let corner4 = CGPoint(x: center.x + a * cos(angle) + b * sin(angle),
+                          y: center.y + a * sin(angle) - b * cos(angle))
+
+    return [corner1, corner2, corner3, corner4]
+}

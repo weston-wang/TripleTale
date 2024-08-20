@@ -108,3 +108,13 @@ func convertCGImageToGrayscalePixelData(_ cgImage: CGImage) -> [UInt8]? {
     context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
     return pixelData
 }
+
+func position(from anchor: ARAnchor) -> SIMD3<Float> {
+    return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
+}
+
+func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Float, horizontalScaleFactor: Float) -> simd_float3 {
+    let vector = point - center
+    let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
+    return center + scaledVector
+}

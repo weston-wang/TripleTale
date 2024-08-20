@@ -125,3 +125,9 @@ func findContourClosestToCenter(contours: [[CGPoint]], imageWidth: Int, imageHei
 
     return closestContour
 }
+
+func calculateDistanceToObject(_ inputAnchor: ARAnchor) -> Float {
+    let distance = sqrt(inputAnchor.transform.columns.3.x*inputAnchor.transform.columns.3.x + inputAnchor.transform.columns.3.y*inputAnchor.transform.columns.3.y + inputAnchor.transform.columns.3.z*inputAnchor.transform.columns.3.z)
+    
+    return distance
+}

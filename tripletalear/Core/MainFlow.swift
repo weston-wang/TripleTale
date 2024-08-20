@@ -55,3 +55,22 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     return tipsNormalized
 
 }
+
+func buildRealWorldVerticesAnchors(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], ARAnchor, ARAnchor, [ARAnchor]) {
+    var verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
+    
+    let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize)
+
+    let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // first one is tall, second is wide
+    let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
+    let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors)
+
+    let distanceToFish = calculateDistanceToObject(centroidAboveAnchor!)
+    let distanceToGround = calculateDistanceToObject(centroidBelowAnchor!)
+    let scalingFactor = distanceToFish / distanceToGround * 1.1
+    
+    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor, horizontalScaleFactor: scalingFactor)
+    
+    
+    return (verticesAnchors, centroidAboveAnchor!, centroidBelowAnchor!, cornerAnchors)
+}

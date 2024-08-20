@@ -142,12 +142,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                     saveImageToGallery(image)
                         
                     let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
-                    
-                    print("vertices: \(normalizedVertices)")
-                    
-                    let anchors = getVertices(self.sceneView, normalizedVertices, image.size)
-                    // The anchors will be automatically visualized as red spheres in the AR scene
-                    print("anchors: \(anchors)")
+
+                    let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+                    print("fish anchors: \(fishAnchors)")
+
                 }
                 
                 self.isFrozen.toggle()
