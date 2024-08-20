@@ -59,11 +59,9 @@
 		4EA49E292C74160900CDA5C9 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
+				4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */,
 				4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */,
 				4EA49E252C74145300CDA5C9 /* ComputerVision.swift */,
-				4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */,
-				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -75,7 +73,9 @@
 				4EA91EB32C730CA1001ACC69 /* Utilities.swift */,
 				4EA91EB92C730EBF001ACC69 /* Extensions.swift */,
 				4EA91EB72C730D28001ACC69 /* BracketView.swift */,
+				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
 				4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */,
+				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
