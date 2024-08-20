@@ -141,9 +141,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
                     // Save the image to the photo album
                     saveImageToGallery(image)
-                    
-                    let testImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
-                    saveImageToGallery(testImage!)
+                    let maskImage = generateMaskImage(from: image, for: self.imagePortion)
+                    saveImageToGallery(maskImage!.toUIImage()!)
+
                 }
                 
                 self.isFrozen.toggle()

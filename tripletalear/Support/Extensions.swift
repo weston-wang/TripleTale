@@ -384,3 +384,13 @@ extension UIViewController {
         present(alert, animated: true, completion: nil)
     }
 }
+
+extension CIImage {
+    func toUIImage() -> UIImage? {
+        let context = CIContext(options: nil)
+        if let cgImage = context.createCGImage(self, from: self.extent) {
+            return UIImage(cgImage: cgImage)
+        }
+        return nil
+    }
+}
