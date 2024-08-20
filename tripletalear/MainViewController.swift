@@ -36,6 +36,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var currentBuffer: CVPixelBuffer?
+    private var currentImage: UIImage?
     private var visionQueue = DispatchQueue(label: "visionQueue")
 
     /// The ML model to be used for detection of fish
@@ -137,7 +138,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
             feedbackGenerator.prepare()
             feedbackGenerator.impactOccurred()
 
+            
             if self.isFrozen {
+                var weightInLb = Measurement(value: 0, unit: UnitMass.pounds)
+                var widthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                var lengthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                var heightInInches = Measurement(value: 0, unit: UnitLength.inches)
+                var circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
+
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
                     saveImageToGallery(image)
                         
@@ -145,8 +153,24 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
 
                     let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
                     print("fish anchors: \(fishAnchors)")
-
+                    
+                    var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
+                    
+                    length = length * Float(self.lengthNudge)
+                    width = width * Float(self.widthNudge)
+                    
+                    let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+                    
+                    (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
+                    
+                    
+                    if let combinedImage = generateResultImage(self.currentImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
+                        self.showImagePopup(combinedImage: combinedImage)
+                    } else {
+                        self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+                    }
                 }
+                
                 
                 self.isFrozen.toggle()
             }
