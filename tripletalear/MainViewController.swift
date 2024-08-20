@@ -297,7 +297,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         // Create a visual representation of the anchor (e.g., a sphere)
         let sphere = SCNSphere(radius: 0.005) // 0.5 cm sphere
-        sphere.firstMaterial?.diffuse.contents = UIColor.red // Example color
+        
+        var setColor = UIColor.red
+        if anchor is ARPlaneAnchor {
+            setColor = UIColor.green
+        }
+        
+        sphere.firstMaterial?.diffuse.contents = setColor // Example color
 
         // Create a node with this geometry
         let sphereNode = SCNNode(geometry: sphere)

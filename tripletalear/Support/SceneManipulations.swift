@@ -26,31 +26,26 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 }
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-   let newAnchor: ARAnchor
+    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
+    
+    guard let result = hitTestResults.first else { return nil }
    
-   let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
-    if let result = hitTestResults.first {
-        newAnchor = ARAnchor(transform: result.worldTransform)
-    } else {
-        return nil
-    }
-   
-   return newAnchor
+    // Create and add an anchor at the raycast result's position
+    let anchor = ARAnchor(transform: result.worldTransform)
+    currentView.session.add(anchor: anchor)
+    
+    return anchor
 }
 
 func addAnchorWithRaycast(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
     // Create a raycast query from the screen point
-    guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else {
-        return nil
-    }
+    guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else { return nil }
     
     // Perform the raycast
     let raycastResults = currentView.session.raycast(raycastQuery)
     
     // Check if we have a valid result
-    guard let result = raycastResults.first else {
-        return nil
-    }
+    guard let result = raycastResults.first else { return nil }
     
     // Create and add an anchor at the raycast result's position
     let anchor = ARAnchor(transform: result.worldTransform)
