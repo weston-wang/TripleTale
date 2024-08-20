@@ -139,8 +139,10 @@ func calculateEllipseTips(center: CGPoint, size: CGSize, rotation: CGFloat) -> [
 func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat), tips: [CGPoint]) -> UIImage? {
     // Create a renderer format with the appropriate scale
     let format = UIGraphicsImageRendererFormat()
+    format.scale = image.scale // Match the input image scale
+
     let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
-    
+
     let renderedImage = renderer.image { context in
         // Draw the original image
         image.draw(at: .zero)
@@ -190,6 +192,6 @@ func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closes
             context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 10, height: 10))
         }
     }
-    
+
     return renderedImage
 }

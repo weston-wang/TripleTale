@@ -142,6 +142,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                     saveImageToGallery(image)
                         
                     let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
+                    
+                    print("vertices: \(normalizedVertices)")
+                    
+                    let anchors = getVertices(self.sceneView, normalizedVertices, image.size)
+                    // The anchors will be automatically visualized as red spheres in the AR scene
+                    print("anchors: \(anchors)")
                 }
                 
                 self.isFrozen.toggle()
@@ -255,6 +261,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 print("Error: Vision request failed with error \"\(error)\"")
             }
         }
+    }
+    
+    // This method is called whenever an ARAnchor is added to the session
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        // Create a visual representation of the anchor (e.g., a sphere)
+        let sphere = SCNSphere(radius: 0.005) // 0.5 cm sphere
+        sphere.firstMaterial?.diffuse.contents = UIColor.red // Example color
+
+        // Create a node with this geometry
+        let sphereNode = SCNNode(geometry: sphere)
+
+        // Attach the node to the anchor's node
+        node.addChildNode(sphereNode)
     }
     
     func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
