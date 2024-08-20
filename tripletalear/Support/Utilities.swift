@@ -85,3 +85,26 @@ func processObservations(for request: VNRequest, error: Error?) -> (identifierSt
 
     return (identifierString, confidence, boundingBox)
 }
+
+func convertCGImageToGrayscalePixelData(_ cgImage: CGImage) -> [UInt8]? {
+    let width = cgImage.width
+    let height = cgImage.height
+    let bitsPerComponent = 8
+    let bytesPerPixel = 1
+    let bytesPerRow = width * bytesPerPixel
+
+    var pixelData = [UInt8](repeating: 0, count: width * height)
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    guard let context = CGContext(data: &pixelData,
+                                  width: width,
+                                  height: height,
+                                  bitsPerComponent: bitsPerComponent,
+                                  bytesPerRow: bytesPerRow,
+                                  space: colorSpace,
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+        return nil
+    }
+
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+    return pixelData
+}

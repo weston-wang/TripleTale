@@ -64,3 +64,64 @@ func generateMaskImage(from image: UIImage, for portion: CGFloat) -> CIImage? {
     }
     return nil
 }
+
+func extractContours(from pixelData: [UInt8], width: Int, height: Int) -> [[CGPoint]] {
+    var contours = [[CGPoint]]()
+    var visited = Array(repeating: Array(repeating: false, count: width), count: height)
+    let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)] // 4-connected directions
+
+    func bfs(startX: Int, startY: Int) -> [CGPoint] {
+        var queue = [(x: Int, y: Int)]()
+        queue.append((startX, startY))
+        visited[startY][startX] = true
+        var contour = [CGPoint]()
+        
+        while !queue.isEmpty {
+            let (x, y) = queue.removeFirst()
+            contour.append(CGPoint(x: x, y: y))
+            
+            for (dx, dy) in directions {
+                let newX = x + dx
+                let newY = y + dy
+                if newX >= 0, newX < width, newY >= 0, newY < height, !visited[newY][newX], pixelData[newY * width + newX] == 255 {
+                    queue.append((newX, newY))
+                    visited[newY][newX] = true
+                }
+            }
+        }
+        
+        return contour
+    }
+
+    for y in 0..<height {
+        for x in 0..<width {
+            if pixelData[y * width + x] == 255 && !visited[y][x] {
+                let contour = bfs(startX: x, startY: y)
+                if !contour.isEmpty {
+                    contours.append(contour)
+                }
+            }
+        }
+    }
+
+    return contours
+}
+
+func findContourClosestToCenter(contours: [[CGPoint]], imageWidth: Int, imageHeight: Int) -> [CGPoint]? {
+    let center = CGPoint(x: imageWidth / 2, y: imageHeight / 2)
+    var minDistance = CGFloat.greatestFiniteMagnitude
+    var closestContour: [CGPoint]?
+
+    for contour in contours {
+        let contourCenter = contour.reduce(CGPoint.zero) { CGPoint(x: $0.x + $1.x, y: $0.y + $1.y) }
+        let avgContourCenter = CGPoint(x: contourCenter.x / CGFloat(contour.count), y: contourCenter.y / CGFloat(contour.count))
+        let distance = hypot(center.x - avgContourCenter.x, center.y - avgContourCenter.y)
+        
+        if distance < minDistance {
+            minDistance = distance
+            closestContour = contour
+        }
+    }
+
+    return closestContour
+}

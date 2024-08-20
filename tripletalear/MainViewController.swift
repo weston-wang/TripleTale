@@ -139,11 +139,33 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
 
             if self.isFrozen {
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
-                    // Save the image to the photo album
                     saveImageToGallery(image)
+                    
                     let maskImage = generateMaskImage(from: image, for: self.imagePortion)
-                    saveImageToGallery(maskImage!.toUIImage()!)
+                    let maskUiImage = maskImage!.toUIImage()!
+                    
+                    let context = CIContext()
+                    let cgImage = context.createCGImage(maskImage!, from: maskImage!.extent)
+                    let pixelData = convertCGImageToGrayscalePixelData(cgImage!)
 
+                    let width = cgImage!.width
+                    let height = cgImage!.height
+                    let contours = extractContours(from: pixelData!, width: width, height: height)
+                    
+                    let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height)
+                    
+                    let ellipse = fitEllipseMinimax(to: closestContour!)
+                    
+                    let size = CGSize(width: ellipse!.size.width, height: ellipse!.size.height)
+                    let tips = calculateEllipseTips(center: ellipse!.center, size: size, rotation: ellipse!.rotationInDegrees)
+                    
+                    let tipsNormalized = tips.map { point in
+                        CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
+                    }
+
+                    let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour!, ellipse: (center: ellipse!.center, size: size, rotation: ellipse!.rotationInDegrees), tips: tips)
+                    
+                    saveImageToGallery(resultImage!)
                 }
                 
                 self.isFrozen.toggle()
