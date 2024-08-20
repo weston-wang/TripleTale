@@ -25,6 +25,19 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
     return distance
 }
 
+func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
+   let newAnchor: ARAnchor
+   
+   let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
+    if let result = hitTestResults.first {
+        newAnchor = ARAnchor(transform: result.worldTransform)
+    } else {
+        return nil
+    }
+   
+   return newAnchor
+}
+
 func addAnchorWithRaycast(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
     // Create a raycast query from the screen point
     guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else {
@@ -54,7 +67,7 @@ func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ ca
         let vertexOnScreen = getScreenPosition(currentView, vertex.x, vertex.y, capturedImageSize)
                 
         // Use raycasting to add an anchor at the screen position
-        if let vertexAnchor = addAnchorWithRaycast(currentView, vertexOnScreen) {
+        if let vertexAnchor = addAnchor(currentView, vertexOnScreen) {
             verticesAnchors.append(vertexAnchor)
         }
     }
@@ -108,7 +121,7 @@ func getVerticesCenter(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint]
     
     let centroidOnScreen = getScreenPosition(currentView, centroid.x, centroid.y, capturedImageSize)
 
-    let centroidAnchor = addAnchorWithRaycast(currentView, centroidOnScreen)
+    let centroidAnchor = addAnchor(currentView, centroidOnScreen)
 
     return centroidAnchor
 }
@@ -117,16 +130,16 @@ func getAngledCorners(_ currentView: ARSCNView, _ corners: [CGPoint], _ captured
     var cornerAnchors: [ARAnchor] = []
     
     let leftTop = getScreenPosition(currentView, corners[0].x, corners[0].y, capturedImageSize)
-    let anchorLT = addAnchorWithRaycast(currentView, leftTop)!
+    let anchorLT = addAnchor(currentView, leftTop)!
 
     let rightTop = getScreenPosition(currentView, corners[1].x, corners[1].y, capturedImageSize)
-    let anchorRT = addAnchorWithRaycast(currentView, rightTop)!
+    let anchorRT = addAnchor(currentView, rightTop)!
     
     let leftBottom = getScreenPosition(currentView, corners[2].x, corners[2].y, capturedImageSize)
-    let anchorLB = addAnchorWithRaycast(currentView, leftBottom)!
+    let anchorLB = addAnchor(currentView, leftBottom)!
     
     let rightBottom = getScreenPosition(currentView, corners[3].x, corners[3].y, capturedImageSize)
-    let anchorRB = addAnchorWithRaycast(currentView, rightBottom)!
+    let anchorRB = addAnchor(currentView, rightBottom)!
     
     cornerAnchors.append(anchorLT)
     cornerAnchors.append(anchorRT)
