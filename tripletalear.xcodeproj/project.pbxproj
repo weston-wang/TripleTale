@@ -74,6 +74,18 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
+		4EA49E2D2C74DCF000CDA5C9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				4EA91EA92C730A28001ACC69 /* Assets.xcassets */,
+				4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */,
+				4EA91EA62C730A27001ACC69 /* Main.storyboard */,
+				4EA91EAB2C730A28001ACC69 /* LaunchScreen.storyboard */,
+				4EA91EA22C730A27001ACC69 /* art.scnassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		4EA91E942C730A27001ACC69 = {
 			isa = PBXGroup;
 			children = (
@@ -96,11 +108,7 @@
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
 				4EA49E2A2C74160F00CDA5C9 /* Support */,
 				4EA49E292C74160900CDA5C9 /* Core */,
-				4EA91EA22C730A27001ACC69 /* art.scnassets */,
-				4EA91EA92C730A28001ACC69 /* Assets.xcassets */,
-				4EA91EA62C730A27001ACC69 /* Main.storyboard */,
-				4EA91EAB2C730A28001ACC69 /* LaunchScreen.storyboard */,
-				4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */,
+				4EA49E2D2C74DCF000CDA5C9 /* Resources */,
 			);
 			path = tripletalear;
 			sourceTree = "<group>";
