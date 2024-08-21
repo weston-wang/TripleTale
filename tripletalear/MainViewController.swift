@@ -91,9 +91,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         let cornerView = createCornerView(withSize: 100)
         view.addSubview(cornerView)
 
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal, .vertical] // Detect both horizontal and vertical planes
-        sceneView.session.run(configuration)
+        startPlaneDetection()
+//        let configuration = ARWorldTrackingConfiguration()
+//        configuration.planeDetection = [.horizontal, .vertical] // Detect both horizontal and vertical planes
+//        sceneView.session.run(configuration)
         
         // Initial bracket update
         updateBracketSize()
@@ -101,7 +102,43 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         // Start Device Motion Updates
         startDeviceMotionUpdates()
     }
-
+    
+    func startBodyTracking() {
+        // Create and run body tracking configuration
+        let configuration = ARBodyTrackingConfiguration()
+        
+        // Enable depth data (only works on LiDAR-equipped devices)
+        if ARBodyTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            configuration.frameSemantics.insert(.personSegmentationWithDepth)
+        } else {
+            print("Device does not support scene depth")
+        }
+        
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
+    
+    func startPlaneDetection() {
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical]
+        
+        // Enable depth data (only works on LiDAR-equipped devices)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            configuration.frameSemantics.insert(.personSegmentationWithDepth)
+        } else {
+            print("Device does not support scene depth")
+        }
+        
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
+    
     
     @objc private func handleTapGesture() {
         tapCounter += 1
@@ -256,7 +293,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         let image = arSCNView.snapshot()
         return image
     }
- 
+    
+    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
+        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
+        self.identifierString = identifier
+        self.confidence = confidence
+        self.boundingBox = boundingBox ?? .zero
+    }
+    
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         guard let currentFrame = sceneView.session.currentFrame else { return }
 
@@ -305,12 +349,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
-    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
-        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
-        self.identifierString = identifier
-        self.confidence = confidence
-        self.boundingBox = boundingBox ?? .zero
-    }
 }
 
 
