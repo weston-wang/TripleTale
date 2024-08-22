@@ -92,11 +92,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         let cornerView = createCornerView(withSize: 100)
         view.addSubview(cornerView)
 
+        // Start AR
         startPlaneDetection()
-//        let configuration = ARWorldTrackingConfiguration()
-//        configuration.planeDetection = [.horizontal, .vertical] // Detect both horizontal and vertical planes
-//        sceneView.session.run(configuration)
-        
+
         // Initial bracket update
         updateBracketSize()
         
@@ -139,7 +137,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         }
         
         // If no depth data is available, return nil
-//        print("Depth data not available on this device.")
+        print("Depth data not available on this device.")
         return nil
     }
     
@@ -147,18 +145,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal, .vertical]
         configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
-
-//
-//        // Enable depth data (only works on LiDAR-equipped devices)
-//        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-//            configuration.frameSemantics.insert(.sceneDepth)
-//        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-//            configuration.frameSemantics.insert(.smoothedSceneDepth)
-//        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
-//            configuration.frameSemantics.insert(.personSegmentationWithDepth)
-//        } else {
-//            print("Device does not support scene depth")
-//        }
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
