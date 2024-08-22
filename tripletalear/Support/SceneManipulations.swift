@@ -26,33 +26,57 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 }
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
+    // First, attempt to use the raycast method
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
+        let raycastResults = currentView.session.raycast(raycastQuery)
+        
+        if let result = raycastResults.first {
+            let anchor = ARAnchor(transform: result.worldTransform)
+            currentView.session.add(anchor: anchor)
+            return anchor
+        }
+    }
+    
+    // Fallback to the hit-test method if raycast fails or is unavailable
     let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
     
-    guard let result = hitTestResults.first else { return nil }
-   
-    // Create and add an anchor at the raycast result's position
-    let anchor = ARAnchor(transform: result.worldTransform)
-    currentView.session.add(anchor: anchor)
+    if let result = hitTestResults.first {
+        let anchor = ARAnchor(transform: result.worldTransform)
+        currentView.session.add(anchor: anchor)
+        return anchor
+    }
     
-    return anchor
+    return nil
 }
 
-func addAnchorWithRaycast(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-    // Create a raycast query from the screen point
-    guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else { return nil }
-    
-    // Perform the raycast
-    let raycastResults = currentView.session.raycast(raycastQuery)
-    
-    // Check if we have a valid result
-    guard let result = raycastResults.first else { return nil }
-    
-    // Create and add an anchor at the raycast result's position
-    let anchor = ARAnchor(transform: result.worldTransform)
-    currentView.session.add(anchor: anchor)
-    
-    return anchor
-}
+//func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
+//    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
+//    
+//    guard let result = hitTestResults.first else { return nil }
+//   
+//    // Create and add an anchor at the raycast result's position
+//    let anchor = ARAnchor(transform: result.worldTransform)
+//    currentView.session.add(anchor: anchor)
+//    
+//    return anchor
+//}
+//
+//func addAnchorWithRaycast(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
+//    // Create a raycast query from the screen point
+//    guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else { return nil }
+//    
+//    // Perform the raycast
+//    let raycastResults = currentView.session.raycast(raycastQuery)
+//    
+//    // Check if we have a valid result
+//    guard let result = raycastResults.first else { return nil }
+//    
+//    // Create and add an anchor at the raycast result's position
+//    let anchor = ARAnchor(transform: result.worldTransform)
+//    currentView.session.add(anchor: anchor)
+//    
+//    return anchor
+//}
 
 func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> [ARAnchor] {
     var verticesAnchors: [ARAnchor] = []

@@ -37,6 +37,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var currentBuffer: CVPixelBuffer?
     private var currentImage: UIImage?
+    private var depthImage: UIImage?
     private var visionQueue = DispatchQueue(label: "visionQueue")
 
     /// The ML model to be used for detection of fish
@@ -120,6 +121,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
+
+    func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
+        // First, try to get sceneDepth from LiDAR-equipped devices
+        if let sceneDepth = currentFrame.sceneDepth {
+            return pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+        }
+        
+        // If sceneDepth is not available, check for smoothedSceneDepth (better quality for non-LiDAR devices)
+        if let smoothedSceneDepth = currentFrame.smoothedSceneDepth {
+            return pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
+        }
+        
+        // Fallback to estimatedDepthData if smoothedSceneDepth is not available
+        if let estimatedDepthData = currentFrame.estimatedDepthData {
+            return pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
+        }
+        
+        // If no depth data is available, return nil
+        print("Depth data not available on this device.")
+        return nil
+    }
     
     func startPlaneDetection() {
         let configuration = ARWorldTrackingConfiguration()
@@ -178,6 +200,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
             
             if self.isFrozen {
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
+                    saveImageToGallery(self.depthImage!)
                     self.calculateAndDisplayWeight(with: image, at: self.imagePortion)
                 }
                 
@@ -325,8 +348,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 try requestHandler.perform([self.mlRequest])
                 
                 // Convert the pixel buffer to UIImage
-                self.currentImage = pixelBufferToUIImage(pixelBuffer: self.self.currentBuffer!)
+                self.currentImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
                 
+                self.depthImage = self.getDepthMap(from: currentFrame)
+
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")
             }

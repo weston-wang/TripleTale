@@ -45,6 +45,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         let maskUiImage = maskImage.toUIImage()!
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
         
+        saveImageToGallery(image)
         saveImageToGallery(resultImage!)
     }
     
