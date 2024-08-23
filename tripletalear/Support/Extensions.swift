@@ -69,38 +69,70 @@ extension UIImage {
     }
     
     func cropEllipse(centeredIn size: CGSize) -> UIImage? {
-         // Calculate the rectangle for the ellipse
-         let rect = CGRect(x: (self.size.width - size.width) / 2,
-                           y: (self.size.height - size.height) / 2,
-                           width: size.width,
-                           height: size.height)
-         
-         // Begin a new image context
-         UIGraphicsBeginImageContextWithOptions(rect.size, false, self.scale)
-         guard let context = UIGraphicsGetCurrentContext() else {
-             return nil
-         }
-         
-         // Translate context so that the ellipse is centered in the final image
-         context.translateBy(x: -rect.origin.x, y: -rect.origin.y)
-         
-         // Create the path for the ellipse
-         let ellipsePath = UIBezierPath(ovalIn: rect)
-         
-         // Clip the context to the ellipse path
-         ellipsePath.addClip()
-         
-         // Draw the image in the context
-         self.draw(at: .zero)
-         
-         // Get the new image from the context
-         let newImage = UIGraphicsGetImageFromCurrentImageContext()
-         
-         // End the image context
-         UIGraphicsEndImageContext()
-         
-         return newImage
-     }
+        // Calculate the rectangle for the ellipse
+        let rect = CGRect(x: (self.size.width - size.width) / 2,
+                          y: (self.size.height - size.height) / 2,
+                          width: size.width,
+                          height: size.height)
+        
+        // Begin a new image context
+        UIGraphicsBeginImageContextWithOptions(rect.size, false, self.scale)
+        guard let context = UIGraphicsGetCurrentContext() else {
+            return nil
+        }
+        
+        // Translate context so that the ellipse is centered in the final image
+        context.translateBy(x: -rect.origin.x, y: -rect.origin.y)
+        
+        // Create the path for the ellipse
+        let ellipsePath = UIBezierPath(ovalIn: rect)
+        
+        // Clip the context to the ellipse path
+        ellipsePath.addClip()
+        
+        // Draw the image in the context
+        self.draw(at: .zero)
+        
+        // Get the new image from the context
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        
+        // End the image context
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
+    
+    func croppedToAspectRatio(size: CGSize) -> UIImage? {
+        let originalAspectRatio = self.size.width / self.size.height
+        let targetAspectRatio = size.width / size.height
+        
+        var newSize: CGSize
+        if originalAspectRatio > targetAspectRatio {
+            // Image is too wide, adjust width
+            newSize = CGSize(width: self.size.height * targetAspectRatio, height: self.size.height)
+        } else {
+            // Image is too tall, adjust height
+            newSize = CGSize(width: self.size.width, height: self.size.width / targetAspectRatio)
+        }
+        
+        let cropRect = CGRect(
+            x: (self.size.width - newSize.width) / 2,
+            y: (self.size.height - newSize.height) / 2,
+            width: newSize.width,
+            height: newSize.height
+        )
+        
+        guard let cgImage = self.cgImage?.cropping(to: cropRect) else { return nil }
+        return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
+    }
+    
+    func resized(to size: CGSize) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(size, false, self.scale)
+        self.draw(in: CGRect(origin: .zero, size: size))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return resizedImage
+    }
     
     func imageWithText(_ text: String, atPoint point: CGPoint, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
         let textAttributes: [NSAttributedString.Key: Any] = [
@@ -279,7 +311,7 @@ extension UIImage {
         
         return resultImage
     }
-        
+    
     func applyingBlurWithRadius(_ radius: CGFloat) -> UIImage? {
         guard let ciImage = CIImage(image: self) else { return nil }
         let filter = CIFilter(name: "CIGaussianBlur")

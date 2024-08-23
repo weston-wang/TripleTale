@@ -187,8 +187,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
             feedbackGenerator.impactOccurred()
             
             if self.isFrozen {
-                saveImageToGallery(self.depthImage!)
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
+                    self.depthImage = self.depthImage!.croppedToAspectRatio(size: image.size)
+                    self.depthImage = self.depthImage!.resized(to: image.size)
+                    saveImageToGallery(self.depthImage!)
+
                     self.calculateAndDisplayWeight(with: image, at: self.imagePortion)
                 }
                 
