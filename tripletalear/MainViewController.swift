@@ -102,54 +102,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         startDeviceMotionUpdates()
     }
     
-    func startBodyTracking() {
-        // Create and run body tracking configuration
-        let configuration = ARBodyTrackingConfiguration()
-        
-        // Enable depth data (only works on LiDAR-equipped devices)
-        if ARBodyTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics.insert(.sceneDepth)
-        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            configuration.frameSemantics.insert(.smoothedSceneDepth)
-        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
-            configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        } else {
-            print("Device does not support scene depth")
-        }
-        
-        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-    }
-
-    func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
-        // First, try to get sceneDepth from LiDAR-equipped devices
-        if let sceneDepth = currentFrame.sceneDepth {
-            return pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
-        }
-        
-        // If sceneDepth is not available, check for smoothedSceneDepth (better quality for non-LiDAR devices)
-        if let smoothedSceneDepth = currentFrame.smoothedSceneDepth {
-            return pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
-        }
-        
-        // Fallback to estimatedDepthData if smoothedSceneDepth is not available
-        if let estimatedDepthData = currentFrame.estimatedDepthData {
-            return pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
-        }
-        
-        // If no depth data is available, return nil
-        print("Depth data not available on this device.")
-        return nil
-    }
-    
-    func startPlaneDetection() {
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal, .vertical]
-        configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
-        
-        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-    }
-    
-    
     @objc private func handleTapGesture() {
         tapCounter += 1
         
@@ -301,6 +253,32 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     func detectOrientation(attitude: CMAttitude) -> Bool {
         return  attitude.pitch * 180 / .pi > 60.0
     }
+        
+    func startBodyTracking() {
+        // Create and run body tracking configuration
+        let configuration = ARBodyTrackingConfiguration()
+        
+        // Enable depth data (only works on LiDAR-equipped devices)
+        if ARBodyTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            configuration.frameSemantics.insert(.personSegmentationWithDepth)
+        } else {
+            print("Device does not support scene depth")
+        }
+        
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
+    
+    func startPlaneDetection() {
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical]
+        configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
+        
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
     
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
         // Capture the current view as a UIImage
@@ -313,6 +291,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         self.identifierString = identifier
         self.confidence = confidence
         self.boundingBox = boundingBox ?? .zero
+    }
+    
+    func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
+        // First, try to get sceneDepth from LiDAR-equipped devices
+        if let sceneDepth = currentFrame.sceneDepth {
+            return pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+        }
+        
+        // If sceneDepth is not available, check for smoothedSceneDepth (better quality for non-LiDAR devices)
+        if let smoothedSceneDepth = currentFrame.smoothedSceneDepth {
+            return pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
+        }
+        
+        // Fallback to estimatedDepthData if smoothedSceneDepth is not available
+        if let estimatedDepthData = currentFrame.estimatedDepthData {
+            return pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
+        }
+        
+        // If no depth data is available, return nil
+        print("Depth data not available on this device.")
+        return nil
     }
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
