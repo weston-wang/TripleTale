@@ -32,7 +32,7 @@
 		4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlow.swift; sourceTree = "<group>"; };
 		4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Measurements.swift; sourceTree = "<group>"; };
 		4EA49E302C750D1600CDA5C9 /* Visualizations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Visualizations.swift; sourceTree = "<group>"; };
-		4EA91E9D2C730A27001ACC69 /* tripletalear.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = tripletalear.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4EA91E9D2C730A27001ACC69 /* TripleTale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripleTale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EA91EA02C730A27001ACC69 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4EA91EA22C730A27001ACC69 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
 		4EA91EA42C730A27001ACC69 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -95,7 +95,7 @@
 		4EA91E942C730A27001ACC69 = {
 			isa = PBXGroup;
 			children = (
-				4EA91E9F2C730A27001ACC69 /* tripletalear */,
+				4EA91E9F2C730A27001ACC69 /* TripleTale */,
 				4EA91E9E2C730A27001ACC69 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -103,12 +103,12 @@
 		4EA91E9E2C730A27001ACC69 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4EA91E9D2C730A27001ACC69 /* tripletalear.app */,
+				4EA91E9D2C730A27001ACC69 /* TripleTale.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4EA91E9F2C730A27001ACC69 /* tripletalear */ = {
+		4EA91E9F2C730A27001ACC69 /* TripleTale */ = {
 			isa = PBXGroup;
 			children = (
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
@@ -116,15 +116,15 @@
 				4EA49E292C74160900CDA5C9 /* Core */,
 				4EA49E2D2C74DCF000CDA5C9 /* Resources */,
 			);
-			path = tripletalear;
+			path = TripleTale;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4EA91E9C2C730A27001ACC69 /* tripletalear */ = {
+		4EA91E9C2C730A27001ACC69 /* TripleTale */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4EA91EB02C730A28001ACC69 /* Build configuration list for PBXNativeTarget "tripletalear" */;
+			buildConfigurationList = 4EA91EB02C730A28001ACC69 /* Build configuration list for PBXNativeTarget "TripleTale" */;
 			buildPhases = (
 				4EA91E992C730A27001ACC69 /* Sources */,
 				4EA91E9A2C730A27001ACC69 /* Frameworks */,
@@ -134,9 +134,9 @@
 			);
 			dependencies = (
 			);
-			name = tripletalear;
+			name = TripleTale;
 			productName = tripletalear;
-			productReference = 4EA91E9D2C730A27001ACC69 /* tripletalear.app */;
+			productReference = 4EA91E9D2C730A27001ACC69 /* TripleTale.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -154,7 +154,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4EA91E982C730A27001ACC69 /* Build configuration list for PBXProject "tripletalear" */;
+			buildConfigurationList = 4EA91E982C730A27001ACC69 /* Build configuration list for PBXProject "TripleTale" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -167,7 +167,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4EA91E9C2C730A27001ACC69 /* tripletalear */,
+				4EA91E9C2C730A27001ACC69 /* TripleTale */,
 			);
 		};
 /* End PBXProject section */
@@ -369,8 +369,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletalear;
+				MARKETING_VERSION = 5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletaleapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -400,8 +400,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletalear;
+				MARKETING_VERSION = 5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletaleapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -412,7 +412,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4EA91E982C730A27001ACC69 /* Build configuration list for PBXProject "tripletalear" */ = {
+		4EA91E982C730A27001ACC69 /* Build configuration list for PBXProject "TripleTale" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4EA91EAE2C730A28001ACC69 /* Debug */,
@@ -421,7 +421,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4EA91EB02C730A28001ACC69 /* Build configuration list for PBXNativeTarget "tripletalear" */ = {
+		4EA91EB02C730A28001ACC69 /* Build configuration list for PBXNativeTarget "TripleTale" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4EA91EB12C730A28001ACC69 /* Debug */,

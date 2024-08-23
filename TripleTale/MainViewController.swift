@@ -38,7 +38,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     private var currentBuffer: CVPixelBuffer?
     private var currentImage: UIImage?
     private var depthImage: UIImage?
-    private var visionQueue = DispatchQueue(label: "visionQueue")
+    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
 
     /// The ML model to be used for detection of fish
     private var tripleTaleModel: TripleTaleV2 = {
