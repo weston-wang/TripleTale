@@ -187,8 +187,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
             feedbackGenerator.impactOccurred()
             
             if self.isFrozen {
+                saveImageToGallery(self.depthImage!)
                 if let image = self.captureFrameAsUIImage(from: self.sceneView) {
-                    saveImageToGallery(self.depthImage!)
                     self.calculateAndDisplayWeight(with: image, at: self.imagePortion)
                 }
                 
@@ -337,8 +337,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 
                 // Convert the pixel buffer to UIImage
                 self.currentImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
-                
-//                self.depthImage = self.getDepthMap(from: currentFrame)
+                self.depthImage = self.getDepthMap(from: currentFrame)
 
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")

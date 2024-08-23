@@ -110,7 +110,7 @@ extension UIImage {
         ]
         
         // Start drawing image context
-        UIGraphicsBeginImageContextWithOptions(self.size, false, 0.0)
+        UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
         defer { UIGraphicsEndImageContext() }
         
         // Draw the original image
@@ -146,7 +146,7 @@ extension UIImage {
         ]
         
         // Start drawing image context
-        UIGraphicsBeginImageContextWithOptions(self.size, false, 0.0)
+        UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
         defer { UIGraphicsEndImageContext() }
         
         // Draw the original image
@@ -180,7 +180,7 @@ extension UIImage {
         let mainImageSize = self.size
         let overlayImageSize = overlayImage.size
         
-        UIGraphicsBeginImageContextWithOptions(mainImageSize, false, 0.0)
+        UIGraphicsBeginImageContextWithOptions(mainImageSize, false, self.scale)
         
         // Draw the main image
         self.draw(in: CGRect(origin: .zero, size: mainImageSize))
