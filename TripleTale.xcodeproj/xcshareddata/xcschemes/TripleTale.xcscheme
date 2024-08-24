@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4EA91E9C2C730A27001ACC69"
-               BuildableName = "tripletalear.app"
-               BlueprintName = "tripletalear"
+               BuildableName = "TripleTale.app"
+               BlueprintName = "TripleTale"
                ReferencedContainer = "container:TripleTale.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4EA91E9C2C730A27001ACC69"
-            BuildableName = "tripletalear.app"
-            BlueprintName = "tripletalear"
+            BuildableName = "TripleTale.app"
+            BlueprintName = "TripleTale"
             ReferencedContainer = "container:TripleTale.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4EA91E9C2C730A27001ACC69"
-            BuildableName = "tripletalear.app"
-            BlueprintName = "tripletalear"
+            BuildableName = "TripleTale.app"
+            BlueprintName = "TripleTale"
             ReferencedContainer = "container:TripleTale.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

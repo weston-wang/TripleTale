@@ -139,12 +139,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
             feedbackGenerator.impactOccurred()
             
             if self.isFrozen {
-                if let image = self.captureFrameAsUIImage(from: self.sceneView) {
-                    self.depthImage = self.depthImage!.croppedToAspectRatio(size: image.size)
-                    self.depthImage = self.depthImage!.resized(to: image.size)
-                    saveImageToGallery(self.depthImage!)
+                var image: UIImage?
+                
+                if self.isForwardFacing, let depthImage = self.depthImage {
+                    let croppedImage = depthImage.croppedToAspectRatio(size: depthImage.size)
+                    image = croppedImage?.resized(to: depthImage.size)
+                } else {
+                    image = self.captureFrameAsUIImage(from: self.sceneView)
+                }
 
-                    self.calculateAndDisplayWeight(with: image, at: self.imagePortion)
+                if let image = image {
+                    self.calculateAndDisplayWeight(with: image)
                 }
                 
                 self.isFrozen.toggle()
@@ -152,8 +157,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
-    func calculateAndDisplayWeight(with image: UIImage, at portion: CGFloat) {
-        let normalizedVertices = findEllipseVertices(from: image, for: portion, debug: true)!
+    func calculateAndDisplayWeight(with image: UIImage) {
+        let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
 
         let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
