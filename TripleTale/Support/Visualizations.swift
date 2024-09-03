@@ -1,9 +1,8 @@
 //
 //  Visualizations.swift
-//  TripleTale
+//  tripletalear
 //
-//  Created by Wes Wang on 8/5/24.
-//  Copyright © 2024 Apple. All rights reserved.
+//  Created by Wes Wang on 8/20/24.
 //
 
 import Foundation
@@ -16,32 +15,64 @@ import Photos
 import CoreGraphics
 import CoreImage
 
-func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = nil, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
-    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
+func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat), tips: [CGPoint]) -> UIImage? {
+    // Create a renderer format with the appropriate scale
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = image.scale // Match the input image scale
 
-    let formattedLength = String(format: "%.2f", lengthInInches.value)
-    let formattedWeight = String(format: "%.2f", weightInLb.value)
-    let formattedWidth = String(format: "%.2f", widthInInches.value)
-    let formattedHeight = String(format: "%.2f", heightInInches.value)
-    let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
+    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
 
-//        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+        
+        // Set the contour drawing properties
+        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
+        context.cgContext.setLineWidth(1.0)
+        
+        // Draw all contours
+        for contour in contours {
+            context.cgContext.beginPath()
+            for point in contour {
+                if point == contour.first {
+                    context.cgContext.move(to: point)
+                } else {
+                    context.cgContext.addLine(to: point)
+                }
+            }
+            context.cgContext.strokePath()
+        }
+        
+        // Set the ellipse drawing properties
+        context.cgContext.setStrokeColor(UIColor.red.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Save the context state
+        context.cgContext.saveGState()
+        
+        // Move to the ellipse center
+        context.cgContext.translateBy(x: ellipse.center.x, y: ellipse.center.y)
+        
+        // Rotate the context
+        context.cgContext.rotate(by: ellipse.rotation * CGFloat.pi / 180)
+        
+        // Draw the ellipse
+        let rect = CGRect(x: -ellipse.size.width, y: -ellipse.size.height, width: 2 * ellipse.size.width, height: 2 * ellipse.size.height)
+        context.cgContext.strokeEllipse(in: rect)
+        
+        // Restore the context state
+        context.cgContext.restoreGState()
+        
+        // Set the tips drawing properties
+        context.cgContext.setFillColor(UIColor.green.cgColor)
+        
+        // Draw the tips
+        for tip in tips {
+            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 10, height: 10))
+        }
+    }
 
-    let weightTextImage = imageWithBox.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    
-    let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
-
-    let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
-    
-
-    let overlayImage = UIImage(named: "shimano_logo")!
-    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-    
-    saveImageToGallery(combinedImage!)
-    saveImageToGallery(inputImage)
-
-    return combinedImage!
+    return renderedImage
 }
 
 func drawRectanglesOnImage(image: UIImage, boundingBoxes: [CGRect]) -> UIImage {
@@ -109,64 +140,6 @@ func drawBracketsOnImage(image: UIImage, boundingBoxes: [CGRect], bracketLength:
     return newImage
 }
 
-func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat), tips: [CGPoint]) -> UIImage? {
-    // Create a renderer format with the appropriate scale
-    let format = UIGraphicsImageRendererFormat()
-    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
-    
-    let renderedImage = renderer.image { context in
-        // Draw the original image
-        image.draw(at: .zero)
-        
-        // Set the contour drawing properties
-        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
-        context.cgContext.setLineWidth(1.0)
-        
-        // Draw all contours
-        for contour in contours {
-            context.cgContext.beginPath()
-            for point in contour {
-                if point == contour.first {
-                    context.cgContext.move(to: point)
-                } else {
-                    context.cgContext.addLine(to: point)
-                }
-            }
-            context.cgContext.strokePath()
-        }
-        
-        // Set the ellipse drawing properties
-        context.cgContext.setStrokeColor(UIColor.red.cgColor)
-        context.cgContext.setLineWidth(2.0)
-        
-        // Save the context state
-        context.cgContext.saveGState()
-        
-        // Move to the ellipse center
-        context.cgContext.translateBy(x: ellipse.center.x, y: ellipse.center.y)
-        
-        // Rotate the context
-        context.cgContext.rotate(by: ellipse.rotation * CGFloat.pi / 180)
-        
-        // Draw the ellipse
-        let rect = CGRect(x: -ellipse.size.width, y: -ellipse.size.height, width: 2 * ellipse.size.width, height: 2 * ellipse.size.height)
-        context.cgContext.strokeEllipse(in: rect)
-        
-        // Restore the context state
-        context.cgContext.restoreGState()
-        
-        // Set the tips drawing properties
-        context.cgContext.setFillColor(UIColor.green.cgColor)
-        
-        // Draw the tips
-        for tip in tips {
-            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 10, height: 10))
-        }
-    }
-    
-    return renderedImage
-}
-
 func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
     let imageWidth = ciImage.extent.width
     let imageHeight = ciImage.extent.height
@@ -204,37 +177,4 @@ func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
     UIGraphicsEndImageContext()
     
     return resultImage
-}
-
-func drawEllipseAndPoints(on image: UIImage, points: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotation: CGFloat)) -> UIImage? {
-    let renderer = UIGraphicsImageRenderer(size: image.size)
-    let renderedImage = renderer.image { context in
-        // Draw the original image
-        image.draw(at: .zero)
-        
-        // Set the points drawing properties
-        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
-        context.cgContext.setFillColor(UIColor.blue.cgColor)
-        context.cgContext.setLineWidth(2.0)
-        
-        // Draw the points
-        for point in points {
-            let rect = CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4)
-            context.cgContext.fillEllipse(in: rect)
-        }
-        
-        // Set the ellipse drawing properties
-        context.cgContext.setStrokeColor(UIColor.red.cgColor)
-        context.cgContext.setLineWidth(2.0)
-        
-        // Draw the ellipse
-        context.cgContext.saveGState()
-        context.cgContext.translateBy(x: ellipse.center.x, y: ellipse.center.y)
-        context.cgContext.rotate(by: ellipse.rotation)
-        let ellipseRect = CGRect(x: -ellipse.size.width, y: -ellipse.size.height, width: 2 * ellipse.size.width, height: 2 * ellipse.size.height)
-        context.cgContext.strokeEllipse(in: ellipseRect)
-        context.cgContext.restoreGState()
-    }
-    
-    return renderedImage
 }

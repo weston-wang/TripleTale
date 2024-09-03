@@ -1,13 +1,13 @@
 //
 //  BracketView.swift
-//  TripleTale
+//  tripletalear
 //
-//  Created by Wes Wang on 7/31/24.
-//  Copyright © 2024 Apple. All rights reserved.
+//  Created by Wes Wang on 8/18/24.
 //
 
 import Foundation
 import UIKit
+
 class BracketView: UIView {
     private let shapeLayer = CAShapeLayer()
     
