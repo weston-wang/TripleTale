@@ -11,7 +11,7 @@ import ARKit
 import Vision
 import CoreMotion
 
-class MainViewController: UIViewController, ARSCNViewDelegate {
+class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     var sceneView: ARSCNView!
     
@@ -39,6 +39,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     private var currentImage: UIImage?
     private var depthImage: UIImage?
     private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
+
+    private var galleryImage: UIImage?
 
     /// The ML model to be used for detection of fish
     private var tripleTaleModel: TripleTaleV2 = {
@@ -91,6 +93,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         // Create a transparent view for the bottom left corner
         let cornerView = createCornerView(withSize: 100)
         view.addSubview(cornerView)
+        
+        // Call the function to create and add the button
+        setupGalleryButton()
 
         // Start AR
         startPlaneDetection()
@@ -130,6 +135,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
+    @objc private func loadImageFromGallery() {
+        let imagePickerController = UIImagePickerController()
+        imagePickerController.delegate = self
+        imagePickerController.sourceType = .photoLibrary
+        present(imagePickerController, animated: true, completion: nil)
+    }
+    
     @objc func toggleFreeze() {
         DispatchQueue.main.async {
             self.isFrozen.toggle()  // Toggle the state of isFrozen
@@ -155,6 +167,39 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
                 self.isFrozen.toggle()
             }
         }
+    }
+    
+    // Function to create and add the button with an SF Symbol
+    private func setupGalleryButton() {
+        let galleryButton = UIButton(type: .system)
+
+        // Set the SF Symbol with a larger configuration
+        let largeConfig = UIImage.SymbolConfiguration(pointSize: 25, weight: .bold, scale: .large)
+        let symbolImage = UIImage(systemName: "photo.on.rectangle", withConfiguration: largeConfig)
+        galleryButton.setImage(symbolImage, for: .normal)
+
+        // Optionally, set the tint color for the button
+        galleryButton.tintColor = .white
+
+        galleryButton.addTarget(self, action: #selector(loadImageFromGallery), for: .touchUpInside)
+        galleryButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(galleryButton)
+        
+        // Set constraints for the button to be at the bottom right corner
+        NSLayoutConstraint.activate([
+            galleryButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            galleryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+        ])
+    }
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        if let selectedImage = info[.originalImage] as? UIImage {
+            galleryImage = selectedImage
+        }
+        dismiss(animated: true, completion: nil)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true, completion: nil)
     }
     
     func calculateAndDisplayWeight(with image: UIImage) {
@@ -282,11 +327,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
         configuration.planeDetection = [.horizontal, .vertical]
         
         // Enable depth data (only works on LiDAR-equipped devices)
-        if ARBodyTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
-        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
             configuration.frameSemantics.insert(.smoothedSceneDepth)
-        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
             configuration.frameSemantics.insert(.personSegmentationWithDepth)
         } else {
             print("Device does not support scene depth")
