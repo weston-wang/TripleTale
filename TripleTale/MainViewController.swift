@@ -280,7 +280,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate {
     func startPlaneDetection() {
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal, .vertical]
-        configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
+        
+        // Enable depth data (only works on LiDAR-equipped devices)
+        if ARBodyTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
+        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
+            configuration.frameSemantics.insert(.personSegmentationWithDepth)
+        } else {
+            print("Device does not support scene depth")
+        }
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
