@@ -20,8 +20,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var lengthNudge: Double = 1.2
     var widthNudge: Double = 1.2
     
-    private var freezeButton: UIButton?
-    private var isFrozen = false
+    private var cameraButton: UIButton?
     
     var bracketView: BracketView?
     private var imagePortion: CGFloat = 1.0
@@ -86,15 +85,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
         view.addSubview(bracketView!)
         
-        // Add the freeze button and other UI elements
-        freezeButton = createFreezeButton()
-        view.addSubview(freezeButton!)
-        
         // Create a transparent view for the bottom left corner
-        let cornerView = createCornerView(withSize: 100)
-        view.addSubview(cornerView)
+        createCornerView(withSize: 100)
         
-        // Call the function to create and add the button
+        // Call the function to create and add the camera button
+        setupCameraButton()
+
+        // Call the function to create and add the gallery button
         setupGalleryButton()
 
         // Start AR
@@ -169,6 +166,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
+    // Function to create and add the camera button
+    private func setupCameraButton() {
+        let button = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 35
+        button.clipsToBounds = true
+
+        // Set the button images for different states
+        button.setImage(UIImage(named: "measure"), for: .normal)
+        button.setImage(UIImage(named: "pressed"), for: .highlighted)
+
+        button.imageView?.contentMode = .scaleAspectFill
+
+        button.isHidden = false
+
+        button.addTarget(self, action: #selector(handleFreezeButtonPress), for: .touchUpInside)
+
+        // Add the button to the view
+        view.addSubview(button)
+    }
+    
     // Function to create and add the button with an SF Symbol
     private func setupGalleryButton() {
         let galleryButton = UIButton(type: .system)
@@ -191,6 +209,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             galleryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
     }
+    
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let selectedImage = info[.originalImage] as? UIImage {
             galleryImage = selectedImage
@@ -223,25 +242,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
-    func createFreezeButton() -> UIButton {
-        let button = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
-        button.backgroundColor = .white
-        button.layer.cornerRadius = 35
-        button.clipsToBounds = true
-
-        // Set the button images for different states
-        button.setImage(UIImage(named: "measure"), for: .normal)
-        button.setImage(UIImage(named: "pressed"), for: .highlighted)
-
-        button.imageView?.contentMode = .scaleAspectFill
-
-        button.isHidden = false
-
-        button.addTarget(self, action: #selector(handleFreezeButtonPress), for: .touchUpInside)
-        return button
-    }
-    
-    func createCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) -> UIView {
+    func createCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) {
         let cornerView = UIView()
         cornerView.backgroundColor = backgroundColor
         
@@ -253,7 +254,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture))
         cornerView.addGestureRecognizer(tapGesture)
 
-        return cornerView
+        view.addSubview(cornerView)
     }
     
     func startDeviceMotionUpdates() {
