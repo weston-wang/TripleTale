@@ -149,10 +149,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         print("Depth image successfully generated")
         
         let resizedDepthImage = self.resizeDepthMap(depthImage, to: galleryImage!.size)
-        saveImageToGallery(resizedDepthImage!)
-        
         let normalizedVertices = findEllipseVertices(from: resizedDepthImage!, for: self.imagePortion, debug: true)!
 
+        
     }
 
     /// Method to run the depth request on an input UIImage
@@ -172,6 +171,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 print("Failed to perform depth request: \(error)")
             }
         }
+    }
+    
+    // Function to scale the fish length to the same plane as the face
+    func scaleLengthToFacePlane(fishLengthPx: CGFloat, fishDepth: CGFloat, faceDepth: CGFloat) -> CGFloat {
+        // Scale the fish length using the depth ratio
+        let scalingFactor = faceDepth / fishDepth
+        let scaledFishLengthPx = fishLengthPx * scalingFactor
+        return scaledFishLengthPx
     }
     
     override func viewDidLoad() {
@@ -250,23 +257,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         processCameraImage()
     }
     
-    func processCameraImage() {
-        DispatchQueue.main.async {
-            var image: UIImage?
-            
-            if self.isForwardFacing, let depthImage = self.depthImage {
-                let croppedImage = depthImage.croppedToAspectRatio(size: depthImage.size)
-                image = croppedImage?.resized(to: depthImage.size)
-            } else {
-                image = self.captureFrameAsUIImage(from: self.sceneView)
-            }
-
-            if let image = image {
-                self.calculateAndDisplayWeight(with: image)
-            }
-        }
-    }
-    
     func processGalleryImage(_ inputImage: UIImage?) {
         DispatchQueue.main.async {
             if let image = inputImage {
@@ -284,6 +274,23 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 } else {
                     print("No face detected.")
                 }
+            }
+        }
+    }
+    
+    func processCameraImage() {
+        DispatchQueue.main.async {
+            var image: UIImage?
+            
+            if self.isForwardFacing, let depthImage = self.depthImage {
+                let croppedImage = depthImage.croppedToAspectRatio(size: depthImage.size)
+                image = croppedImage?.resized(to: depthImage.size)
+            } else {
+                image = self.captureFrameAsUIImage(from: self.sceneView)
+            }
+
+            if let image = image {
+                self.calculateAndDisplayWeight(with: image)
             }
         }
     }
@@ -426,24 +433,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func detectOrientation(attitude: CMAttitude) -> Bool {
         return  attitude.pitch * 180 / .pi > 60.0
-    }
-        
-    func startBodyTracking() {
-        // Create and run body tracking configuration
-        let configuration = ARBodyTrackingConfiguration()
-        
-        // Enable depth data (only works on LiDAR-equipped devices)
-        if ARBodyTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics.insert(.sceneDepth)
-        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-            configuration.frameSemantics.insert(.smoothedSceneDepth)
-        } else if ARBodyTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
-            configuration.frameSemantics.insert(.personSegmentationWithDepth)
-        } else {
-            print("Device does not support scene depth")
-        }
-        
-        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     
     func startPlaneDetection() {
