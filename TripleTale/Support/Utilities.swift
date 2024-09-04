@@ -51,6 +51,15 @@ func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     return UIImage(cgImage: cgImage)
 }
 
+func depthPixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
+    let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+
+    let context = CIContext(options: nil)
+    guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+    return UIImage(cgImage: cgImage)
+}
+
+
 func processObservations(for request: VNRequest, error: Error?) -> (identifierString: String, confidence: VNConfidence, boundingBox: CGRect?)? {
     guard let results = request.results else {
         print("Unable to process image.\n\(error?.localizedDescription ?? "Unknown error")")

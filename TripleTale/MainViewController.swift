@@ -36,6 +36,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var currentBuffer: CVPixelBuffer?
     private var currentImage: UIImage?
+    private var galleryImage: UIImage?
     private var depthImage: UIImage?
     private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
 
@@ -70,6 +71,107 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             fatalError("Failed to load Vision ML model: \(error)")
         }
     }()
+    
+    private func resizeImageForModel(_ image: UIImage) -> UIImage? {
+        let originalSize = image.size
+        let width = originalSize.width
+        let height = originalSize.height
+        
+        let newSize = CGSize(width: 518, height: 392)
+
+        // Resize the image to the new dimensions
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: CGRect(origin: .zero, size: newSize))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return resizedImage
+    }
+
+    /// Resize depth map back to the original input image size
+    private func resizeDepthMap(_ depthImage: UIImage, to originalSize: CGSize) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(originalSize, false, 1.0)
+        depthImage.draw(in: CGRect(origin: .zero, size: originalSize))
+        let resizedDepthImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return resizedDepthImage
+    }
+    
+    private var depthQueue = DispatchQueue(label: "com.tripleTale.depthQueue")
+
+    /// The ML model to be used for detection of fish
+    private var depthModel: DepthAnythingV2 = {
+        do {
+            let configuration = MLModelConfiguration()
+            return try DepthAnythingV2(configuration: configuration)
+        } catch {
+            fatalError("Couldn't create DepthAnythingV2 due to: \(error)")
+        }
+    }()
+    
+    /// Vision CoreML request for processing depth data
+    private lazy var depthRequest: VNCoreMLRequest = {
+        do {
+            // Instantiate the model from its generated Swift class.
+            let model = try VNCoreMLModel(for: depthModel.model)
+            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Error in depth request: \(error)")
+                    return
+                }
+                
+                guard let results = request.results as? [VNPixelBufferObservation],
+                      let depthMap = results.first?.pixelBuffer else {
+                    print("No depth map found")
+                    return
+                }
+
+                // Convert depth map (CVPixelBuffer) to UIImage
+                let depthImage = depthPixelBufferToUIImage(pixelBuffer: depthMap)
+                
+                // Process or return the depth image here
+                DispatchQueue.main.async {
+                    self.handleDepthImage(depthImage!)
+                }
+            })
+            
+            return request
+        } catch {
+            fatalError("Failed to load Vision ML model: \(error)")
+        }
+    }()
+
+    /// Method to handle depth image (this can be replaced by any further processing or display logic)
+    private func handleDepthImage(_ depthImage: UIImage) {
+        // Process or display the depth image, e.g., setting it to a UIImageView
+        print("Depth image successfully generated")
+        
+        saveImageToGallery(depthImage)
+
+        let resizedDepthImage = self.resizeDepthMap(depthImage, to: galleryImage!.size)
+        saveImageToGallery(resizedDepthImage!)
+    }
+
+    /// Method to run the depth request on an input UIImage
+    func processDepthImage(from inputImage: UIImage) {
+        guard let cgImage = inputImage.cgImage else {
+            print("Unable to convert UIImage to CGImage")
+            return
+        }
+        
+        // Perform request asynchronously on a background queue
+        depthQueue.async { [weak self] in
+            guard let self = self else { return }
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+            do {
+                try handler.perform([self.depthRequest])
+            } catch {
+                print("Failed to perform depth request: \(error)")
+            }
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -167,6 +269,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func processGalleryImage(_ inputImage: UIImage?) {
         DispatchQueue.main.async {
             if let image = inputImage {
+                
+                let resizedImage = self.resizeImageForModel(image)
+                saveImageToGallery(resizedImage!)
+                self.processDepthImage(from: resizedImage!)
+                
                 if let topFaceRect = detectTopFaceBoundingBox(in: image) {
                     if let imageWithBoundingBox = image.drawBoundingBox(topFaceRect) {
                         print("detected face: \(topFaceRect)")
@@ -248,6 +355,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let selectedImage = info[.originalImage] as? UIImage {
+            self.galleryImage = selectedImage
             processGalleryImage(selectedImage)
         }
         dismiss(animated: true, completion: nil)
