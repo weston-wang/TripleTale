@@ -118,3 +118,24 @@ func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Fl
     let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
     return center + scaledVector
 }
+
+func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
+    // First, try to get sceneDepth from LiDAR-equipped devices
+    if let sceneDepth = currentFrame.sceneDepth {
+        return pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+    }
+    
+    // If sceneDepth is not available, check for smoothedSceneDepth (better quality for non-LiDAR devices)
+    if let smoothedSceneDepth = currentFrame.smoothedSceneDepth {
+        return pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
+    }
+    
+    // Fallback to estimatedDepthData if smoothedSceneDepth is not available
+    if let estimatedDepthData = currentFrame.estimatedDepthData {
+        return pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
+    }
+    
+    // If no depth data is available, return nil
+    print("Depth data not available on this device.")
+    return nil
+}

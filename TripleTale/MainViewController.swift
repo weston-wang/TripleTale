@@ -139,7 +139,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         present(imagePickerController, animated: true, completion: nil)
     }
     
-    @objc func handleFreezeButtonPress() {
+    @objc func handleCameraButtonPress() {
         // Haptic feedback
         let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
         feedbackGenerator.prepare()
@@ -166,6 +166,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
+    func calculateAndDisplayWeight(with image: UIImage) {
+        let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
+
+        let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+        
+        var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
+        
+        length = length * Float(self.lengthNudge)
+        width = width * Float(self.widthNudge)
+        
+        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+        
+        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
+                          
+        if let combinedImage = generateResultImage(self.currentImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
+            self.showImagePopup(combinedImage: combinedImage)
+        } else {
+            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+        }
+    }
+    
     // Function to create and add the camera button
     private func setupCameraButton() {
         let button = UIButton(frame: CGRect(x: (view.bounds.width - 70)/2, y: view.bounds.height - 150, width: 70, height: 70))
@@ -181,7 +202,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         button.isHidden = false
 
-        button.addTarget(self, action: #selector(handleFreezeButtonPress), for: .touchUpInside)
+        button.addTarget(self, action: #selector(handleCameraButtonPress), for: .touchUpInside)
 
         // Add the button to the view
         view.addSubview(button)
@@ -219,27 +240,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         dismiss(animated: true, completion: nil)
-    }
-    
-    func calculateAndDisplayWeight(with image: UIImage) {
-        let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
-
-        let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
-        
-        var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
-        
-        length = length * Float(self.lengthNudge)
-        width = width * Float(self.widthNudge)
-        
-        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-        
-        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
-                          
-        if let combinedImage = generateResultImage(self.currentImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
-            self.showImagePopup(combinedImage: combinedImage)
-        } else {
-            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-        }
     }
     
     func createCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) {
@@ -354,27 +354,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         self.boundingBox = boundingBox ?? .zero
     }
     
-    func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
-        // First, try to get sceneDepth from LiDAR-equipped devices
-        if let sceneDepth = currentFrame.sceneDepth {
-            return pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
-        }
-        
-        // If sceneDepth is not available, check for smoothedSceneDepth (better quality for non-LiDAR devices)
-        if let smoothedSceneDepth = currentFrame.smoothedSceneDepth {
-            return pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
-        }
-        
-        // Fallback to estimatedDepthData if smoothedSceneDepth is not available
-        if let estimatedDepthData = currentFrame.estimatedDepthData {
-            return pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
-        }
-        
-        // If no depth data is available, return nil
-        print("Depth data not available on this device.")
-        return nil
-    }
-    
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         guard let currentFrame = sceneView.session.currentFrame else { return }
 
@@ -400,7 +379,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 // Convert the pixel buffer to UIImage
                 self.currentImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
-                self.depthImage = self.getDepthMap(from: currentFrame)
+                self.depthImage = getDepthMap(from: currentFrame)
 
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")
