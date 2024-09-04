@@ -228,9 +228,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     print("Depth image received: \(depthImage)")
                     // You can resize it or perform further processing
                     let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
-                    let thresholdDepthImage = thresholdImage(inputImage: resizedDepthImage!, threshold: 0.8)
-                    saveImageToGallery(thresholdDepthImage!)
-                    let normalizedVertices = findEllipseVertices(from: resizedDepthImage!, for: 1.0, debug: true)
+//                    let thresholdDepthImage = thresholdImage(inputImage: resizedDepthImage!, threshold: 0.8)
+//                    saveImageToGallery(thresholdDepthImage!)
+                    let normalizedVertices = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
                 }
                 
                 if let topFaceRect = detectTopFaceBoundingBox(in: image) {
