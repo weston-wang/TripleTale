@@ -148,3 +148,74 @@ func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
     print("Depth data not available on this device.")
     return nil
 }
+
+// Function to scale the fish length to the same plane as the face
+func scaleLengthToFacePlane(fishLengthPx: CGFloat, fishDepth: CGFloat, faceDepth: CGFloat) -> CGFloat {
+    // Scale the fish length using the depth ratio
+    let scalingFactor = faceDepth / fishDepth
+    let scaledFishLengthPx = fishLengthPx * scalingFactor
+    return scaledFishLengthPx
+}
+
+func getDepthAtCenter(of rect: CGRect, depthMap: UIImage) -> CGFloat? {
+    // Convert UIImage to CIImage
+    guard let ciImage = CIImage(image: depthMap) else {
+        print("Error: Unable to create CIImage from UIImage")
+        return nil
+    }
+    
+    // Create a Core Image context
+    let context = CIContext()
+    
+    // Get the extent (dimensions) of the CIImage
+    let depthMapExtent = ciImage.extent
+    
+    // Get the center point of the CGRect
+    let centerX = rect.midX
+    let centerY = rect.midY
+    
+    // Ensure the coordinates are within bounds of the image
+    guard depthMapExtent.contains(CGPoint(x: centerX, y: centerY)) else {
+        print("Error: Center point is outside depth map bounds")
+        return nil
+    }
+    
+    // Calculate the scaled coordinates for the depth map
+    let depthX = centerX / rect.width * depthMapExtent.width
+    let depthY = centerY / rect.height * depthMapExtent.height
+    
+    // Create a bitmap representation of the depth map in grayscale
+    var pixelValue: [UInt8] = [0] // For grayscale, only 1 channel (UInt8)
+    context.render(ciImage, toBitmap: &pixelValue, rowBytes: 1, bounds: CGRect(x: Int(depthX), y: Int(depthY), width: 1, height: 1), format: .R8, colorSpace: nil)
+    
+    // Convert the pixel value to a CGFloat
+    let depthValue = CGFloat(pixelValue[0])
+    
+    return depthValue
+}
+
+func resizeImageForModel(_ image: UIImage) -> UIImage? {
+    let originalSize = image.size
+    let width = originalSize.width
+    let height = originalSize.height
+    
+    let newSize = CGSize(width: 518, height: 392)
+
+    // Resize the image to the new dimensions
+    UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+    image.draw(in: CGRect(origin: .zero, size: newSize))
+    let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    return resizedImage
+}
+
+/// Resize depth map back to the original input image size
+func resizeDepthMap(_ depthImage: UIImage, to originalSize: CGSize) -> UIImage? {
+    UIGraphicsBeginImageContextWithOptions(originalSize, false, 1.0)
+    depthImage.draw(in: CGRect(origin: .zero, size: originalSize))
+    let resizedDepthImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    return resizedDepthImage
+}

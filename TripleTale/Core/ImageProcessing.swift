@@ -168,3 +168,33 @@ func calculateRectangleCorners(_ vertices: [CGPoint], _ ditherX: CGFloat, _ dith
 
     return [corner1, corner2, corner3, corner4]
 }
+
+func thresholdImage(inputImage: UIImage, threshold: Float) -> UIImage? {
+    // Convert UIImage to CIImage
+    guard let ciImage = CIImage(image: inputImage) else { return nil }
+    
+    // Create a CIContext to process the image
+    let ciContext = CIContext(options: nil)
+    
+    // Convert to grayscale using CIColorControls
+    let grayscaleFilter = CIFilter(name: "CIColorControls")
+    grayscaleFilter?.setValue(ciImage, forKey: kCIInputImageKey)
+    grayscaleFilter?.setValue(0.0, forKey: kCIInputSaturationKey) // Set saturation to 0 for grayscale
+    
+    // Retrieve the grayscale image
+    guard let grayscaleCIImage = grayscaleFilter?.outputImage else { return nil }
+    
+    // Apply a threshold using CIThresholdToAlpha (available in Core Image filters)
+    let thresholdFilter = CIFilter(name: "CIThresholdToAlpha")!
+    thresholdFilter.setValue(grayscaleCIImage, forKey: kCIInputImageKey)
+    thresholdFilter.setValue(threshold, forKey: "inputThreshold")
+    
+    // Get the output CIImage from the filter
+    guard let thresholdedCIImage = thresholdFilter.outputImage else { return nil }
+    
+    // Convert the CIImage to CGImage
+    guard let cgImage = ciContext.createCGImage(thresholdedCIImage, from: thresholdedCIImage.extent) else { return nil }
+    
+    // Return the thresholded image as a UIImage
+    return UIImage(cgImage: cgImage)
+}

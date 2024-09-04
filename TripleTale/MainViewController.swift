@@ -72,32 +72,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }()
     
-    private func resizeImageForModel(_ image: UIImage) -> UIImage? {
-        let originalSize = image.size
-        let width = originalSize.width
-        let height = originalSize.height
-        
-        let newSize = CGSize(width: 518, height: 392)
-
-        // Resize the image to the new dimensions
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-        image.draw(in: CGRect(origin: .zero, size: newSize))
-        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        return resizedImage
-    }
-
-    /// Resize depth map back to the original input image size
-    private func resizeDepthMap(_ depthImage: UIImage, to originalSize: CGSize) -> UIImage? {
-        UIGraphicsBeginImageContextWithOptions(originalSize, false, 1.0)
-        depthImage.draw(in: CGRect(origin: .zero, size: originalSize))
-        let resizedDepthImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        return resizedDepthImage
-    }
-    
     private var depthQueue = DispatchQueue(label: "com.tripleTale.depthQueue")
 
     /// The ML model to be used for detection of fish
@@ -131,9 +105,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 // Convert depth map (CVPixelBuffer) to UIImage
                 let depthImage = depthPixelBufferToUIImage(pixelBuffer: depthMap)
                 
-                // Process or return the depth image here
-                DispatchQueue.main.async {
-                    self.handleDepthImage(depthImage!)
+                // Instead of processing directly, return the depth image through the completion handler
+                if let depthImage = depthImage {
+                    self.depthCompletionHandler?(depthImage)
                 }
             })
             
@@ -143,23 +117,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }()
 
-    /// Method to handle depth image (this can be replaced by any further processing or display logic)
-    private func handleDepthImage(_ depthImage: UIImage) {
-        // Process or display the depth image, e.g., setting it to a UIImageView
-        print("Depth image successfully generated")
-        
-        let resizedDepthImage = self.resizeDepthMap(depthImage, to: galleryImage!.size)
-        let normalizedVertices = findEllipseVertices(from: resizedDepthImage!, for: self.imagePortion, debug: true)!
+    /// Completion handler that will return the depth image
+    private var depthCompletionHandler: ((UIImage) -> Void)?
 
-        
-    }
-
-    /// Method to run the depth request on an input UIImage
-    func processDepthImage(from inputImage: UIImage) {
+    /// Method to run the depth request on an input UIImage and return the result via completion handler
+    func processDepthImage(from inputImage: UIImage, completion: @escaping (UIImage) -> Void) {
         guard let cgImage = inputImage.cgImage else {
             print("Unable to convert UIImage to CGImage")
             return
         }
+        
+        // Set the completion handler
+        self.depthCompletionHandler = completion
         
         // Perform request asynchronously on a background queue
         depthQueue.async { [weak self] in
@@ -171,14 +140,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 print("Failed to perform depth request: \(error)")
             }
         }
-    }
-    
-    // Function to scale the fish length to the same plane as the face
-    func scaleLengthToFacePlane(fishLengthPx: CGFloat, fishDepth: CGFloat, faceDepth: CGFloat) -> CGFloat {
-        // Scale the fish length using the depth ratio
-        let scalingFactor = faceDepth / fishDepth
-        let scaledFishLengthPx = fishLengthPx * scalingFactor
-        return scaledFishLengthPx
     }
     
     override func viewDidLoad() {
@@ -261,8 +222,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         DispatchQueue.main.async {
             if let image = inputImage {
                 
-                let resizedImage = self.resizeImageForModel(image)
-                self.processDepthImage(from: resizedImage!)
+                let resizedImage = resizeImageForModel(image)
+                self.processDepthImage(from: resizedImage!) { depthImage in
+                    // Use the returned depthImage here
+                    print("Depth image received: \(depthImage)")
+                    // You can resize it or perform further processing
+                    let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
+                    let thresholdDepthImage = thresholdImage(inputImage: resizedDepthImage!, threshold: 0.8)
+                    saveImageToGallery(thresholdDepthImage!)
+                    let normalizedVertices = findEllipseVertices(from: resizedDepthImage!, for: 1.0, debug: true)
+                }
                 
                 if let topFaceRect = detectTopFaceBoundingBox(in: image) {
                     if let imageWithBoundingBox = image.drawBoundingBox(topFaceRect) {
