@@ -125,3 +125,50 @@ func findContourClosestToCenter(contours: [[CGPoint]], imageWidth: Int, imageHei
 
     return closestContour
 }
+
+func detectTopFaceBoundingBox(in image: UIImage) -> CGRect? {
+    guard let ciImage = CIImage(image: image) else {
+        fatalError("Unable to create CIImage from UIImage")
+    }
+    
+    var topFaceRect: CGRect?
+    
+    let faceDetectionRequest = VNDetectFaceRectanglesRequest { request, error in
+        if let error = error {
+            print("Face detection error: \(error)")
+            return
+        }
+        guard let observations = request.results as? [VNFaceObservation] else {
+            return
+        }
+        
+        var minY: CGFloat = CGFloat.greatestFiniteMagnitude
+        
+        for face in observations {
+            let boundingBox = face.boundingBox
+            let size = image.size
+            let x = boundingBox.origin.x * size.width
+            let y = (1 - boundingBox.origin.y - boundingBox.height) * size.height
+            let width = boundingBox.width * size.width
+            let height = boundingBox.height * size.height
+            let faceRect = CGRect(x: x, y: y, width: width, height: height)
+            
+            // Update the topFaceRect if this face is closer to the top
+            if y < minY {
+                minY = y
+                topFaceRect = faceRect
+            }
+        }
+    }
+    
+    let requestHandler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+    
+    do {
+        try requestHandler.perform([faceDetectionRequest])
+    } catch {
+        print("Failed to perform face detection: \(error)")
+        return nil
+    }
+    
+    return topFaceRect
+}

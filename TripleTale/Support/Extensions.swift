@@ -234,6 +234,32 @@ extension UIImage {
         return combinedImage
     }
     
+    func drawBoundingBox(_ boundingBox: CGRect, color: UIColor = .green, lineWidth: CGFloat = 2.0) -> UIImage? {
+        UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
+        
+        guard let context = UIGraphicsGetCurrentContext() else {
+            return nil
+        }
+        
+        // Draw the original image
+        self.draw(at: .zero)
+        
+        // Set the properties for the bounding box
+        context.setStrokeColor(color.cgColor)
+        context.setLineWidth(lineWidth)
+        
+        // Draw the bounding box
+        context.stroke(boundingBox)
+        
+        // Get the new image with the bounding box drawn on it
+        let imageWithBoundingBox = UIGraphicsGetImageFromCurrentImageContext()
+        
+        // Clean up
+        UIGraphicsEndImageContext()
+        
+        return imageWithBoundingBox
+    }
+    
     func rotated(byDegrees degrees: CGFloat) -> UIImage? {
         let radians = degrees * (.pi / 180)
         

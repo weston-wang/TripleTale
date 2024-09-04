@@ -39,8 +39,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var depthImage: UIImage?
     private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
 
-    private var galleryImage: UIImage?
-
     /// The ML model to be used for detection of fish
     private var tripleTaleModel: TripleTaleV2 = {
         do {
@@ -146,10 +144,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         feedbackGenerator.impactOccurred()
 
         // Call processImage
-        processImage()
+        processCameraImage()
     }
     
-    func processImage() {
+    func processCameraImage() {
         DispatchQueue.main.async {
             var image: UIImage?
             
@@ -162,6 +160,23 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             if let image = image {
                 self.calculateAndDisplayWeight(with: image)
+            }
+        }
+    }
+    
+    func processGalleryImage(_ inputImage: UIImage?) {
+        DispatchQueue.main.async {
+            if let image = inputImage {
+                if let topFaceRect = detectTopFaceBoundingBox(in: image) {
+                    if let imageWithBoundingBox = image.drawBoundingBox(topFaceRect) {
+                        print("detected face: \(topFaceRect)")
+                        saveImageToGallery(imageWithBoundingBox)
+                    } else {
+                        print("Failed to draw bounding box on image.")
+                    }
+                } else {
+                    print("No face detected.")
+                }
             }
         }
     }
@@ -233,7 +248,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let selectedImage = info[.originalImage] as? UIImage {
-            galleryImage = selectedImage
+            processGalleryImage(selectedImage)
         }
         dismiss(animated: true, completion: nil)
     }
