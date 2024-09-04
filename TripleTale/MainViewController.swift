@@ -142,29 +142,29 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         present(imagePickerController, animated: true, completion: nil)
     }
     
-    @objc func toggleFreeze() {
-        DispatchQueue.main.async {
-            self.isFrozen.toggle()  // Toggle the state of isFrozen
-            
-            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
-            feedbackGenerator.prepare()
-            feedbackGenerator.impactOccurred()
-            
-            if self.isFrozen {
-                var image: UIImage?
-                
-                if self.isForwardFacing, let depthImage = self.depthImage {
-                    let croppedImage = depthImage.croppedToAspectRatio(size: depthImage.size)
-                    image = croppedImage?.resized(to: depthImage.size)
-                } else {
-                    image = self.captureFrameAsUIImage(from: self.sceneView)
-                }
+    @objc func handleFreezeButtonPress() {
+        // Haptic feedback
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
 
-                if let image = image {
-                    self.calculateAndDisplayWeight(with: image)
-                }
-                
-                self.isFrozen.toggle()
+        // Call processImage
+        processImage()
+    }
+    
+    func processImage() {
+        DispatchQueue.main.async {
+            var image: UIImage?
+            
+            if self.isForwardFacing, let depthImage = self.depthImage {
+                let croppedImage = depthImage.croppedToAspectRatio(size: depthImage.size)
+                image = croppedImage?.resized(to: depthImage.size)
+            } else {
+                image = self.captureFrameAsUIImage(from: self.sceneView)
+            }
+
+            if let image = image {
+                self.calculateAndDisplayWeight(with: image)
             }
         }
     }
@@ -237,7 +237,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         button.isHidden = false
 
-        button.addTarget(self, action: #selector(toggleFreeze), for: .touchUpInside)
+        button.addTarget(self, action: #selector(handleFreezeButtonPress), for: .touchUpInside)
         return button
     }
     
