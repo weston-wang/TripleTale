@@ -16,15 +16,6 @@ import CoreGraphics
 import CoreImage
 import Accelerate
 
-func thresholdGrayscaleImage(pixelData: [UInt8], width: Int, height: Int, threshold: UInt8) -> [UInt8] {
-    var binaryData = pixelData
-    for i in 0..<pixelData.count {
-        binaryData[i] = pixelData[i] > threshold ? 255 : 0
-    }
-    return binaryData
-}
-
-
 func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> [CGPoint]? {
     // get foreground mask
     guard let maskImage = CIImage(image: image) else { return nil }
@@ -39,7 +30,7 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> [CGPo
     let height = cgImage.height
     
     // Convert grayscale to binary using a threshold
-    let threshold: UInt8 = 204 // 80% brightness
+    let threshold: UInt8 = UInt8(255 * 0.85) // 85% brightness
     let pixelData = thresholdGrayscaleImage(pixelData: originalPixelData, width: width, height: height, threshold: threshold)
     
     let contours = extractContours(from: pixelData, width: width, height: height)
@@ -63,12 +54,7 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> [CGPo
         saveImageToGallery(resultImage!)
     }
     
-    let tipsNormalized = tips.map { point in
-        CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
-    }
-    
-    return tipsNormalized
-
+    return tips
 }
 
 

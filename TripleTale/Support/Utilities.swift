@@ -122,6 +122,12 @@ func position(from anchor: ARAnchor) -> SIMD3<Float> {
     return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
 }
 
+func distanceBetween(_ point1: CGPoint, _ point2: CGPoint) -> CGFloat {
+    let dx = point2.x - point1.x
+    let dy = point2.y - point1.y
+    return sqrt(dx * dx + dy * dy)
+}
+
 func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Float, horizontalScaleFactor: Float) -> simd_float3 {
     let vector = point - center
     let scaledVector = simd_float3(x: vector.x * horizontalScaleFactor, y: vector.y * verticalScaleFactor, z: vector.z)
@@ -157,48 +163,49 @@ func scaleLengthToFacePlane(fishLengthPx: CGFloat, fishDepth: CGFloat, faceDepth
     return scaledFishLengthPx
 }
 
-func getDepthAtCenter(of rect: CGRect, depthMap: UIImage) -> CGFloat? {
-    // Convert UIImage to CIImage
-    guard let ciImage = CIImage(image: depthMap) else {
-        print("Error: Unable to create CIImage from UIImage")
-        return nil
-    }
-    
-    // Create a Core Image context
-    let context = CIContext()
-    
-    // Get the extent (dimensions) of the CIImage
-    let depthMapExtent = ciImage.extent
-    
-    // Get the center point of the CGRect
-    let centerX = rect.midX
-    let centerY = rect.midY
-    
+// Function to get the depth value at specific coordinates (centerX, centerY) from a UIImage
+func getDepthValue(atX centerX: CGFloat, atY centerY: CGFloat, depthMap: UIImage) -> CGFloat? {
     // Ensure the coordinates are within bounds of the image
-    guard depthMapExtent.contains(CGPoint(x: centerX, y: centerY)) else {
-        print("Error: Center point is outside depth map bounds")
+    guard let cgImage = depthMap.cgImage else {
+        print("Error: Unable to access CGImage from UIImage")
         return nil
     }
     
-    // Calculate the scaled coordinates for the depth map
-    let depthX = centerX / rect.width * depthMapExtent.width
-    let depthY = centerY / rect.height * depthMapExtent.height
+    let imageWidth = CGFloat(cgImage.width)
+    let imageHeight = CGFloat(cgImage.height)
     
-    // Create a bitmap representation of the depth map in grayscale
-    var pixelValue: [UInt8] = [0] // For grayscale, only 1 channel (UInt8)
-    context.render(ciImage, toBitmap: &pixelValue, rowBytes: 1, bounds: CGRect(x: Int(depthX), y: Int(depthY), width: 1, height: 1), format: .R8, colorSpace: nil)
+    // Ensure the coordinates are within the bounds of the image
+    guard centerX >= 0 && centerX < imageWidth && centerY >= 0 && centerY < imageHeight else {
+        print("Error: Coordinates are outside the image bounds")
+        return nil
+    }
+    
+    // Create a bitmap context to extract the pixel data
+    guard let dataProvider = cgImage.dataProvider,
+          let pixelData = dataProvider.data else {
+        print("Error: Unable to get pixel data from CGImage")
+        return nil
+    }
+    
+    let data = CFDataGetBytePtr(pixelData)
+    
+    // Calculate the byte index for the specified coordinates
+    let bytesPerPixel = 1  // Assuming it's an 8-bit grayscale image (1 byte per pixel)
+    let byteIndex = Int(centerY) * cgImage.bytesPerRow + Int(centerX) * bytesPerPixel
+    
+    // Extract the grayscale pixel value (depth) at the specified coordinates
+    let pixelValue = data?[byteIndex]
     
     // Convert the pixel value to a CGFloat
-    let depthValue = CGFloat(pixelValue[0])
-    
-    return depthValue
+    if let pixelValue = pixelValue {
+        return CGFloat(pixelValue) / 255.0  // Normalize to [0, 1]
+    } else {
+        print("Error: Failed to extract pixel value")
+        return nil
+    }
 }
 
 func resizeImageForModel(_ image: UIImage) -> UIImage? {
-    let originalSize = image.size
-    let width = originalSize.width
-    let height = originalSize.height
-    
     let newSize = CGSize(width: 518, height: 392)
 
     // Resize the image to the new dimensions
@@ -218,4 +225,32 @@ func resizeDepthMap(_ depthImage: UIImage, to originalSize: CGSize) -> UIImage? 
     UIGraphicsEndImageContext()
 
     return resizedDepthImage
+}
+
+func thresholdGrayscaleImage(pixelData: [UInt8], width: Int, height: Int, threshold: UInt8) -> [UInt8] {
+    var binaryData = pixelData
+    for i in 0..<pixelData.count {
+        binaryData[i] = pixelData[i] > threshold ? 255 : 0
+    }
+    return binaryData
+}
+
+// Function to calculate the center of an array of CGPoint
+func calculateCenter(of points: [CGPoint]) -> CGPoint? {
+    guard !points.isEmpty else { return nil }  // Return nil if the array is empty
+    
+    var totalX: CGFloat = 0
+    var totalY: CGFloat = 0
+    
+    // Sum all x and y values
+    for point in points {
+        totalX += point.x
+        totalY += point.y
+    }
+    
+    // Calculate the average x and y values
+    let centerX = totalX / CGFloat(points.count)
+    let centerY = totalY / CGFloat(points.count)
+    
+    return CGPoint(x: centerX, y: centerY)
 }

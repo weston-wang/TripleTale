@@ -224,25 +224,34 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 let resizedImage = resizeImageForModel(image)
                 self.processDepthImage(from: resizedImage!) { depthImage in
-                    // Use the returned depthImage here
-                    print("Depth image received: \(depthImage)")
-                    // You can resize it or perform further processing
                     let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
-//                    let thresholdDepthImage = thresholdImage(inputImage: resizedDepthImage!, threshold: 0.8)
-//                    saveImageToGallery(thresholdDepthImage!)
-                    let normalizedVertices = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
+                    let vertices = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
+                    
+                    let dim1 = distanceBetween(vertices![0], vertices![2])
+                    let dim2 = distanceBetween(vertices![1], vertices![3])
+                    
+                    let fishLength = [dim1, dim2].max()
+                    
+                    print("detected fish lenght: \(fishLength!) px")
+                    
+                    if let topFaceRect = detectTopFaceBoundingBox(in: image) {
+                        print("detected face: \(topFaceRect) px")
+
+                        let faceDepthValue = getDepthValue(atX: topFaceRect.midX, atY: topFaceRect.midY, depthMap: resizedDepthImage!)
+                        print("Depth value at face center: \(faceDepthValue!)")
+                        
+                        let fishCenter = calculateCenter(of: vertices!)
+                        let fishDepthValue = getDepthValue(atX: fishCenter!.x, atY: fishCenter!.y, depthMap: resizedDepthImage!)
+                        print("Depth value at fish center: \(fishDepthValue!)")
+
+                        let imageWithBoundingBox = image.drawBoundingBox(topFaceRect)
+                        saveImageToGallery(imageWithBoundingBox!)
+                        
+                    } else {
+                        print("No face detected.")
+                    }
                 }
                 
-                if let topFaceRect = detectTopFaceBoundingBox(in: image) {
-                    if let imageWithBoundingBox = image.drawBoundingBox(topFaceRect) {
-                        print("detected face: \(topFaceRect)")
-                        saveImageToGallery(imageWithBoundingBox)
-                    } else {
-                        print("Failed to draw bounding box on image.")
-                    }
-                } else {
-                    print("No face detected.")
-                }
             }
         }
     }
