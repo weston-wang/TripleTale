@@ -148,10 +148,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Process or display the depth image, e.g., setting it to a UIImageView
         print("Depth image successfully generated")
         
-        saveImageToGallery(depthImage)
-
         let resizedDepthImage = self.resizeDepthMap(depthImage, to: galleryImage!.size)
         saveImageToGallery(resizedDepthImage!)
+        
+        let normalizedVertices = findEllipseVertices(from: resizedDepthImage!, for: self.imagePortion, debug: true)!
+
     }
 
     /// Method to run the depth request on an input UIImage
@@ -271,7 +272,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             if let image = inputImage {
                 
                 let resizedImage = self.resizeImageForModel(image)
-                saveImageToGallery(resizedImage!)
                 self.processDepthImage(from: resizedImage!)
                 
                 if let topFaceRect = detectTopFaceBoundingBox(in: image) {
