@@ -350,6 +350,27 @@ extension UIImage {
         
         return UIImage(cgImage: cgImage, scale: self.scale, orientation: self.imageOrientation)
     }
+    
+    // Function to draw a dot at the given (x, y) coordinate
+    func drawDot(at point: CGPoint, color: UIColor = .red, radius: CGFloat = 5.0) -> UIImage? {
+        // Create a renderer at the size of the existing image
+        let renderer = UIGraphicsImageRenderer(size: self.size)
+        
+        // Render a new image with the dot
+        let newImage = renderer.image { context in
+            // Draw the original image first
+            self.draw(at: .zero)
+            
+            // Set the color for the dot
+            context.cgContext.setFillColor(color.cgColor)
+            
+            // Draw a filled circle (dot) at the given point
+            let dotRect = CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)
+            context.cgContext.fillEllipse(in: dotRect)
+        }
+        
+        return newImage
+    }
 }
 
 /// - Tag: UIViewController

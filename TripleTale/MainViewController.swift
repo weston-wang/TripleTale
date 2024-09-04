@@ -243,6 +243,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                         let fishCenter = calculateCenter(of: vertices!)
                         let fishDepthValue = getDepthValue(atX: fishCenter!.x, atY: fishCenter!.y, depthMap: resizedDepthImage!)
                         print("Depth value at fish center: \(fishDepthValue!)")
+                        
+                        let updatedFishLength = scaleLengthToFacePlane(fishLengthPx: fishLength!, fishDepth: fishDepthValue!, faceDepth: faceDepthValue!)
+                        
+                        print("updated fish length: \(updatedFishLength) px")
 
                         let imageWithBoundingBox = image.drawBoundingBox(topFaceRect)
                         saveImageToGallery(imageWithBoundingBox!)
