@@ -245,7 +245,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
 
                     let fishLengthIn = updatedFishLength / topFaceRect.height * faceLengthIn
-                    let fishForkLengthM = fishLengthIn * 0.8 * 0.0254
+                    let fishForkLengthM = fishLengthIn * 0.0254     // no extra scaling since oval is roughly fork length
                     
                     let (weightInLb, forkInInches) = calculateWeightFromFork(Float(fishForkLengthM), "CalicoBass")
                     
@@ -253,7 +253,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
                     let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
-                    if let combinedImage = generateResultImage(image, nil, widthInInches, forkInInches, heightInInches, circumferenceInInches, weightInLb, "") {
+                    if let combinedImage = generateResultImage(image, nil, widthInInches, forkInInches / 0.8, heightInInches, circumferenceInInches, weightInLb, "") {
                         // Ensure that the UI update (showing the image popup) happens on the main thread
                         DispatchQueue.main.async {
                             self.showImagePopup(combinedImage: combinedImage)

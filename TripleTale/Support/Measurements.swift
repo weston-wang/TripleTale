@@ -13,7 +13,7 @@ typealias LengthWeightConstants = (a: Double, b: Double)
 
 // Create the lookup table as a dictionary
 let lengthWeightLookupTable: [String: LengthWeightConstants] = [
-    "CalicoBass": (a: 0.000403, b: 3.154),
+    "CalicoBass": (a: 0.000607, b: 2.97),
     "BluefinTuna": (a: 0.000153, b: 3.124),
     "Yellowtail": (a: 0.0000127, b: 3.089 )
     // Add more species as needed
@@ -154,8 +154,11 @@ func calculateWeightFromFork(_ fork: Float, _ species: String) -> (Measurement<U
     let forkInMeters = Measurement(value: Double(fork), unit: UnitLength.meters)
     let forkInInches = forkInMeters.converted(to: .inches)
     
-    let weight = constants!.a * pow(forkInInches.value, constants!.b)
+    let interim = pow(forkInInches.value, Double(constants!.b))
+    let weight = Double(constants!.a) * interim
     
+    print("species: \(species), a: \(constants!.a), b: \(constants!.b)")
+    print("intermedia var: \(interim)")
     print("Fork length \(forkInInches) in")
     print("Found weight \(weight)")
 
