@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4E4C7FAF2C8B6105003F3F96 /* ElbowAngleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */; };
+		4E4C7FB12C8B6275003F3F96 /* FingerBendDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */; };
+		4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */; };
+		4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */; };
 		4EA250AA2C88D31F00E671E7 /* DepthAnythingV2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */; };
 		4EA49E242C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
@@ -26,6 +30,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElbowAngleDetector.swift; sourceTree = "<group>"; };
+		4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerBendDetector.swift; sourceTree = "<group>"; };
+		4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerWidthDetector.swift; sourceTree = "<group>"; };
+		4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandBoundingBoxDetector.swift; sourceTree = "<group>"; };
 		4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2.mlpackage; sourceTree = "<group>"; };
 		4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
 		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
@@ -76,6 +84,10 @@
 				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
 				4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */,
 				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
+				4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */,
+				4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */,
+				4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */,
+				4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -192,16 +204,20 @@
 			files = (
 				4EA91EB42C730CA1001ACC69 /* Utilities.swift in Sources */,
 				4EA91EBA2C730EBF001ACC69 /* Extensions.swift in Sources */,
+				4E4C7FB12C8B6275003F3F96 /* FingerBendDetector.swift in Sources */,
 				4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */,
 				4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */,
 				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
 				4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */,
 				4EA49E242C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel in Sources */,
 				4EA250AA2C88D31F00E671E7 /* DepthAnythingV2.mlpackage in Sources */,
+				4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */,
 				4EA49E2F2C750BED00CDA5C9 /* Measurements.swift in Sources */,
 				4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */,
 				4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */,
+				4E4C7FAF2C8B6105003F3F96 /* ElbowAngleDetector.swift in Sources */,
 				4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */,
+				4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */,
 				4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

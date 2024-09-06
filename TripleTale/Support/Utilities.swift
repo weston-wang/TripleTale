@@ -269,3 +269,21 @@ func scaleObjectToFacePlane(measuredLength: CGFloat, distanceToFace: CGFloat, ob
     
     return scaledLength
 }
+
+func estimateHandDistanceFromTorso(elbowAngle: CGFloat, upperArmLength: CGFloat, forearmLength: CGFloat) -> CGFloat {
+    // Elbow angle is assumed to be in degrees, convert to radians for calculation
+    let elbowAngleInRadians = elbowAngle * (.pi / 180.0)
+    
+    // When the elbow is fully extended (180 degrees), the hand is farthest from the torso
+    // The forearm is assumed to be fully extended horizontally forward when the elbow is fully extended.
+    // As the elbow bends, the forearm shortens its distance to the torso.
+
+    // Calculate how far the hand is in front of the elbow along the x-axis based on elbow angle
+    let forwardDistance = forearmLength * cos(elbowAngleInRadians)
+    
+    // In this model, we are estimating the distance from the torso to the hand,
+    // which will be the length of the upper arm plus the forward component of the forearm.
+    let totalForwardDistance = upperArmLength + forwardDistance
+    
+    return totalForwardDistance
+}

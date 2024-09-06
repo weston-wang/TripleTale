@@ -28,6 +28,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     let motionManager = CMMotionManager()
     private var isForwardFacing = false
     
+    let elbowAngleDetector = ElbowAngleDetector()
+    let fingerBendDetector = FingerBendDetector()
+    let fingerWidthDetector = FingerWidthDetector()
+    let handBoundingBoxDetector = HandBoundingBoxDetector()
+
     // Classification results
     private var identifierString = ""
     private var confidence: VNConfidence = 0.0
@@ -220,6 +225,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func processGalleryImage(_ inputImage: UIImage?) {
         if let image = inputImage {
+            handBoundingBoxDetector.detectHandBoundingBox(in: image) { boundingBox in
+                if let box = boundingBox {
+                    print("Hand bounding box: \(box)")
+                    let imageWithBox = inputImage?.drawBoundingBox(box)
+                    saveImageToGallery(imageWithBox!)
+                } else {
+                    print("Could not detect hand bounding box")
+                }
+            }
+    
             let resizedImage = resizeImageForModel(image)
             self.processDepthImage(from: resizedImage!) { depthImage in
                 let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
