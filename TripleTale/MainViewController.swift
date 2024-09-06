@@ -28,10 +28,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     let motionManager = CMMotionManager()
     private var isForwardFacing = false
     
-    let elbowAngleDetector = ElbowAngleDetector()
-    let fingerBendDetector = FingerBendDetector()
-    let fingerWidthDetector = FingerWidthDetector()
-    let handBoundingBoxDetector = HandBoundingBoxDetector()
+//    let elbowAngleDetector = ElbowAngleDetector()
+//    let fingerBendDetector = FingerBendDetector()
+//    let fingerWidthDetector = FingerWidthDetector()
+//    let handBoundingBoxDetector = HandBoundingBoxDetector()
+    let armPoseDetector = ArmPoseDetector()
 
     // Classification results
     private var identifierString = ""
@@ -225,13 +226,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func processGalleryImage(_ inputImage: UIImage?) {
         if let image = inputImage {
-            handBoundingBoxDetector.detectHandBoundingBox(in: image) { boundingBox in
-                if let box = boundingBox {
-                    print("Hand bounding box: \(box)")
-                    let imageWithBox = inputImage?.drawBoundingBox(box)
-                    saveImageToGallery(imageWithBox!)
-                } else {
-                    print("Could not detect hand bounding box")
+            armPoseDetector.detectArmBendAngles(in: image) { leftShoulder, leftElbow, leftWrist, rightShoulder, rightElbow, rightWrist, angles in
+                if let leftShoulder = leftShoulder, let leftElbow = leftElbow, let leftWrist = leftWrist,
+                   let rightShoulder = rightShoulder, let rightElbow = rightElbow, let rightWrist = rightWrist,
+                   let angles = angles {
+                    
+                    let leftElbowAngle = angles["leftElbowAngle"] ?? 0.0
+                    let rightElbowAngle = angles["rightElbowAngle"] ?? 0.0
+                                        
+                    // Draw the arms and angles on the image
+                    let modifiedImage = image.drawArmsWithElbowAngles(leftShoulder: leftShoulder, leftElbow: leftElbow, leftWrist: leftWrist, leftAngle: leftElbowAngle,
+                                                                      rightShoulder: rightShoulder, rightElbow: rightElbow, rightWrist: rightWrist, rightAngle: rightElbowAngle)
+                    
+                    // Show the modified image in a UIImageView
+                    saveImageToGallery(modifiedImage!)
                 }
             }
     

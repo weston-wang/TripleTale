@@ -371,6 +371,53 @@ extension UIImage {
         
         return newImage
     }
+    
+   func drawArmsWithElbowAngles(leftShoulder: CGPoint, leftElbow: CGPoint, leftWrist: CGPoint, leftAngle: CGFloat,
+                                rightShoulder: CGPoint, rightElbow: CGPoint, rightWrist: CGPoint, rightAngle: CGFloat) -> UIImage? {
+       
+       // Begin a graphics context with the image
+       UIGraphicsBeginImageContext(self.size)
+       self.draw(at: CGPoint.zero)
+       
+       guard let context = UIGraphicsGetCurrentContext() else {
+           return nil
+       }
+       
+       context.setLineWidth(5.0)
+       context.setStrokeColor(UIColor.red.cgColor)
+       
+       // Draw the left arm
+       context.move(to: leftShoulder)
+       context.addLine(to: leftElbow)
+       context.addLine(to: leftWrist)
+       context.strokePath()
+       
+       // Draw the right arm
+       context.move(to: rightShoulder)
+       context.addLine(to: rightElbow)
+       context.addLine(to: rightWrist)
+       context.strokePath()
+       
+       // Draw the elbow angles as text
+       drawText("Left Elbow: \(Int(leftAngle))°", at: leftElbow, in: context)
+       drawText("Right Elbow: \(Int(rightAngle))°", at: rightElbow, in: context)
+       
+       // Generate a new image with the drawings
+       let newImage = UIGraphicsGetImageFromCurrentImageContext()
+       UIGraphicsEndImageContext()
+       
+       return newImage
+   }
+   
+   private func drawText(_ text: String, at point: CGPoint, in context: CGContext) {
+       let attributes: [NSAttributedString.Key: Any] = [
+           .font: UIFont.systemFont(ofSize: 16),
+           .foregroundColor: UIColor.blue
+       ]
+       
+       let textRect = CGRect(x: point.x + 10, y: point.y - 10, width: 100, height: 20)
+       text.draw(in: textRect, withAttributes: attributes)
+   }
 }
 
 /// - Tag: UIViewController

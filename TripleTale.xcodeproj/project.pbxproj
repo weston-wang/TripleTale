@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4E28C9862C8B6C45007BE96D /* ArmPoseDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E28C9852C8B6C45007BE96D /* ArmPoseDetector.swift */; };
 		4E4C7FAF2C8B6105003F3F96 /* ElbowAngleDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */; };
 		4E4C7FB12C8B6275003F3F96 /* FingerBendDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */; };
 		4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */; };
@@ -30,6 +31,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4E28C9852C8B6C45007BE96D /* ArmPoseDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArmPoseDetector.swift; sourceTree = "<group>"; };
 		4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElbowAngleDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerBendDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerWidthDetector.swift; sourceTree = "<group>"; };
@@ -64,6 +66,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4E28C9872C8B6C97007BE96D /* Body Mechanics */ = {
+			isa = PBXGroup;
+			children = (
+				4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */,
+				4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */,
+				4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */,
+				4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */,
+				4E28C9852C8B6C45007BE96D /* ArmPoseDetector.swift */,
+			);
+			path = "Body Mechanics";
+			sourceTree = "<group>";
+		};
 		4EA49E292C74160900CDA5C9 /* Core */ = {
 			isa = PBXGroup;
 			children = (
@@ -84,10 +98,6 @@
 				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
 				4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */,
 				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
-				4E4C7FAE2C8B6105003F3F96 /* ElbowAngleDetector.swift */,
-				4E4C7FB02C8B6275003F3F96 /* FingerBendDetector.swift */,
-				4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */,
-				4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -124,8 +134,9 @@
 			isa = PBXGroup;
 			children = (
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
-				4EA49E2A2C74160F00CDA5C9 /* Support */,
 				4EA49E292C74160900CDA5C9 /* Core */,
+				4EA49E2A2C74160F00CDA5C9 /* Support */,
+				4E28C9872C8B6C97007BE96D /* Body Mechanics */,
 				4EA49E2D2C74DCF000CDA5C9 /* Resources */,
 			);
 			path = TripleTale;
@@ -205,6 +216,7 @@
 				4EA91EB42C730CA1001ACC69 /* Utilities.swift in Sources */,
 				4EA91EBA2C730EBF001ACC69 /* Extensions.swift in Sources */,
 				4E4C7FB12C8B6275003F3F96 /* FingerBendDetector.swift in Sources */,
+				4E28C9862C8B6C45007BE96D /* ArmPoseDetector.swift in Sources */,
 				4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */,
 				4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */,
 				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
