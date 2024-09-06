@@ -32,7 +32,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //    let fingerBendDetector = FingerBendDetector()
 //    let fingerWidthDetector = FingerWidthDetector()
 //    let handBoundingBoxDetector = HandBoundingBoxDetector()
-    let armPoseDetector = ArmPoseDetector()
+//    let armPoseDetector = ArmPoseDetector()
+    let armPose3DDetector = ArmPose3DDetector()
 
     // Classification results
     private var identifierString = ""
@@ -226,20 +227,26 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func processGalleryImage(_ inputImage: UIImage?) {
         if let image = inputImage {
-            armPoseDetector.detectArmBendAngles(in: image) { leftShoulder, leftElbow, leftWrist, rightShoulder, rightElbow, rightWrist, angles in
-                if let leftShoulder = leftShoulder, let leftElbow = leftElbow, let leftWrist = leftWrist,
-                   let rightShoulder = rightShoulder, let rightElbow = rightElbow, let rightWrist = rightWrist,
-                   let angles = angles {
-                    
-                    let leftElbowAngle = angles["leftElbowAngle"] ?? 0.0
-                    let rightElbowAngle = angles["rightElbowAngle"] ?? 0.0
-                                        
-                    // Draw the arms and angles on the image
-                    let modifiedImage = image.drawArmsWithElbowAngles(leftShoulder: leftShoulder, leftElbow: leftElbow, leftWrist: leftWrist, leftAngle: leftElbowAngle,
-                                                                      rightShoulder: rightShoulder, rightElbow: rightElbow, rightWrist: rightWrist, rightAngle: rightElbowAngle)
-                    
-                    // Show the modified image in a UIImageView
-                    saveImageToGallery(modifiedImage!)
+            armPose3DDetector.detectArmBendAngles(in: image) { leftShoulder, leftElbow, leftWrist, rightShoulder, rightElbow, rightWrist, angles, detected in
+                if detected {
+                    print("3D arm pose detected!")
+                    print("leftShoulder: \(leftShoulder), leftElbow: \(leftElbow), leftWrist: \(leftWrist), rightShoulder: \(rightShoulder), rightElbow: \(rightElbow), rightWrist: \(rightWrist)")
+
+                    if let angles = angles {
+                        let leftElbowAngle = angles["leftElbowAngle"]
+                        let rightElbowAngle = angles["rightElbowAngle"]
+                        print("Left elbow angle: \(leftElbowAngle)°, Right elbow angle: \(rightElbowAngle)°")
+
+                        
+                        // Draw the arm pose on the image
+                        let annotatedImage = image.drawArmPose(leftShoulder: leftShoulder!, leftElbow: leftElbow!, leftWrist: leftWrist!,
+                                                               rightShoulder: rightShoulder!, rightElbow: rightElbow!, rightWrist: rightWrist!,
+                                                               leftElbowAngle: leftElbowAngle!, rightElbowAngle: rightElbowAngle!)
+                        
+                        saveImageToGallery(annotatedImage!)
+                    }
+                } else {
+                    print("No 3D arm pose detected.")
                 }
             }
     

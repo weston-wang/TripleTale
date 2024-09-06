@@ -10,9 +10,9 @@ import Vision
 
 class ArmPoseDetector {
     
-    func detectArmBendAngles(in image: UIImage, completion: @escaping (CGPoint?, CGPoint?, CGPoint?, CGPoint?, CGPoint?, CGPoint?, [String: CGFloat]?) -> Void) {
+    func detectArmBendAngles(in image: UIImage, completion: @escaping (CGPoint?, CGPoint?, CGPoint?, CGPoint?, CGPoint?, CGPoint?, [String: CGFloat]?, Bool) -> Void) {
         guard let cgImage = image.cgImage else {
-            completion(nil, nil, nil, nil, nil, nil, nil)
+            completion(nil, nil, nil, nil, nil, nil, nil, false)
             return
         }
 
@@ -21,8 +21,9 @@ class ArmPoseDetector {
         
         do {
             try requestHandler.perform([bodyPoseRequest])
-            guard let results = bodyPoseRequest.results as? [VNHumanBodyPoseObservation], let observation = results.first else {
-                completion(nil, nil, nil, nil, nil, nil, nil)
+            guard let results = bodyPoseRequest.results, let observation = results.first else {
+                // No results detected
+                completion(nil, nil, nil, nil, nil, nil, nil, false)
                 return
             }
             
@@ -35,11 +36,10 @@ class ArmPoseDetector {
             let rightElbow = try? observation.recognizedPoint(.rightElbow)
             let rightWrist = try? observation.recognizedPoint(.rightWrist)
             
-            // Calculate the elbow angles
-            let leftElbowAngle = self.calculateArmBendAngle(from: observation, side: "left")
-            let rightElbowAngle = self.calculateArmBendAngle(from: observation, side: "right")
-            
-            // Check if the recognized points have sufficient confidence
+            // Boolean to check if at least one point was detected with sufficient confidence
+            var detectedSomething = false
+
+            // Check if the recognized points have sufficient confidence (threshold 0.5)
             if let ls = leftShoulder, let le = leftElbow, let lw = leftWrist, ls.confidence > 0.5, le.confidence > 0.5, lw.confidence > 0.5,
                let rs = rightShoulder, let re = rightElbow, let rw = rightWrist, rs.confidence > 0.5, re.confidence > 0.5, rw.confidence > 0.5 {
                 
@@ -51,15 +51,23 @@ class ArmPoseDetector {
                 let rightShoulderPoint = CGPoint(x: rs.location.x * image.size.width, y: (1 - rs.location.y) * image.size.height)
                 let rightElbowPoint = CGPoint(x: re.location.x * image.size.width, y: (1 - re.location.y) * image.size.height)
                 let rightWristPoint = CGPoint(x: rw.location.x * image.size.width, y: (1 - rw.location.y) * image.size.height)
+
+                detectedSomething = true // At least one valid point was detected
                 
-                completion(leftShoulderPoint, leftElbowPoint, leftWristPoint, rightShoulderPoint, rightElbowPoint, rightWristPoint, ["leftElbowAngle": leftElbowAngle, "rightElbowAngle": rightElbowAngle])
+                // Calculate the elbow angles
+                let leftElbowAngle = self.calculateArmBendAngle(from: observation, side: "left")
+                let rightElbowAngle = self.calculateArmBendAngle(from: observation, side: "right")
+                
+                // Complete with detected points and flag that detection was successful
+                completion(leftShoulderPoint, leftElbowPoint, leftWristPoint, rightShoulderPoint, rightElbowPoint, rightWristPoint, ["leftElbowAngle": leftElbowAngle, "rightElbowAngle": rightElbowAngle], detectedSomething)
             } else {
-                completion(nil, nil, nil, nil, nil, nil, nil)
+                // Points were not detected or had low confidence
+                completion(nil, nil, nil, nil, nil, nil, nil, detectedSomething)
             }
             
         } catch {
             print("Error performing body pose request: \(error)")
-            completion(nil, nil, nil, nil, nil, nil, nil)
+            completion(nil, nil, nil, nil, nil, nil, nil, false)
         }
     }
 
@@ -85,15 +93,16 @@ class ArmPoseDetector {
     }
 
     private func calculateAngle(shoulder: CGPoint, elbow: CGPoint, wrist: CGPoint) -> CGFloat {
+        // Create vectors for upper arm (shoulder -> elbow) and forearm (elbow -> wrist)
         let upperArmVector = CGVector(dx: elbow.x - shoulder.x, dy: elbow.y - shoulder.y)
         let forearmVector = CGVector(dx: wrist.x - elbow.x, dy: wrist.y - elbow.y)
 
-        // Calculate the dot product and magnitudes
+        // Calculate the dot product and magnitudes (lengths) of the vectors
         let dotProduct = (upperArmVector.dx * forearmVector.dx) + (upperArmVector.dy * forearmVector.dy)
         let upperArmMagnitude = sqrt(upperArmVector.dx * upperArmVector.dx + upperArmVector.dy * upperArmVector.dy)
         let forearmMagnitude = sqrt(forearmVector.dx * forearmVector.dx + forearmVector.dy * forearmVector.dy)
 
-        // Calculate the angle in radians and convert to degrees
+        // Calculate the angle between the vectors in radians and convert it to degrees
         let cosineAngle = dotProduct / (upperArmMagnitude * forearmMagnitude)
         let angleInRadians = acos(cosineAngle)
         let angleInDegrees = angleInRadians * (180.0 / .pi)

@@ -287,3 +287,34 @@ func estimateHandDistanceFromTorso(elbowAngle: CGFloat, upperArmLength: CGFloat,
     
     return totalForwardDistance
 }
+
+func pixelBuffer(from image: UIImage) -> CVPixelBuffer? {
+    guard let cgImage = image.cgImage else {
+        return nil
+    }
+    
+    let width = cgImage.width
+    let height = cgImage.height
+    let attrs: [String: Any] = [kCVPixelBufferCGImageCompatibilityKey as String: true,
+                                kCVPixelBufferCGBitmapContextCompatibilityKey as String: true]
+    
+    var pixelBuffer: CVPixelBuffer?
+    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, attrs as CFDictionary, &pixelBuffer)
+    
+    guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+        return nil
+    }
+    
+    CVPixelBufferLockBaseAddress(buffer, .readOnly)
+    let data = CVPixelBufferGetBaseAddress(buffer)
+    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+    
+    guard let context = CGContext(data: data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), space: rgbColorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) else {
+        return nil
+    }
+    
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+    CVPixelBufferUnlockBaseAddress(buffer, .readOnly)
+    
+    return buffer
+}

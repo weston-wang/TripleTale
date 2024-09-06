@@ -371,6 +371,110 @@ extension UIImage {
         
         return newImage
     }
+
+    /// Draws the arm points and 3D angles (pitch, yaw, roll) on the image.
+    /// - Parameters:
+    ///   - leftShoulder: The position of the left shoulder.
+    ///   - leftElbow: The position of the left elbow.
+    ///   - leftWrist: The position of the left wrist.
+    ///   - rightShoulder: The position of the right shoulder.
+    ///   - rightElbow: The position of the right elbow.
+    ///   - rightWrist: The position of the right wrist.
+    ///   - leftElbowAngle: The simd_float3 for the left elbow (pitch, yaw, roll).
+    ///   - rightElbowAngle: The simd_float3 for the right elbow (pitch, yaw, roll).
+    /// - Returns: A new UIImage with the points, connections, and angles drawn.
+    func drawArmPose(leftShoulder: simd_float3, leftElbow: simd_float3, leftWrist: simd_float3,
+                     rightShoulder: simd_float3, rightElbow: simd_float3, rightWrist: simd_float3,
+                     leftElbowAngle: simd_float3, rightElbowAngle: simd_float3) -> UIImage? {
+
+        // Begin a new image context
+        UIGraphicsBeginImageContext(self.size)
+
+        // Draw the original image in the background
+        self.draw(at: CGPoint.zero)
+
+        // Set up the drawing context
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        context.setLineWidth(4.0)
+        context.setStrokeColor(UIColor.red.cgColor)
+        context.setFillColor(UIColor.blue.cgColor)
+
+        // Helper to convert 3D points to 2D points (for this example, we only use x and y)
+        func convertToCGPoint(_ point: simd_float3) -> CGPoint {
+            // Assuming x and y are normalized between -1 and 1
+            let x = (CGFloat(point.x) + 1.0) * self.size.width / 2.0
+            let y = (1.0 - CGFloat(point.y)) * self.size.height / 2.0
+            return CGPoint(x: x, y: y)
+        }
+
+        // Convert 3D points to 2D points
+        let leftShoulder2D = convertToCGPoint(leftShoulder)
+        let leftElbow2D = convertToCGPoint(leftElbow)
+        let leftWrist2D = convertToCGPoint(leftWrist)
+
+        let rightShoulder2D = convertToCGPoint(rightShoulder)
+        let rightElbow2D = convertToCGPoint(rightElbow)
+        let rightWrist2D = convertToCGPoint(rightWrist)
+
+        // Draw lines for the left arm
+        context.move(to: leftShoulder2D)
+        context.addLine(to: leftElbow2D)
+        context.addLine(to: leftWrist2D)
+        context.strokePath()
+
+        // Draw lines for the right arm
+        context.move(to: rightShoulder2D)
+        context.addLine(to: rightElbow2D)
+        context.addLine(to: rightWrist2D)
+        context.strokePath()
+
+        // Draw circles at the points
+        let circleRadius: CGFloat = 8.0
+        [leftShoulder2D, leftElbow2D, leftWrist2D, rightShoulder2D, rightElbow2D, rightWrist2D].forEach { point in
+            context.fillEllipse(in: CGRect(x: point.x - circleRadius / 2, y: point.y - circleRadius / 2, width: circleRadius, height: circleRadius))
+        }
+
+        // Draw the 3D angles (pitch, yaw, roll) near the elbows
+        drawText("Pitch: \(Int(leftElbowAngle.x))°, Yaw: \(Int(leftElbowAngle.y))°, Roll: \(Int(leftElbowAngle.z))°", at: leftElbow2D, in: context)
+        drawText("Pitch: \(Int(rightElbowAngle.x))°, Yaw: \(Int(rightElbowAngle.y))°, Roll: \(Int(rightElbowAngle.z))°", at: rightElbow2D, in: context)
+
+        // Generate a new image with the drawing
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return newImage
+    }
+    
+    /// Draws all detected body parts on the image.
+    /// - Parameter bodyPoints: A dictionary of body parts and their 2D positions.
+    /// - Returns: A new UIImage with the body parts drawn.
+    func drawBodyPoints(_ bodyPoints: [VNHumanBodyPoseObservation.JointName: CGPoint]) -> UIImage? {
+        
+        // Begin a new image context
+        UIGraphicsBeginImageContext(self.size)
+        
+        // Draw the original image in the background
+        self.draw(at: CGPoint.zero)
+        
+        // Set up the drawing context
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        context.setLineWidth(2.0)
+        context.setStrokeColor(UIColor.red.cgColor)
+        context.setFillColor(UIColor.blue.cgColor)
+        
+        // Loop through each body point and draw it on the image
+        for (_, point) in bodyPoints {
+            let circleRadius: CGFloat = 5.0
+            let circleRect = CGRect(x: point.x - circleRadius, y: point.y - circleRadius, width: circleRadius * 2, height: circleRadius * 2)
+            context.fillEllipse(in: circleRect)
+        }
+        
+        // Generate the new image with the drawn points
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
     
    func drawArmsWithElbowAngles(leftShoulder: CGPoint, leftElbow: CGPoint, leftWrist: CGPoint, leftAngle: CGFloat,
                                 rightShoulder: CGPoint, rightElbow: CGPoint, rightWrist: CGPoint, rightAngle: CGFloat) -> UIImage? {
