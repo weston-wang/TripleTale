@@ -158,7 +158,7 @@ func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
 // Function to scale the fish length to the same plane as the face
 func scaleLengthToFacePlane(fishLengthPx: CGFloat, fishDepth: CGFloat, faceDepth: CGFloat) -> CGFloat {
     // Scale the fish length using the depth ratio
-    let scalingFactor = faceDepth / fishDepth
+    let scalingFactor = (1/faceDepth) / (1/fishDepth)
     let scaledFishLengthPx = fishLengthPx * scalingFactor
     return scaledFishLengthPx
 }
@@ -253,4 +253,19 @@ func calculateCenter(of points: [CGPoint]) -> CGPoint? {
     let centerY = totalY / CGFloat(points.count)
     
     return CGPoint(x: centerX, y: centerY)
+}
+
+// Function to scale the object as if it were in the same plane as the face
+func scaleObjectToFacePlane(measuredLength: CGFloat, distanceToFace: CGFloat, objectDistanceFromTorso: CGFloat) -> CGFloat {
+    // Distance to the face (assuming 2 feet or 0.6 meters)
+    let distanceToCamera: CGFloat = distanceToFace
+    
+    // Calculate the distance ratio (how much closer the object is compared to the face)
+    let objectDistanceToCamera = distanceToCamera - objectDistanceFromTorso
+    let scalingRatio = objectDistanceToCamera / distanceToCamera
+    
+    // Scale the measured length of the object
+    let scaledLength = measuredLength * scalingRatio
+    
+    return scaledLength
 }
