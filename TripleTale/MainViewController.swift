@@ -219,53 +219,54 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     func processGalleryImage(_ inputImage: UIImage?) {
-        DispatchQueue.main.async {
-            if let image = inputImage {
+        if let image = inputImage {
+            let resizedImage = resizeImageForModel(image)
+            self.processDepthImage(from: resizedImage!) { depthImage in
+                let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
+                let vertices = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
                 
-                let resizedImage = resizeImageForModel(image)
-                self.processDepthImage(from: resizedImage!) { depthImage in
-                    let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
-                    let vertices = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
-                    
-                    let dim1 = distanceBetween(vertices![0], vertices![2])
-                    let dim2 = distanceBetween(vertices![1], vertices![3])
-                    
-                    let fishLength = [dim1, dim2].max()
-                    
-                    print("detected fish lenght: \(fishLength!) px")
-                    
-                    if let topFaceRect = detectTopFaceBoundingBox(in: image) {
-                        print("detected face: \(topFaceRect) px")
+                let dim1 = distanceBetween(vertices![0], vertices![2])
+                let dim2 = distanceBetween(vertices![1], vertices![3])
+                
+                let fishLength = [dim1, dim2].max()
+                
+                print("detected fish length: \(fishLength!) px")
+                
+                if let topFaceRect = detectTopFaceBoundingBox(in: image) {
+                    print("detected face: \(topFaceRect) px")
 
-                        let distanceToFace: CGFloat = 2.0  // Distance from the camera to the face in feet, nominal
-                        let objectDistanceFromTorso: CGFloat = 1.0  // Distance from torso to object in feet (1 foot in front)
-                        
-                        let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), distanceToFace: distanceToFace, objectDistanceFromTorso: objectDistanceFromTorso)
-                        
-                        print("updated fish length: \(updatedFishLength) px")
-                        
-                        let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
+                    let distanceToFace: CGFloat = 2.0  // Distance from the camera to the face in feet, nominal
+                    let objectDistanceFromTorso: CGFloat = 1.0  // Distance from torso to object in feet (1 foot in front)
+                    
+                    let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), distanceToFace: distanceToFace, objectDistanceFromTorso: objectDistanceFromTorso)
+                    
+                    print("updated fish length: \(updatedFishLength) px")
+                    
+                    let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
 
-                        let fishLengthIn = updatedFishLength / topFaceRect.height * faceLengthIn
-                        let fishForkLengthM = fishLengthIn * 0.8 * 0.0254
-                        
-                        let (weightInLb, forkInInches) = calculateWeightFromFork(Float(fishForkLengthM), "CalicoBass")
-                        
-                        let widthInInches = Measurement(value: 0, unit: UnitLength.inches)
-                        let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
-                        let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    let fishLengthIn = updatedFishLength / topFaceRect.height * faceLengthIn
+                    let fishForkLengthM = fishLengthIn * 0.8 * 0.0254
+                    
+                    let (weightInLb, forkInInches) = calculateWeightFromFork(Float(fishForkLengthM), "CalicoBass")
+                    
+                    let widthInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
+                    let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
-                        if let combinedImage = generateResultImage(image, nil , widthInInches, forkInInches, heightInInches, circumferenceInInches, weightInLb, "Calico Bass") {
-                          self.showImagePopup(combinedImage: combinedImage)
-                        } else {
-                          self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+                    if let combinedImage = generateResultImage(image, nil, widthInInches, forkInInches, heightInInches, circumferenceInInches, weightInLb, "") {
+                        // Ensure that the UI update (showing the image popup) happens on the main thread
+                        DispatchQueue.main.async {
+                            self.showImagePopup(combinedImage: combinedImage)
                         }
-                        
                     } else {
-                        print("No face detected.")
+                        DispatchQueue.main.async {
+                            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+                        }
                     }
+                    
+                } else {
+                    print("No face detected.")
                 }
-                
             }
         }
     }
