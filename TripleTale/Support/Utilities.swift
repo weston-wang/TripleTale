@@ -256,12 +256,11 @@ func calculateCenter(of points: [CGPoint]) -> CGPoint? {
 }
 
 // Function to scale the object as if it were in the same plane as the face
-func scaleObjectToFacePlane(measuredLength: CGFloat, distanceToFace: CGFloat, objectDistanceFromTorso: CGFloat) -> CGFloat {
+func scaleObjectToFacePlane(measuredLength: CGFloat, faceDistanceToCamera: CGFloat, objectDistanceToCamera: CGFloat) -> CGFloat {
     // Distance to the face (assuming 2 feet or 0.6 meters)
-    let distanceToCamera: CGFloat = distanceToFace
+    let distanceToCamera: CGFloat = faceDistanceToCamera
     
     // Calculate the distance ratio (how much closer the object is compared to the face)
-    let objectDistanceToCamera = distanceToCamera - objectDistanceFromTorso
     let scalingRatio = objectDistanceToCamera / distanceToCamera
     
     // Scale the measured length of the object
@@ -288,33 +287,99 @@ func estimateHandDistanceFromTorso(elbowAngle: CGFloat, upperArmLength: CGFloat,
     return totalForwardDistance
 }
 
+/// Converts a UIImage into a CVPixelBuffer.
 func pixelBuffer(from image: UIImage) -> CVPixelBuffer? {
-    guard let cgImage = image.cgImage else {
+    guard let cgImage = image.cgImage else { return nil }
+
+    let frameSize = CGSize(width: cgImage.width, height: cgImage.height)
+    var pixelBuffer: CVPixelBuffer?
+
+    let options: [CFString: Any] = [
+        kCVPixelBufferCGImageCompatibilityKey: true,
+        kCVPixelBufferCGBitmapContextCompatibilityKey: true
+    ]
+
+    let status = CVPixelBufferCreate(kCFAllocatorDefault,
+                                     Int(frameSize.width),
+                                     Int(frameSize.height),
+                                     kCVPixelFormatType_32ARGB, // Choose format appropriate for your depth data
+                                     options as CFDictionary,
+                                     &pixelBuffer)
+
+    guard status == kCVReturnSuccess, let buffer = pixelBuffer else { return nil }
+
+    CVPixelBufferLockBaseAddress(buffer, .readOnly)
+    let pixelData = CVPixelBufferGetBaseAddress(buffer)
+
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    let context = CGContext(data: pixelData,
+                            width: Int(frameSize.width),
+                            height: Int(frameSize.height),
+                            bitsPerComponent: 8,
+                            bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
+                            space: colorSpace,
+                            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
+
+    context?.draw(cgImage, in: CGRect(origin: .zero, size: frameSize))
+    CVPixelBufferUnlockBaseAddress(buffer, .readOnly)
+
+    return buffer
+}
+
+func createDepthDataFromDictionary(from depthImage: UIImage) -> AVDepthData? {
+    // Convert the UIImage to a CGImage
+    guard let cgImage = depthImage.cgImage else {
+        print("Unable to convert UIImage to CGImage")
         return nil
     }
-    
+
     let width = cgImage.width
     let height = cgImage.height
-    let attrs: [String: Any] = [kCVPixelBufferCGImageCompatibilityKey as String: true,
-                                kCVPixelBufferCGBitmapContextCompatibilityKey as String: true]
-    
-    var pixelBuffer: CVPixelBuffer?
-    let status = CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, attrs as CFDictionary, &pixelBuffer)
-    
-    guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+
+    // Create a pixel buffer to hold the depth data
+    let depthPixelBufferOptions: [CFString: Any] = [
+        kCVPixelBufferWidthKey: width,
+        kCVPixelBufferHeightKey: height,
+        kCVPixelBufferPixelFormatTypeKey: kCVPixelFormatType_DisparityFloat32 // or kCVPixelFormatType_DepthFloat32
+    ]
+
+    var depthPixelBuffer: CVPixelBuffer?
+    CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_DisparityFloat32, depthPixelBufferOptions as CFDictionary, &depthPixelBuffer)
+
+    guard let pixelBuffer = depthPixelBuffer else {
+        print("Unable to create CVPixelBuffer")
         return nil
     }
-    
-    CVPixelBufferLockBaseAddress(buffer, .readOnly)
-    let data = CVPixelBufferGetBaseAddress(buffer)
-    let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
-    
-    guard let context = CGContext(data: data, width: width, height: height, bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), space: rgbColorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) else {
+
+    // Lock the pixel buffer to modify it
+    CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+    let depthPointer = CVPixelBufferGetBaseAddress(pixelBuffer)
+
+    // Create a CGContext and draw the image into the pixel buffer
+    let context = CGContext(data: depthPointer,
+                            width: width,
+                            height: height,
+                            bitsPerComponent: 32, // Float32 format for depth
+                            bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+                            space: CGColorSpaceCreateDeviceGray(),
+                            bitmapInfo: CGImageAlphaInfo.none.rawValue)
+
+    context?.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+    // Unlock the pixel buffer
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
+
+    // Now we need to create the auxiliary dictionary for AVDepthData
+    let auxDataInfo: [AnyHashable: Any] = [
+        kCGImageAuxiliaryDataInfoData: pixelBuffer, // The pixel buffer
+    ]
+
+    // Create AVDepthData from the auxiliary dictionary
+    do {
+        let depthData = try AVDepthData(fromDictionaryRepresentation: auxDataInfo)
+        return depthData
+    } catch {
+        print("Error creating AVDepthData from dictionary: \(error)")
         return nil
     }
-    
-    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-    CVPixelBufferUnlockBaseAddress(buffer, .readOnly)
-    
-    return buffer
 }

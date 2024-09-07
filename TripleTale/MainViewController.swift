@@ -227,26 +227,35 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func processGalleryImage(_ inputImage: UIImage?) {
         if let image = inputImage {
-            armPose3DDetector.detectArmBendAngles(in: image) { leftShoulder, leftElbow, leftWrist, rightShoulder, rightElbow, rightWrist, angles, detected in
+            
+            var distanceToFace: CGFloat = 2.0  // Distance from the camera to the face in feet, nominal
+            var distanceToObject: CGFloat = 1.0  // Distance from torso to object in feet (1 foot in front)
+            
+            let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
+            let minGap: Float = 0.1             // wrist should be at least 0.1 m in front of torso
+            let forkToFullRatio = 0.8
+            
+            armPose3DDetector.detectArmBendAngles(in: image) { pointsInImage, distancesInM, detected in
                 if detected {
-                    print("3D arm pose detected!")
-                    print("leftShoulder: \(leftShoulder), leftElbow: \(leftElbow), leftWrist: \(leftWrist), rightShoulder: \(rightShoulder), rightElbow: \(rightElbow), rightWrist: \(rightWrist)")
-
-                    if let angles = angles {
-                        let leftElbowAngle = angles["leftElbowAngle"]
-                        let rightElbowAngle = angles["rightElbowAngle"]
-                        print("Left elbow angle: \(leftElbowAngle)°, Right elbow angle: \(rightElbowAngle)°")
-
+                    print("2D Points in Image: \(pointsInImage)")
+                    print("Distances to camera: \(distancesInM)")
+                    
+                    let distanceToFaceInM = distancesInM["head"]
+                    let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
+                    
+                    distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)
+                    if distanceToWristInM! > minGap {
+                        distanceToObject = CGFloat(distanceToWristInM! * 3.28084)
                         
-                        // Draw the arm pose on the image
-                        let annotatedImage = image.drawArmPose(leftShoulder: leftShoulder!, leftElbow: leftElbow!, leftWrist: leftWrist!,
-                                                               rightShoulder: rightShoulder!, rightElbow: rightElbow!, rightWrist: rightWrist!,
-                                                               leftElbowAngle: leftElbowAngle!, rightElbowAngle: rightElbowAngle!)
-                        
-                        saveImageToGallery(annotatedImage!)
+                        print("reassigning distance to fish: \(distanceToObject) ft")
+                        print("reassigning distance to face: \(distanceToFace) ft")
                     }
-                } else {
-                    print("No 3D arm pose detected.")
+                    
+                    // Draw the points on the image
+                    if let annotatedImage = image.drawVNPoints(pointsInImage) {
+                        // Display the annotated image in an UIImageView
+                        saveImageToGallery(annotatedImage)
+                    }
                 }
             }
     
@@ -264,16 +273,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 if let topFaceRect = detectTopFaceBoundingBox(in: image) {
                     print("detected face: \(topFaceRect) px")
-
-                    let distanceToFace: CGFloat = 2.0  // Distance from the camera to the face in feet, nominal
-                    let objectDistanceFromTorso: CGFloat = 1.0  // Distance from torso to object in feet (1 foot in front)
                     
-                    let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), distanceToFace: distanceToFace, objectDistanceFromTorso: objectDistanceFromTorso)
+                    let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), faceDistanceToCamera: distanceToFace, objectDistanceToCamera: distanceToObject)
                     
                     print("updated fish length: \(updatedFishLength) px")
                     
-                    let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
-
                     let fishLengthIn = updatedFishLength / topFaceRect.height * faceLengthIn
                     let fishForkLengthM = fishLengthIn * 0.0254     // no extra scaling since oval is roughly fork length
                     
@@ -283,7 +287,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
                     let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
-                    if let combinedImage = generateResultImage(image, nil, widthInInches, forkInInches / 0.8, heightInInches, circumferenceInInches, weightInLb, "") {
+                    if let combinedImage = generateResultImage(image, nil, widthInInches, forkInInches / forkToFullRatio, heightInInches, circumferenceInInches, weightInLb, "") {
                         // Ensure that the UI update (showing the image popup) happens on the main thread
                         DispatchQueue.main.async {
                             self.showImagePopup(combinedImage: combinedImage)

@@ -522,6 +522,53 @@ extension UIImage {
        let textRect = CGRect(x: point.x + 10, y: point.y - 10, width: 100, height: 20)
        text.draw(in: textRect, withAttributes: attributes)
    }
+    
+    /// Draws the points represented by VNPoints on the image.
+    /// - Parameters:
+    ///   - points: A dictionary of joint names and their VNPoint positions.
+    /// - Returns: A new UIImage with the points drawn.
+    func drawVNPoints(_ points: [String: VNPoint]) -> UIImage? {
+
+        // Begin a new image context
+        UIGraphicsBeginImageContext(self.size)
+
+        // Draw the original image in the background
+        self.draw(at: CGPoint.zero)
+
+        // Set up the drawing context
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        context.setLineWidth(2.0)
+        context.setStrokeColor(UIColor.red.cgColor)
+        context.setFillColor(UIColor.green.cgColor)
+
+        // Loop through each VNPoint and draw it
+        for (_, vnPoint) in points {
+            // Convert the normalized VNPoint.location to CGPoint in image coordinates
+            let pointInImage = convertNormalizedPointToCGPoint(vnPoint.location, imageSize: self.size)
+            
+            // Draw a small circle at the point
+            let circleRadius: CGFloat = 16.0
+            context.fillEllipse(in: CGRect(x: pointInImage.x - circleRadius / 2, y: pointInImage.y - circleRadius / 2, width: circleRadius, height: circleRadius))
+        }
+
+        // Generate a new image with the drawing
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return newImage
+    }
+
+    /// Converts a normalized VNPoint.location to a CGPoint in the image coordinate system.
+    /// - Parameters:
+    ///   - point: The VNPoint to convert (assumed to be normalized between 0 and 1, with a lower-left origin).
+    ///   - imageSize: The size of the image for conversion.
+    /// - Returns: The CGPoint in the image's coordinate space.
+    private func convertNormalizedPointToCGPoint(_ point: CGPoint, imageSize: CGSize) -> CGPoint {
+        // Convert normalized coordinates with a lower-left origin to UIKit's top-left origin
+        let x = point.x * imageSize.width
+        let y = (1.0 - point.y) * imageSize.height // Flip y-axis for UIKit
+        return CGPoint(x: x, y: y)
+    }
 }
 
 /// - Tag: UIViewController
@@ -622,5 +669,31 @@ extension CIImage {
             return UIImage(cgImage: cgImage)
         }
         return nil
+    }
+}
+
+extension VNPoint {
+
+    /// Adds two VNPoints and returns the result as a new VNPoint.
+    /// - Parameter other: The other VNPoint to add.
+    /// - Returns: A new VNPoint with the added coordinates.
+    func adding(_ other: VNPoint) -> VNPoint {
+        let xSum = self.x + other.x
+        let ySum = self.y + other.y
+        return VNPoint(x: xSum, y: ySum)
+    }
+
+    /// Adds two VNPoints with clamping to the range [0, 1].
+    /// - Parameter other: The other VNPoint to add.
+    /// - Returns: A new VNPoint with the added coordinates clamped to [0, 1].
+    func addingClamped(_ other: VNPoint) -> VNPoint {
+        let xSum = clamp(self.x + other.x)
+        let ySum = clamp(self.y + other.y)
+        return VNPoint(x: xSum, y: ySum)
+    }
+
+    /// Helper function to clamp a value between 0 and 1.
+    private func clamp(_ value: CGFloat) -> CGFloat {
+        return min(max(value, 0), 1)
     }
 }

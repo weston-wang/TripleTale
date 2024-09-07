@@ -11,7 +11,7 @@ import simd
 
 class ArmPose3DDetector {
     
-    func detectArmBendAngles(in image: UIImage, completion: @escaping ([String: VNPoint], [String: simd_float4], Bool) -> Void) {
+    func detectArmBendAngles(in image: UIImage, completion: @escaping ([String: VNPoint], [String: Float], Bool) -> Void) {
         guard let cgImage = image.cgImage else {
             completion([:], [:], false)
             return
@@ -28,48 +28,53 @@ class ArmPose3DDetector {
                 completion([:], [:], false)
                 return
             }
-            
-           let test = try? observation.pointInImage(.leftElbow)
-            
+                        
             // Extract the shoulder, elbow, and wrist 3D key points for both left and right arms using localPosition
-            if let leftShoulder = try? observation.recognizedPoint(.leftShoulder),
-               let leftElbow = try? observation.recognizedPoint(.leftElbow),
-               let leftWrist = try? observation.recognizedPoint(.leftWrist),
-               let rightShoulder = try? observation.recognizedPoint(.rightShoulder),
-               let rightElbow = try? observation.recognizedPoint(.rightElbow),
-               let rightWrist = try? observation.recognizedPoint(.rightWrist),
-               let head = try? observation.recognizedPoint(.centerHead) {
+            if let head = try? observation.recognizedPoint(.centerHead) {
                 
-                // Extract simd_float3 from the simd_float4x4 localPosition matrix
-                let leftShoulderPoint = self.extractPosition(from: leftShoulder.position)
-                let leftElbowPoint = self.extractPosition(from: leftElbow.position)
-                let leftWristPoint = self.extractPosition(from: leftWrist.position)
+                let leftShoulderPoint = try! observation.pointInImage(.leftShoulder)
+                let leftElbowPoint = try! observation.pointInImage(.leftElbow)
+                let leftWristPoint = try! observation.pointInImage(.leftWrist)
                 
-                let rightShoulderPoint = self.extractPosition(from: rightShoulder.position)
-                let rightElbowPoint = self.extractPosition(from: rightElbow.position)
-                let rightWristPoint = self.extractPosition(from: rightWrist.position)
+                let rightShoulderPoint = try! observation.pointInImage(.rightShoulder)
+                let rightElbowPoint = try! observation.pointInImage(.rightElbow)
+                let rightWristPoint = try! observation.pointInImage(.rightWrist)
                 
-                // Calculate the elbow angles using 3D vectors
-                let leftElbowAngle = self.calculateArmBendAngle3D(shoulder: leftShoulderPoint, elbow: leftElbowPoint, wrist: leftWristPoint)
-                let rightElbowAngle = self.calculateArmBendAngle3D(shoulder: rightShoulderPoint, elbow: rightElbowPoint, wrist: rightWristPoint)
-                
+                let headPoint = try! observation.pointInImage(.centerHead)
+                let rootPoint = try! observation.pointInImage(.root)
+
                 let headRelPos = try? observation.cameraRelativePosition(.centerHead)
                 let rightWristRelPos = try? observation.cameraRelativePosition(.rightWrist)
-                let leftWristRelPos = try? observation.cameraRelativePosition(.leftWrist)
                 let rightElbowRelPos = try? observation.cameraRelativePosition(.rightElbow)
+                let rightShoulderRelPos = try? observation.cameraRelativePosition(.rightShoulder)
+
+                let leftWristRelPos = try? observation.cameraRelativePosition(.leftWrist)
                 let leftElbowRelPos = try? observation.cameraRelativePosition(.leftElbow)
-                
-                print("head 4d: \(head)")
-                print("head 4d local pos: \(head.localPosition)")
-                print("head 4d pos: \(head.position)")
+                let leftShoulderRelPos = try? observation.cameraRelativePosition(.leftShoulder)
 
-                print("head relative distance: \(cameraRelativePositionToDistance(headRelPos!)) m")
-                print("right wrist relative distance: \(cameraRelativePositionToDistance(rightWristRelPos!)) m")
-                print("left wrist relative distance: \(cameraRelativePositionToDistance(leftWristRelPos!)) m")
-                print("right elbow relative distance: \(cameraRelativePositionToDistance(rightElbowRelPos!)) m")
-                print("left elbow relative distance: \(cameraRelativePositionToDistance(leftElbowRelPos!)) m")
+                // Return both 2D points in image and 4D positions in space
+                let pointsInImage: [String: VNPoint] = [
+//                    "leftShoulder": leftShoulderPoint,
+//                    "leftElbow": leftElbowPoint,
+                    "leftWrist": leftWristPoint,
+//                    "rightShoulder": rightShoulderPoint,
+//                    "rightElbow": rightElbowPoint,
+                    "rightWrist": rightWristPoint,
+                    "head": headPoint,
+                    "root": rootPoint
+                ]
 
-                completion(leftShoulderPoint, leftElbowPoint, leftWristPoint, rightShoulderPoint, rightElbowPoint, rightWristPoint, ["leftElbowAngle": leftElbowAngle, "rightElbowAngle": rightElbowAngle], true)
+                let distancesInM: [String: Float] = [
+//                    "leftShoulder": cameraRelativePositionToDistance(leftShoulderRelPos!),
+//                    "leftElbow": cameraRelativePositionToDistance(leftElbowRelPos!),
+                    "leftWrist": cameraRelativePositionToDistance(leftElbowRelPos!),
+//                    "rightShoulder": cameraRelativePositionToDistance(rightShoulderRelPos!),
+//                    "rightElbow": cameraRelativePositionToDistance(rightElbowRelPos!),
+                    "rightWrist": cameraRelativePositionToDistance(rightWristRelPos!),
+                    "head": cameraRelativePositionToDistance(headRelPos!)
+                ]
+
+                completion(pointsInImage, distancesInM, true)
             } else {
                 // Points were not detected
                 completion([:], [:], false)
