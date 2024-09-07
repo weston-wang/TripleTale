@@ -51,6 +51,35 @@ extension CGImagePropertyOrientation {
 
 /// - Tag: UIImage
 extension UIImage {
+    func downscale(to maxDimension: CGFloat) -> UIImage? {
+        let originalSize = self.size
+        
+        // Check if the image is already smaller than the maxDimension
+        if originalSize.width <= maxDimension && originalSize.height <= maxDimension {
+            // Return the original image if no downscaling is needed
+            return self
+        }
+        
+        let aspectRatio = originalSize.width / originalSize.height
+        var newSize: CGSize
+        
+        if originalSize.width > originalSize.height {
+            // Width is the longer dimension
+            newSize = CGSize(width: maxDimension, height: maxDimension / aspectRatio)
+        } else {
+            // Height is the longer dimension
+            newSize = CGSize(width: maxDimension * aspectRatio, height: maxDimension)
+        }
+        
+        // Create a new UIGraphicsImageRenderer for drawing the downscaled image
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let downscaledImage = renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+        
+        return downscaledImage
+    }
+    
     func cropCenter(to percent: CGFloat) -> UIImage? {
         // Ensure the percentage is between 0 and 100
         let percentage = max(0, min(100, percent))

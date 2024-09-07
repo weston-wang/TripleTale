@@ -226,7 +226,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     func processGalleryImage(_ inputImage: UIImage?) {
-        if let image = inputImage {
+        if let image = inputImage?.downscale(to: 1280) {
             
             var distanceToFace: CGFloat = 2.0  // Distance from the camera to the face in feet, nominal
             var distanceToObject: CGFloat = 1.0  // Distance from torso to object in feet (1 foot in front)
