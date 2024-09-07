@@ -257,11 +257,9 @@ func calculateCenter(of points: [CGPoint]) -> CGPoint? {
 
 // Function to scale the object as if it were in the same plane as the face
 func scaleObjectToFacePlane(measuredLength: CGFloat, faceDistanceToCamera: CGFloat, objectDistanceToCamera: CGFloat) -> CGFloat {
-    // Distance to the face (assuming 2 feet or 0.6 meters)
-    let distanceToCamera: CGFloat = faceDistanceToCamera
     
     // Calculate the distance ratio (how much closer the object is compared to the face)
-    let scalingRatio = objectDistanceToCamera / distanceToCamera
+    let scalingRatio = objectDistanceToCamera / faceDistanceToCamera
     
     // Scale the measured length of the object
     let scaledLength = measuredLength * scalingRatio

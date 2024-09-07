@@ -145,14 +145,13 @@ func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumf
     return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)
 }
 
-func calculateWeightFromFork(_ fork: Float, _ species: String) -> (Measurement<UnitMass>, Measurement<UnitLength>) {
+func calculateWeightFromFork(_ forkIn: CGFloat, _ species: String) -> (Measurement<UnitMass>, Measurement<UnitLength>) {
 //    let a = 0.000153    // for bft
 //    let b = 3.124       // for bft
     
     let constants = lengthWeightLookupTable[species]
 
-    let forkInMeters = Measurement(value: Double(fork), unit: UnitLength.meters)
-    let forkInInches = forkInMeters.converted(to: .inches)
+    let forkInInches =  Measurement(value: Double(forkIn), unit: UnitLength.inches)
     
     let interim = pow(forkInInches.value, Double(constants!.b))
     let weight = Double(constants!.a) * interim

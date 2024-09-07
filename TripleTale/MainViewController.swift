@@ -228,10 +228,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func processGalleryImage(_ inputImage: UIImage?) {
         if let image = inputImage?.downscale(to: 1280) {
             
-            var distanceToFace: CGFloat = 2.0  // Distance from the camera to the face in feet, nominal
-            var distanceToObject: CGFloat = 1.0  // Distance from torso to object in feet (1 foot in front)
+            var distanceToFace: CGFloat = 5.0  // Distance from the camera to the face in feet, nominal
+            var distanceToObject: CGFloat = 4.0  // Distance from torso to object in feet (1 foot in front)
             
-            let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
+            let faceLengthIn: Float = 7.3        // average adult face length 7.0 - 7.8 inch
             let minGap: Float = 0.1             // wrist should be at least 0.1 m in front of torso
             let maxGap: Float = 0.5             // wrist should be at least 0.1 m in front of torso
             let forkToFullRatio = 0.9
@@ -244,7 +244,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let distanceToFaceInM = distancesInM["head"]
                     let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
                     
-                    if distanceToWristInM! > minGap {
+                    if (distanceToFaceInM! - distanceToWristInM!) > minGap {
                         distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)
                         distanceToObject = CGFloat(distanceToWristInM! * 3.28084)
                         
@@ -275,14 +275,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 if let topFaceRect = detectTopFaceBoundingBox(in: image) {
                     print("detected face: \(topFaceRect) px")
                     
+                    // move object to same plane as fish, still in pixels
                     let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), faceDistanceToCamera: distanceToFace, objectDistanceToCamera: distanceToObject)
                     
                     print("updated fish length: \(updatedFishLength) px")
                     
-                    let fishLengthIn = updatedFishLength / topFaceRect.height * faceLengthIn
-                    let fishForkLengthM = fishLengthIn * 0.0254     // no extra scaling since oval is roughly fork length
+                    // convert to real world units in inches
+                    let fishLengthIn = updatedFishLength / topFaceRect.height * CGFloat(faceLengthIn)
                     
-                    let (weightInLb, forkInInches) = calculateWeightFromFork(Float(fishForkLengthM), "CalicoBass")
+                    let (weightInLb, forkInInches) = calculateWeightFromFork(fishLengthIn, "CalicoBass")
                     
                     let widthInInches = Measurement(value: 0, unit: UnitLength.inches)
                     let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
