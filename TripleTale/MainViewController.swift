@@ -518,7 +518,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 // Convert the pixel buffer to UIImage
                 self.currentImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
-                self.depthImage = getDepthMap(from: currentFrame)
+//                self.depthImage = getDepthMap(from: currentFrame)
 
             } catch {
                 print("Error: Vision request failed with error \"\(error)\"")

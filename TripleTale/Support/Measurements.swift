@@ -13,7 +13,7 @@ typealias LengthWeightConstants = (a: Double, b: Double)
 
 // Create the lookup table as a dictionary
 let lengthWeightLookupTable: [String: LengthWeightConstants] = [
-    "CalicoBass": (a: 0.000607, b: 2.97),
+    "CalicoBass": (a: 0.0004, b: 3.218),
     "BluefinTuna": (a: 0.000153, b: 3.124),
     "Yellowtail": (a: 0.0000127, b: 3.089 )
     // Add more species as needed
