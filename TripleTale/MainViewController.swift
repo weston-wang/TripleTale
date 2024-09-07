@@ -233,7 +233,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             
             let faceLengthIn = 7.3        // average adult face length 7.0 - 7.8 inch
             let minGap: Float = 0.1             // wrist should be at least 0.1 m in front of torso
-            let forkToFullRatio = 0.8
+            let maxGap: Float = 0.5             // wrist should be at least 0.1 m in front of torso
+            let forkToFullRatio = 0.9
             
             armPose3DDetector.detectArmBendAngles(in: image) { pointsInImage, distancesInM, detected in
                 if detected {
@@ -243,8 +244,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let distanceToFaceInM = distancesInM["head"]
                     let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
                     
-                    distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)
                     if distanceToWristInM! > minGap {
+                        distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)
                         distanceToObject = CGFloat(distanceToWristInM! * 3.28084)
                         
                         print("reassigning distance to fish: \(distanceToObject) ft")

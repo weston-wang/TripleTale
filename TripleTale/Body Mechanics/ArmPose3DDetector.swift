@@ -9,7 +9,7 @@ import UIKit
 import Vision
 import simd
 
-class ArmPose3DDetector {
+struct ArmPose3DDetector {
     
     func detectArmBendAngles(in image: UIImage, completion: @escaping ([String: VNPoint], [String: Float], Bool) -> Void) {
         guard let cgImage = image.cgImage else {
