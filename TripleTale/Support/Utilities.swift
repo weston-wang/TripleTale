@@ -381,3 +381,23 @@ func createDepthDataFromDictionary(from depthImage: UIImage) -> AVDepthData? {
         return nil
     }
 }
+
+func validateWristsLocations(foundPoints: [String : VNPoint], wristDistances: [String : Float], depthImage: UIImage) -> Bool {
+    
+    // get depth at head
+    let headLoc = foundPoints["head"];
+
+    // find closest wrist
+    
+    // get depths at wrists
+    let leftWristLoc = foundPoints["leftWrist"];
+    let rightWristLoc = foundPoints["rightWrist"];
+    
+    let headDepth = getDepthValue(atX: headLoc!.x, atY: headLoc!.y, depthMap: depthImage)
+    let leftWristDepth = getDepthValue(atX: leftWristLoc!.x, atY: leftWristLoc!.y, depthMap: depthImage)
+    let rightWristDepth = getDepthValue(atX: rightWristLoc!.x, atY: rightWristLoc!.y, depthMap: depthImage)
+
+    
+
+    return false
+}

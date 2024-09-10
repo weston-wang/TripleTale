@@ -28,11 +28,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     let motionManager = CMMotionManager()
     private var isForwardFacing = false
     
-//    let elbowAngleDetector = ElbowAngleDetector()
-//    let fingerBendDetector = FingerBendDetector()
-//    let fingerWidthDetector = FingerWidthDetector()
-//    let handBoundingBoxDetector = HandBoundingBoxDetector()
-//    let armPoseDetector = ArmPoseDetector()
     let armPose3DDetector = ArmPose3DDetector()
 
     // Classification results
@@ -229,14 +224,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         if let image = inputImage?.downscale(to: 1280) {
             
             var distanceToFace: CGFloat = 5.0  // Distance from the camera to the face in feet, nominal
-            var distanceToObject: CGFloat = 4.0  // Distance from torso to object in feet (1 foot in front)
+            var distanceToFish: CGFloat = 4.0  // Distance from torso to object in feet (1 foot in front)
             
             let faceLengthIn: Float = 7.3        // average adult face length 7.0 - 7.8 inch
             let minGap: Float = 0.1             // wrist should be at least 0.1 m in front of torso
-            let maxGap: Float = 0.5             // wrist should be at least 0.1 m in front of torso
             let forkToFullRatio = 0.9
             
-            armPose3DDetector.detectArmBendAngles(in: image) { pointsInImage, distancesInM, detected in
+            armPose3DDetector.detectWrists(in: image) { pointsInImage, distancesInM, detected in
                 if detected {
                     print("2D Points in Image: \(pointsInImage)")
                     print("Distances to camera: \(distancesInM)")
@@ -244,11 +238,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let distanceToFaceInM = distancesInM["head"]
                     let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
                     
+                    // check if wrist depth map is valid,  assuming fish depth is close to 255
+                    
                     if (distanceToFaceInM! - distanceToWristInM!) > minGap {
-                        distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)
-                        distanceToObject = CGFloat(distanceToWristInM! * 3.28084)
+                        distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)  // conver meters to inches
+                        distanceToFish = CGFloat(distanceToWristInM! * 3.28084)
                         
-                        print("reassigning distance to fish: \(distanceToObject) ft")
+                        print("reassigning distance to fish: \(distanceToFish) ft")
                         print("reassigning distance to face: \(distanceToFace) ft")
                     }
                     
@@ -276,7 +272,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     print("detected face: \(topFaceRect) px")
                     
                     // move object to same plane as fish, still in pixels
-                    let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), faceDistanceToCamera: distanceToFace, objectDistanceToCamera: distanceToObject)
+                    let updatedFishLength = scaleObjectToFacePlane(measuredLength: CGFloat(fishLength!), faceDistanceToCamera: distanceToFace, objectDistanceToCamera: distanceToFish)
                     
                     print("updated fish length: \(updatedFishLength) px")
                     
@@ -371,8 +367,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let galleryButton = UIButton(type: .system)
 
         // Set the SF Symbol with a larger configuration
-        let largeConfig = UIImage.SymbolConfiguration(pointSize: 25, weight: .bold, scale: .large)
-        let symbolImage = UIImage(systemName: "photo.on.rectangle", withConfiguration: largeConfig)
+        let largeConfig = UIImage.SymbolConfiguration(pointSize: 30, weight: .bold, scale: .large)
+        let symbolImage = UIImage(systemName: "photo.artframe.circle", withConfiguration: largeConfig)
         galleryButton.setImage(symbolImage, for: .normal)
 
         // Optionally, set the tint color for the button

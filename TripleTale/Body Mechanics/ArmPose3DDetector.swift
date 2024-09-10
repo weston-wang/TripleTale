@@ -11,7 +11,7 @@ import simd
 
 struct ArmPose3DDetector {
     
-    func detectArmBendAngles(in image: UIImage, completion: @escaping ([String: VNPoint], [String: Float], Bool) -> Void) {
+    func detectWrists(in image: UIImage, completion: @escaping ([String: VNPoint], [String: Float], Bool) -> Void) {
         guard let cgImage = image.cgImage else {
             completion([:], [:], false)
             return
