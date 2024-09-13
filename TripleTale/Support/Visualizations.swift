@@ -97,7 +97,7 @@ func drawRectanglesOnImage(image: UIImage, boundingBoxes: [CGRect]) -> UIImage {
     return newImage
 }
 
-func drawBracketsOnImage(image: UIImage, boundingBox: CGRect, bracketLength: CGFloat = 30.0, bracketThickness: CGFloat = 8.0) -> UIImage {
+func drawBracketsOnImage(image: UIImage, boundingBox: CGRect, bracketLength: CGFloat = 25.0, bracketThickness: CGFloat = 5.0) -> UIImage {
     UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
     image.draw(at: CGPoint.zero)
     
@@ -173,7 +173,7 @@ func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
     return resultImage
 }
 
-func drawClosestContourAndEllipse(on image: UIImage, closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), tips: [CGPoint]) -> UIImage? {
+func drawEllipse(on image: UIImage, ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), tips: [CGPoint]) -> UIImage? {
     // Create a renderer format with the appropriate scale
     let format = UIGraphicsImageRendererFormat()
     format.scale = image.scale // Match the input image scale
@@ -185,26 +185,12 @@ func drawClosestContourAndEllipse(on image: UIImage, closestContour: [CGPoint], 
         image.draw(at: .zero)
         
         // Set the contour drawing properties for closestContour
-        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
-        context.cgContext.setLineWidth(1.0)
-        
-        // Draw only the closestContour border without filling
-        context.cgContext.beginPath()
-        for (index, point) in closestContour.enumerated() {
-            if index == 0 {
-                context.cgContext.move(to: point)
-            } else {
-                context.cgContext.addLine(to: point)
-            }
-        }
-        context.cgContext.addLine(to: closestContour.first!) // Close the path
-        
         // Ensure fill mode is disabled
         context.cgContext.drawPath(using: .stroke)  // Explicitly only stroke the path
 
         // Set the ellipse drawing properties
         context.cgContext.setStrokeColor(UIColor.red.cgColor)
-        context.cgContext.setLineWidth(2.0)
+        context.cgContext.setLineWidth(3.0)
         
         // Save the context state
         context.cgContext.saveGState()
@@ -223,12 +209,38 @@ func drawClosestContourAndEllipse(on image: UIImage, closestContour: [CGPoint], 
         context.cgContext.restoreGState()
         
         // Set the tips drawing properties
-        context.cgContext.setFillColor(UIColor.green.cgColor)
+        context.cgContext.setFillColor(UIColor.yellow.cgColor)
         
         // Draw the tips
         for tip in tips {
-            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 10, height: 10))
+            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 15, height: 15))
         }
+    }
+
+    return renderedImage
+}
+
+func drawPerimeterDots(on image: UIImage, perimeter: [CGPoint], dotSize: CGFloat = 3.0) -> UIImage? {
+    // Create a renderer format with the appropriate scale
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = image.scale // Match the input image scale
+
+    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+
+        // Set the dot drawing properties for the perimeter
+        context.cgContext.setFillColor(UIColor.blue.cgColor)
+
+        // Draw each perimeter point as a dot
+        for point in perimeter {
+            // Draw a small circle (dot) at each perimeter point
+            let rect = CGRect(x: point.x - dotSize / 2, y: point.y - dotSize / 2, width: dotSize, height: dotSize)
+            context.cgContext.fillEllipse(in: rect)
+        }
+    
     }
 
     return renderedImage

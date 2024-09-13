@@ -266,7 +266,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let resizedImage = resizeImageForModel(image)
             self.processDepthImage(from: resizedImage!) { depthImage in
                 let resizedDepthImage = resizeDepthMap(depthImage, to: image.size)
-                let (vertices, ellipse, contour) = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
+                let (vertices, ellipse, contour) = findDepthEllipseVertices(from: resizedDepthImage!, debug: false)
                 
                 print("image size: \(image.size), depth size: \(resizedDepthImage!.size)")
                 

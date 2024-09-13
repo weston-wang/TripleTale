@@ -33,7 +33,7 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> ([CGP
     let threshold: UInt8 = UInt8(255 * 0.85) // 85% brightness
     let pixelData = thresholdGrayscaleImage(pixelData: originalPixelData, width: width, height: height, threshold: threshold)
     
-    let contours = extractContours(from: pixelData, width: width, height: height)
+    let (contours, perimeters) = extractContours(from: pixelData, width: width, height: height)
     
     // find center contour
     guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return (nil, nil, nil) }
@@ -54,7 +54,7 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> ([CGP
         saveImageToGallery(resultImage!)
     }
     
-    return (tips, ellipse, closestContour)
+    return (tips, ellipse, perimeters[0])
 }
 
 
@@ -71,7 +71,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     // find all contours
     let width = cgImage.width
     let height = cgImage.height
-    let contours = extractContours(from: pixelData, width: width, height: height)
+    let (contours, _) = extractContours(from: pixelData, width: width, height: height)
     
     // find center contour
     guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
@@ -166,10 +166,12 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
     pt.x = pt.x + 10
     
     faceImage = faceImage.drawVNPoint(faceLocation)!
-    faceImage = faceImage.imageWithText("\(String(format: "%.2f", faceDistance)) in", atPoint: pt, fontSize: 36, textColor: UIColor.white)!
+    faceImage = faceImage.imageWithText("\(String(format: "%.2f", faceDistance)) ft", atPoint: pt, fontSize: 36, textColor: UIColor.white)!
 
     let perimeter = marchingSquares(from: closestContour)
-    let fishImage = drawClosestContourAndEllipse(on: faceImage, closestContour: perimeter, ellipse: ellipse, tips: tips)
+    var fishImage = drawPerimeterDots(on: faceImage, perimeter: perimeter)
+    fishImage = drawEllipse(on: fishImage!, ellipse: ellipse, tips: tips)
+
     return fishImage
 }
 
