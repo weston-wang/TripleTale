@@ -234,6 +234,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             
             var facePoint: VNPoint = VNPoint(x: 0.0, y: 0.0)
             
+            var leftWristPoint: VNPoint = VNPoint(x: 0.0, y: 0.0)
+            var rightWristPoint: VNPoint = VNPoint(x: 0.0, y: 0.0)
+            var distanceToLeftWrist: CGFloat = 4.0
+            var distanceToRightWrist: CGFloat = 4.0
+            
             armPose3DDetector.detectWrists(in: image) { pointsInImage, distancesInM, detected in
                 if detected {
                     print("2D Points in Image: \(pointsInImage)")
@@ -241,6 +246,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     
                     facePoint = pointsInImage["head"]!
                     
+                    leftWristPoint = pointsInImage["leftWrist"]!
+                    rightWristPoint = pointsInImage["rightWrist"]!
+                    
+                    distanceToLeftWrist = CGFloat(distancesInM["leftWrist"]! * 3.28084)
+                    distanceToRightWrist = CGFloat(distancesInM["rightWrist"]! * 3.28084)
+
                     let distanceToFaceInM = distancesInM["head"]
                     let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
                     
@@ -297,7 +308,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
 //                    if let combinedImage = generateResultImage(image, topFaceRect, widthInInches, forkInInches / forkToFullRatio, heightInInches, circumferenceInInches, weightInLb, wristAndHeadDistance) {
-                    if let combinedImage = generateDebugImage(image, topFaceRect, facePoint, distanceToFace, contour!, ellipse!, vertices!) {
+                    if let combinedImage = generateDebugImage(image, topFaceRect, facePoint, distanceToFace, leftWristPoint, distanceToLeftWrist, rightWristPoint, distanceToRightWrist, contour!, ellipse!, vertices!) {
                         
                         saveImageToGallery(combinedImage)
                         // Ensure that the UI update (showing the image popup) happens on the main thread

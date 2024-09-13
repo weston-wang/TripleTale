@@ -232,7 +232,7 @@ func drawPerimeterDots(on image: UIImage, perimeter: [CGPoint], dotSize: CGFloat
         image.draw(at: .zero)
 
         // Set the dot drawing properties for the perimeter
-        context.cgContext.setFillColor(UIColor.blue.cgColor)
+        context.cgContext.setFillColor(UIColor.cyan.cgColor)
 
         // Draw each perimeter point as a dot
         for point in perimeter {
