@@ -198,3 +198,60 @@ func thresholdImage(inputImage: UIImage, threshold: Float) -> UIImage? {
     // Return the thresholded image as a UIImage
     return UIImage(cgImage: cgImage)
 }
+
+// Function to run Marching Squares and extract the contour from a set of CGPoints
+func marchingSquares(from points: [CGPoint]) -> [CGPoint] {
+    guard !points.isEmpty else { return [] }
+
+    // Find the bounding box of the points
+    let minX = points.map { $0.x }.min()!
+    let maxX = points.map { $0.x }.max()!
+    let minY = points.map { $0.y }.min()!
+    let maxY = points.map { $0.y }.max()!
+    
+    // Define the resolution of the grid (optional, can be refined for precision)
+    let gridWidth = Int(maxX - minX) + 1
+    let gridHeight = Int(maxY - minY) + 1
+    
+    // Create a binary grid initialized to 0 (empty)
+    var grid = Array(repeating: Array(repeating: 0, count: gridWidth), count: gridHeight)
+
+    // Mark points on the grid as 1
+    for point in points {
+        let gridX = Int(point.x - minX)
+        let gridY = Int(point.y - minY)
+        grid[gridY][gridX] = 1
+    }
+
+    // Now run Marching Squares on the binary grid
+    return marchingSquares(mask: grid, offsetX: minX, offsetY: minY)
+}
+
+// Function to run Marching Squares on a binary grid
+func marchingSquares(mask: [[Int]], offsetX: CGFloat, offsetY: CGFloat) -> [CGPoint] {
+    var contour: [CGPoint] = []
+    
+    let rows = mask.count
+    let cols = mask[0].count
+
+    // Function to determine the state of the 2x2 block
+    func getState(topLeft: Int, topRight: Int, bottomLeft: Int, bottomRight: Int) -> Int {
+        return (topLeft << 3) | (topRight << 2) | (bottomLeft << 1) | bottomRight
+    }
+
+    // Start marching squares
+    for i in 0..<rows - 1 {
+        for j in 0..<cols - 1 {
+            let state = getState(topLeft: mask[i][j], topRight: mask[i][j+1], bottomLeft: mask[i+1][j], bottomRight: mask[i+1][j+1])
+            
+            switch state {
+            case 1, 2, 4, 8, 3, 6, 9, 12, 5, 10: // Cases that represent edges
+                contour.append(CGPoint(x: CGFloat(j) + offsetX, y: CGFloat(i) + offsetY))  // Collect contour points
+            default:
+                continue
+            }
+        }
+    }
+
+    return contour
+}

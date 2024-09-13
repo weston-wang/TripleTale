@@ -16,14 +16,14 @@ import CoreGraphics
 import CoreImage
 import Accelerate
 
-func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> [CGPoint]? {
+func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> ([CGPoint]?, (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)?, [CGPoint]?) {
     // get foreground mask
-    guard let maskImage = CIImage(image: image) else { return nil }
+    guard let maskImage = CIImage(image: image) else { return (nil, nil, nil) }
     
     // turn into gray scale pixel data
     let context = CIContext()
-    guard let cgImage = context.createCGImage(maskImage, from: maskImage.extent) else { return nil }
-    guard let originalPixelData = convertCGImageToGrayscalePixelData(cgImage) else { return nil }
+    guard let cgImage = context.createCGImage(maskImage, from: maskImage.extent) else { return (nil, nil, nil) }
+    guard let originalPixelData = convertCGImageToGrayscalePixelData(cgImage) else { return (nil, nil, nil) }
     
     // find all contours
     let width = cgImage.width
@@ -36,10 +36,10 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> [CGPo
     let contours = extractContours(from: pixelData, width: width, height: height)
     
     // find center contour
-    guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
+    guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return (nil, nil, nil) }
     
     // fit ellipse
-    guard let ellipse = fitEllipseMinimax(to: closestContour) else { return nil }
+    guard let ellipse = fitEllipseMinimax(to: closestContour) else { return (nil, nil, nil) }
     
     // find ellipse tips to use for measurements
     let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
@@ -54,7 +54,7 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> [CGPo
         saveImageToGallery(resultImage!)
     }
     
-    return tips
+    return (tips, ellipse, closestContour)
 }
 
 
@@ -128,21 +128,48 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
     let formattedHeight = String(format: "%.2f", heightInInches.value)
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
+//    let tempImage = inputImage.drawBoundingBox(inputBoundingBox!)
+    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: inputBoundingBox!)
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
+//    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
+    let pt = CGPoint(x: 10, y: inputImage.size.height - 300)
 
-    let weightTextImage = imageWithBox.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    
+    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
+
+//    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
+    let weightTextImage = imageWithBox!.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
+
     let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
 
     let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
     
 
-    let overlayImage = UIImage(named: "shimano_logo")!
-    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-    
+//    let overlayImage = UIImage(named: "shimano_logo")!
+//    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
+    let combinedImage = measurementTextImage
+
     saveImageToGallery(combinedImage!)
     saveImageToGallery(inputImage)
 
     return combinedImage!
 }
+
+
+func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ faceLocation: VNPoint, _ faceDistance: CGFloat, _ closestContour: [CGPoint], _ ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), _ tips: [CGPoint]) -> UIImage? {
+
+    // step 1: draw face box
+    var faceImage = drawBracketsOnImage(image: inputImage, boundingBox: faceBoundingBox)
+
+    // step 2: add face distance text below
+    var pt = convertNormalizedPointToCGPoint(faceLocation.location, imageSize: inputImage.size)
+    pt.y = pt.y - 20
+    pt.x = pt.x + 10
+    
+    faceImage = faceImage.drawVNPoint(faceLocation)!
+    faceImage = faceImage.imageWithText("\(String(format: "%.2f", faceDistance)) in", atPoint: pt, fontSize: 36, textColor: UIColor.white)!
+
+    let perimeter = marchingSquares(from: closestContour)
+    let fishImage = drawClosestContourAndEllipse(on: faceImage, closestContour: perimeter, ellipse: ellipse, tips: tips)
+    return fishImage
+}
+

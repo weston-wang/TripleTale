@@ -230,15 +230,22 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let minGap: Float = 0.1             // wrist should be at least 0.1 m in front of torso
             let forkToFullRatio = 0.9
             
+            var wristAndHeadDistance = ""
+            
+            var facePoint: VNPoint = VNPoint(x: 0.0, y: 0.0)
+            
             armPose3DDetector.detectWrists(in: image) { pointsInImage, distancesInM, detected in
                 if detected {
                     print("2D Points in Image: \(pointsInImage)")
                     print("Distances to camera: \(distancesInM)")
                     
+                    facePoint = pointsInImage["head"]!
+                    
                     let distanceToFaceInM = distancesInM["head"]
                     let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
                     
                     // check if wrist depth map is valid,  assuming fish depth is close to 255
+                    wristAndHeadDistance = "face to cam: \(distanceToFaceInM!) m, left wrist: \(distancesInM["leftWrist"]!) m, right wrist: \(distancesInM["rightWrist"]!) m"
                     
                     if (distanceToFaceInM! - distanceToWristInM!) > minGap {
                         distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)  // conver meters to inches
@@ -258,8 +265,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
             let resizedImage = resizeImageForModel(image)
             self.processDepthImage(from: resizedImage!) { depthImage in
-                let resizedDepthImage = resizeDepthMap(depthImage, to: self.galleryImage!.size)
-                let vertices = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
+                let resizedDepthImage = resizeDepthMap(depthImage, to: image.size)
+                let (vertices, ellipse, contour) = findDepthEllipseVertices(from: resizedDepthImage!, debug: true)
+                
+                print("image size: \(image.size), depth size: \(resizedDepthImage!.size)")
                 
                 let dim1 = distanceBetween(vertices![0], vertices![2])
                 let dim2 = distanceBetween(vertices![1], vertices![3])
@@ -276,8 +285,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     
                     print("updated fish length: \(updatedFishLength) px")
                     
+                    wristAndHeadDistance = wristAndHeadDistance + "\n fish length: \(fishLength!) px, face length: \(topFaceRect.height) px"
+                    
                     // convert to real world units in inches
-                    let fishLengthIn = updatedFishLength / topFaceRect.height * CGFloat(faceLengthIn)
+                    let fishLengthIn = updatedFishLength / topFaceRect.height * CGFloat(faceLengthIn) / 0.95
                     
                     let (weightInLb, forkInInches) = calculateWeightFromFork(fishLengthIn, "CalicoBass")
                     
@@ -285,7 +296,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
                     let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
-                    if let combinedImage = generateResultImage(image, nil, widthInInches, forkInInches / forkToFullRatio, heightInInches, circumferenceInInches, weightInLb, "") {
+//                    if let combinedImage = generateResultImage(image, topFaceRect, widthInInches, forkInInches / forkToFullRatio, heightInInches, circumferenceInInches, weightInLb, wristAndHeadDistance) {
+                    if let combinedImage = generateDebugImage(image, topFaceRect, facePoint, distanceToFace, contour!, ellipse!, vertices!) {
+                        
+                        saveImageToGallery(combinedImage)
                         // Ensure that the UI update (showing the image popup) happens on the main thread
                         DispatchQueue.main.async {
                             self.showImagePopup(combinedImage: combinedImage)

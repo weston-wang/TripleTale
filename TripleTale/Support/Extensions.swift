@@ -586,17 +586,34 @@ extension UIImage {
 
         return newImage
     }
+    
+    func drawVNPoint(_ vnPoint: VNPoint) -> UIImage? {
 
-    /// Converts a normalized VNPoint.location to a CGPoint in the image coordinate system.
-    /// - Parameters:
-    ///   - point: The VNPoint to convert (assumed to be normalized between 0 and 1, with a lower-left origin).
-    ///   - imageSize: The size of the image for conversion.
-    /// - Returns: The CGPoint in the image's coordinate space.
-    private func convertNormalizedPointToCGPoint(_ point: CGPoint, imageSize: CGSize) -> CGPoint {
-        // Convert normalized coordinates with a lower-left origin to UIKit's top-left origin
-        let x = point.x * imageSize.width
-        let y = (1.0 - point.y) * imageSize.height // Flip y-axis for UIKit
-        return CGPoint(x: x, y: y)
+        // Begin a new image context
+        UIGraphicsBeginImageContext(self.size)
+
+        // Draw the original image in the background
+        self.draw(at: CGPoint.zero)
+
+        // Set up the drawing context
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        context.setLineWidth(2.0)
+        context.setStrokeColor(UIColor.red.cgColor)
+        context.setFillColor(UIColor.green.cgColor)
+
+        // Convert the normalized VNPoint.location to CGPoint in image coordinates
+        let pointInImage = convertNormalizedPointToCGPoint(vnPoint.location, imageSize: self.size)
+        
+        // Draw a small circle at the point
+        let circleRadius: CGFloat = 16.0
+        context.fillEllipse(in: CGRect(x: pointInImage.x - circleRadius / 2, y: pointInImage.y - circleRadius / 2, width: circleRadius, height: circleRadius))
+    
+
+        // Generate a new image with the drawing
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return newImage
     }
 }
 

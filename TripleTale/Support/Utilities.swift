@@ -401,3 +401,15 @@ func validateWristsLocations(foundPoints: [String : VNPoint], wristDistances: [S
 
     return false
 }
+
+/// Converts a normalized VNPoint.location to a CGPoint in the image coordinate system.
+/// - Parameters:
+///   - point: The VNPoint to convert (assumed to be normalized between 0 and 1, with a lower-left origin).
+///   - imageSize: The size of the image for conversion.
+/// - Returns: The CGPoint in the image's coordinate space.
+func convertNormalizedPointToCGPoint(_ point: CGPoint, imageSize: CGSize) -> CGPoint {
+    // Convert normalized coordinates with a lower-left origin to UIKit's top-left origin
+    let x = point.x * imageSize.width
+    let y = (1.0 - point.y) * imageSize.height // Flip y-axis for UIKit
+    return CGPoint(x: x, y: y)
+}

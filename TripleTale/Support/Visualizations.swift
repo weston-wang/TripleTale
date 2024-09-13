@@ -97,42 +97,36 @@ func drawRectanglesOnImage(image: UIImage, boundingBoxes: [CGRect]) -> UIImage {
     return newImage
 }
 
-func drawBracketsOnImage(image: UIImage, boundingBoxes: [CGRect], bracketLength: CGFloat = 50.0, bracketThickness: CGFloat = 10.0) -> UIImage {
+func drawBracketsOnImage(image: UIImage, boundingBox: CGRect, bracketLength: CGFloat = 30.0, bracketThickness: CGFloat = 8.0) -> UIImage {
     UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
     image.draw(at: CGPoint.zero)
     
     let context = UIGraphicsGetCurrentContext()!
-    context.setStrokeColor(UIColor.white.cgColor)
+    context.setStrokeColor(UIColor.green.cgColor)
     context.setLineWidth(bracketThickness)
-    
-    for rect in boundingBoxes {
-        let transformedRect = CGRect(x: rect.origin.x * image.size.width,
-                                     y: (1 - rect.origin.y - rect.size.height) * image.size.height,
-                                     width: rect.size.width * image.size.width,
-                                     height: rect.size.height * image.size.height)
-        
+               
         // Top-left bracket
-        context.move(to: CGPoint(x: transformedRect.minX, y: transformedRect.minY + bracketLength))
-        context.addLine(to: CGPoint(x: transformedRect.minX, y: transformedRect.minY))
-        context.addLine(to: CGPoint(x: transformedRect.minX + bracketLength, y: transformedRect.minY))
+        context.move(to: CGPoint(x: boundingBox.minX, y: boundingBox.minY + bracketLength))
+        context.addLine(to: CGPoint(x: boundingBox.minX, y: boundingBox.minY))
+        context.addLine(to: CGPoint(x: boundingBox.minX + bracketLength, y: boundingBox.minY))
         
         // Top-right bracket
-        context.move(to: CGPoint(x: transformedRect.maxX - bracketLength, y: transformedRect.minY))
-        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.minY))
-        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.minY + bracketLength))
+        context.move(to: CGPoint(x: boundingBox.maxX - bracketLength, y: boundingBox.minY))
+        context.addLine(to: CGPoint(x: boundingBox.maxX, y: boundingBox.minY))
+        context.addLine(to: CGPoint(x: boundingBox.maxX, y: boundingBox.minY + bracketLength))
         
         // Bottom-left bracket
-        context.move(to: CGPoint(x: transformedRect.minX, y: transformedRect.maxY - bracketLength))
-        context.addLine(to: CGPoint(x: transformedRect.minX, y: transformedRect.maxY))
-        context.addLine(to: CGPoint(x: transformedRect.minX + bracketLength, y: transformedRect.maxY))
+        context.move(to: CGPoint(x: boundingBox.minX, y: boundingBox.maxY - bracketLength))
+        context.addLine(to: CGPoint(x: boundingBox.minX, y: boundingBox.maxY))
+        context.addLine(to: CGPoint(x: boundingBox.minX + bracketLength, y: boundingBox.maxY))
         
         // Bottom-right bracket
-        context.move(to: CGPoint(x: transformedRect.maxX - bracketLength, y: transformedRect.maxY))
-        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.maxY))
-        context.addLine(to: CGPoint(x: transformedRect.maxX, y: transformedRect.maxY - bracketLength))
+        context.move(to: CGPoint(x: boundingBox.maxX - bracketLength, y: boundingBox.maxY))
+        context.addLine(to: CGPoint(x: boundingBox.maxX, y: boundingBox.maxY))
+        context.addLine(to: CGPoint(x: boundingBox.maxX, y: boundingBox.maxY - bracketLength))
         
         context.strokePath()
-    }
+    
     
     let newImage = UIGraphicsGetImageFromCurrentImageContext()!
     UIGraphicsEndImageContext()
@@ -177,4 +171,65 @@ func drawROI(on ciImage: CIImage, portion: CGFloat) -> UIImage? {
     UIGraphicsEndImageContext()
     
     return resultImage
+}
+
+func drawClosestContourAndEllipse(on image: UIImage, closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), tips: [CGPoint]) -> UIImage? {
+    // Create a renderer format with the appropriate scale
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = image.scale // Match the input image scale
+
+    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+        
+        // Set the contour drawing properties for closestContour
+        context.cgContext.setStrokeColor(UIColor.blue.cgColor)
+        context.cgContext.setLineWidth(1.0)
+        
+        // Draw only the closestContour border without filling
+        context.cgContext.beginPath()
+        for (index, point) in closestContour.enumerated() {
+            if index == 0 {
+                context.cgContext.move(to: point)
+            } else {
+                context.cgContext.addLine(to: point)
+            }
+        }
+        context.cgContext.addLine(to: closestContour.first!) // Close the path
+        
+        // Ensure fill mode is disabled
+        context.cgContext.drawPath(using: .stroke)  // Explicitly only stroke the path
+
+        // Set the ellipse drawing properties
+        context.cgContext.setStrokeColor(UIColor.red.cgColor)
+        context.cgContext.setLineWidth(2.0)
+        
+        // Save the context state
+        context.cgContext.saveGState()
+        
+        // Move to the ellipse center
+        context.cgContext.translateBy(x: ellipse.center.x, y: ellipse.center.y)
+        
+        // Rotate the context for the ellipse
+        context.cgContext.rotate(by: ellipse.rotationInDegrees * CGFloat.pi / 180)
+        
+        // Draw the ellipse
+        let rect = CGRect(x: -ellipse.size.width, y: -ellipse.size.height, width: 2 * ellipse.size.width, height: 2 * ellipse.size.height)
+        context.cgContext.strokeEllipse(in: rect)
+        
+        // Restore the context state
+        context.cgContext.restoreGState()
+        
+        // Set the tips drawing properties
+        context.cgContext.setFillColor(UIColor.green.cgColor)
+        
+        // Draw the tips
+        for tip in tips {
+            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 10, height: 10))
+        }
+    }
+
+    return renderedImage
 }
