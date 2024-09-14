@@ -265,12 +265,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                         print("reassigning distance to fish: \(distanceToFish) ft")
                         print("reassigning distance to face: \(distanceToFace) ft")
                     }
-                    
-                    // Draw the points on the image
-                    if let annotatedImage = image.drawVNPoints(pointsInImage) {
-                        // Display the annotated image in an UIImageView
-                        saveImageToGallery(annotatedImage)
-                    }
                 }
             }
     
@@ -301,19 +295,22 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     // convert to real world units in inches
                     let fishLengthIn = updatedFishLength / topFaceRect.height * CGFloat(faceLengthIn) / 0.95
                     
-                    let (weightInLb, forkInInches) = calculateWeightFromFork(fishLengthIn, "CalicoBass")
-                    
-                    let widthInInches = Measurement(value: 0, unit: UnitLength.inches)
-                    let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
-                    let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
+//                    let (weightInLb, forkInInches) = calculateWeightFromFork(fishLengthIn, "CalicoBass")
+//                    
+//                    let widthInInches = Measurement(value: 0, unit: UnitLength.inches)
+//                    let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
+//                    let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
 
 //                    if let combinedImage = generateResultImage(image, topFaceRect, widthInInches, forkInInches / forkToFullRatio, heightInInches, circumferenceInInches, weightInLb, wristAndHeadDistance) {
-                    if let combinedImage = generateDebugImage(image, topFaceRect, facePoint, distanceToFace, leftWristPoint, distanceToLeftWrist, rightWristPoint, distanceToRightWrist, contour!, ellipse!, vertices!) {
+                    if let combinedImage = generateDebugImage(image, topFaceRect, facePoint, distanceToFace, leftWristPoint, distanceToLeftWrist, rightWristPoint, distanceToRightWrist, contour!, ellipse!, vertices!, fishLength!) {
                         
-                        saveImageToGallery(combinedImage)
+                        let textPoint = CGPoint(x: 0, y: combinedImage.size.height - 100)
+                        let finalImage = combinedImage.imageWithText("\(String(format: "%.2f", fishLengthIn)) in", atPoint: textPoint, fontSize: 100, textColor: UIColor.white)!
+                        
+                        saveImageToGallery(finalImage)
                         // Ensure that the UI update (showing the image popup) happens on the main thread
                         DispatchQueue.main.async {
-                            self.showImagePopup(combinedImage: combinedImage)
+                            self.showImagePopup(combinedImage: finalImage)
                         }
                     } else {
                         DispatchQueue.main.async {

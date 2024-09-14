@@ -155,7 +155,7 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
 }
 
 
-func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ faceLocation: VNPoint, _ faceDistance: CGFloat, _ leftWristLocation: VNPoint, _ leftWristDistance: CGFloat, _ rightWristLocation: VNPoint, _ rightWristDistance: CGFloat, _ closestContour: [CGPoint], _ ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), _ tips: [CGPoint]) -> UIImage? {
+func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ faceLocation: VNPoint, _ faceDistance: CGFloat, _ leftWristLocation: VNPoint, _ leftWristDistance: CGFloat, _ rightWristLocation: VNPoint, _ rightWristDistance: CGFloat, _ closestContour: [CGPoint], _ ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), _ tips: [CGPoint], _ fishLength: CGFloat) -> UIImage? {
 
     // step 1: draw face box
     var faceImage = drawBracketsOnImage(image: inputImage, boundingBox: faceBoundingBox)
@@ -167,17 +167,28 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
     
     faceImage = faceImage.drawVNPoint(faceLocation)!
     faceImage = faceImage.imageWithText("\(String(format: "%.2f", faceDistance)) ft", atPoint: pt, fontSize: 36, textColor: UIColor.white)!
+    
+    var facePoint = faceBoundingBox.origin
+    facePoint.y = facePoint.y - 50
+    facePoint.x = facePoint.x + 10
+    faceImage = faceImage.imageWithText("\(String(format: "%.2f", faceBoundingBox.height)) px", atPoint: facePoint, fontSize: 36, textColor: UIColor.white)!
 
     // step 3: draw fish
     let perimeter = marchingSquares(from: closestContour)
     var fishImage = drawPerimeterDots(on: faceImage, perimeter: perimeter)
     fishImage = drawEllipse(on: fishImage!, ellipse: ellipse, tips: tips)
     
+    var fishPt = tips[1]
+    fishPt.y = fishPt.y - 20
+    fishPt.x = fishPt.x + 10
+    
+    fishImage = fishImage!.imageWithText("\(String(format: "%.2f", fishLength)) px", atPoint: fishPt, fontSize: 36, textColor: UIColor.white)!
+
     // step 4: draw wrists
     var leftPt = convertNormalizedPointToCGPoint(leftWristLocation.location, imageSize: inputImage.size)
     leftPt.y = leftPt.y - 20
     leftPt.x = leftPt.x + 10
-
+    
     var rightPt = convertNormalizedPointToCGPoint(rightWristLocation.location, imageSize: inputImage.size)
     rightPt.y = rightPt.y - 20
     rightPt.x = rightPt.x + 10
