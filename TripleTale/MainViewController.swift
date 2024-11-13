@@ -162,8 +162,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Call the function to create and add the camera button
         setupCameraButton()
 
-        // Call the function to create and add the gallery button
-        setupGalleryButton()
+        // DISABLED: Call the function to create and add the gallery button
+//        setupGalleryButton()
 
         // Start AR
         startPlaneDetection()
@@ -171,8 +171,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Initial bracket update
         updateBracketSize()
         
-        // Start Device Motion Updates
-        startDeviceMotionUpdates()
+        // DISABLED: Start Device Motion Updates
+//        startDeviceMotionUpdates()
     }
     
     @objc private func handleTapGesture() {
@@ -329,6 +329,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         DispatchQueue.main.async {
             var image: UIImage?
             
+            // forward facing case is disabled for now, now in this conditional
             if self.isForwardFacing, let depthImage = self.depthImage {
                 let croppedImage = depthImage.croppedToAspectRatio(size: depthImage.size)
                 image = croppedImage?.resized(to: depthImage.size)
@@ -462,6 +463,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Define different sizes for forward-facing and not forward-facing
         let width: CGFloat
         let height: CGFloat
+        
         if isForwardFacing {
             imagePortion = 0.6
             
