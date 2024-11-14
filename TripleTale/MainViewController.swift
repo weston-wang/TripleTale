@@ -228,7 +228,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             
             let faceLengthIn: Float = 7.3        // average adult face length 7.0 - 7.8 inch
             let minGap: Float = 0.1             // wrist should be at least 0.1 m in front of torso
-            let forkToFullRatio = 0.9
+            let verticesToForkRatio = 0.95
             
             var wristAndHeadDistance = ""
             
@@ -239,38 +239,42 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             var distanceToLeftWrist: CGFloat = 4.0
             var distanceToRightWrist: CGFloat = 4.0
             
-            armPose3DDetector.detectWrists(in: image) { pointsInImage, distancesInM, detected in
-                if detected {
-                    print("2D Points in Image: \(pointsInImage)")
-                    print("Distances to camera: \(distancesInM)")
-                    
-                    facePoint = pointsInImage["head"]!
-                    
-                    leftWristPoint = pointsInImage["leftWrist"]!
-                    rightWristPoint = pointsInImage["rightWrist"]!
-                    
-                    distanceToLeftWrist = CGFloat(distancesInM["leftWrist"]! * 3.28084)
-                    distanceToRightWrist = CGFloat(distancesInM["rightWrist"]! * 3.28084)
-
-                    let distanceToFaceInM = distancesInM["head"]
-                    let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
-                    
-                    // check if wrist depth map is valid,  assuming fish depth is close to 255
-                    wristAndHeadDistance = "face to cam: \(distanceToFaceInM!) m, left wrist: \(distancesInM["leftWrist"]!) m, right wrist: \(distancesInM["rightWrist"]!) m"
-                    
-                    if (distanceToFaceInM! - distanceToWristInM!) > minGap {
-                        distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)  // conver meters to inches
-                        distanceToFish = CGFloat(distanceToWristInM! * 3.28084)
-                        
-                        print("reassigning distance to fish: \(distanceToFish) ft")
-                        print("reassigning distance to face: \(distanceToFace) ft")
-                    }
-                }
-            }
-    
             let resizedImage = resizeImageForModel(image)
             self.processDepthImage(from: resizedImage!) { depthImage in
                 let resizedDepthImage = resizeDepthMap(depthImage, to: image.size)
+                
+                let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
+                saveImageToGallery(thresholdedImage!)
+
+                self.armPose3DDetector.detectWrists(in: resizedImage!) { pointsInImage, distancesInM, detected in
+                    if detected {
+                        print("2D Points in Image: \(pointsInImage)")
+                        print("Distances to camera: \(distancesInM)")
+                        
+                        facePoint = pointsInImage["head"]!
+                        
+                        leftWristPoint = pointsInImage["leftWrist"]!
+                        rightWristPoint = pointsInImage["rightWrist"]!
+                        
+                        distanceToLeftWrist = CGFloat(distancesInM["leftWrist"]! * 3.28084)
+                        distanceToRightWrist = CGFloat(distancesInM["rightWrist"]! * 3.28084)
+
+                        let distanceToFaceInM = distancesInM["head"]
+                        let distanceToWristInM = [distancesInM["leftWrist"], distancesInM["rightWrist"]].compactMap({ $0 }).min()
+                        
+                        // check if wrist depth map is valid,  assuming fish depth is close to 255
+                        wristAndHeadDistance = "face to cam: \(distanceToFaceInM!) m, left wrist: \(distancesInM["leftWrist"]!) m, right wrist: \(distancesInM["rightWrist"]!) m"
+                        
+                        if (distanceToFaceInM! - distanceToWristInM!) > minGap {
+                            distanceToFace = CGFloat(distanceToFaceInM! * 3.28084)  // conver meters to inches
+                            distanceToFish = CGFloat(distanceToWristInM! * 3.28084)
+                            
+                            print("reassigning distance to fish: \(distanceToFish) ft")
+                            print("reassigning distance to face: \(distanceToFace) ft")
+                        }
+                    }
+                }
+        
                 let (vertices, ellipse, contour) = findDepthEllipseVertices(from: resizedDepthImage!, debug: false)
                 
                 print("image size: \(image.size), depth size: \(resizedDepthImage!.size)")
@@ -293,21 +297,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     wristAndHeadDistance = wristAndHeadDistance + "\n fish length: \(fishLength!) px, face length: \(topFaceRect.height) px"
                     
                     // convert to real world units in inches
-                    let fishLengthIn = updatedFishLength / topFaceRect.height * CGFloat(faceLengthIn) / 0.95
-                    
-//                    let (weightInLb, forkInInches) = calculateWeightFromFork(fishLengthIn, "CalicoBass")
-//                    
-//                    let widthInInches = Measurement(value: 0, unit: UnitLength.inches)
-//                    let heightInInches = Measurement(value: 0, unit: UnitLength.inches)
-//                    let circumferenceInInches = Measurement(value: 0, unit: UnitLength.inches)
-
-//                    if let combinedImage = generateResultImage(image, topFaceRect, widthInInches, forkInInches / forkToFullRatio, heightInInches, circumferenceInInches, weightInLb, wristAndHeadDistance) {
+                    let fishLengthIn = updatedFishLength / topFaceRect.height * CGFloat(faceLengthIn) / verticesToForkRatio
+            
                     if let combinedImage = generateDebugImage(image, topFaceRect, facePoint, distanceToFace, leftWristPoint, distanceToLeftWrist, rightWristPoint, distanceToRightWrist, contour!, ellipse!, vertices!, fishLength!) {
                         
                         let textPoint = CGPoint(x: 0, y: combinedImage.size.height - 100)
                         let finalImage = combinedImage.imageWithText("\(String(format: "%.2f", fishLengthIn)) in", atPoint: textPoint, fontSize: 100, textColor: UIColor.white)!
                         
                         saveImageToGallery(finalImage)
+                        
                         // Ensure that the UI update (showing the image popup) happens on the main thread
                         DispatchQueue.main.async {
                             self.showImagePopup(combinedImage: finalImage)

@@ -413,3 +413,23 @@ func convertNormalizedPointToCGPoint(_ point: CGPoint, imageSize: CGSize) -> CGP
     let y = (1.0 - point.y) * imageSize.height // Flip y-axis for UIKit
     return CGPoint(x: x, y: y)
 }
+
+// Convert grayscale pixel data back to a UIImage
+func createUIImageFromGrayscalePixelData(pixelData: [UInt8], width: Int, height: Int) -> UIImage? {
+    let bytesPerPixel = 1
+    let bytesPerRow = bytesPerPixel * width
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    
+    guard let context = CGContext(data: UnsafeMutableRawPointer(mutating: pixelData),
+                                  width: width,
+                                  height: height,
+                                  bitsPerComponent: 8,
+                                  bytesPerRow: bytesPerRow,
+                                  space: colorSpace,
+                                  bitmapInfo: CGImageAlphaInfo.none.rawValue),
+          let cgImage = context.makeImage() else {
+        return nil
+    }
+    
+    return UIImage(cgImage: cgImage)
+}

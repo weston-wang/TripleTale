@@ -255,3 +255,53 @@ func marchingSquares(mask: [[Int]], offsetX: CGFloat, offsetY: CGFloat) -> [CGPo
 
     return contour
 }
+
+func thresholdImage(_ image: UIImage, threshold: CGFloat) -> UIImage? {
+    // Convert UIImage to CIImage
+    guard let ciImage = CIImage(image: image) else { return nil }
+
+    // Detect if the image is grayscale by checking the color space
+    let colorSpace = ciImage.colorSpace ?? CGColorSpaceCreateDeviceRGB() // Default to RGB if color space is nil
+    let isGrayscale =  true //colorSpace.model == .monochrome
+
+    // Create a custom kernel for thresholding
+    let kernelSource: String
+    if isGrayscale {
+        // If the image is already grayscale, use the single-channel pixel value directly
+        kernelSource = """
+        kernel vec4 thresholdFilter(__sample image, float threshold) {
+            float binary = image.r > threshold ? 1.0 : 0.0; // Directly use the red channel (or any single channel) for grayscale
+            return vec4(binary, binary, binary, 1.0); // Output binary result
+        }
+        """
+    } else {
+        // For RGB images, convert to grayscale using luminance
+        kernelSource = """
+        kernel vec4 thresholdFilter(__sample image, float threshold) {
+            float luma = dot(image.rgb, vec3(0.299, 0.587, 0.114)); // Convert to grayscale using luminance
+            float binary = luma > threshold ? 1.0 : 0.0; // Apply threshold
+            return vec4(binary, binary, binary, 1.0); // Output binary result
+        }
+        """
+    }
+
+    // Create the kernel
+    let kernel = CIColorKernel(source: kernelSource)
+
+    // Check if kernel was successfully created
+    guard let thresholdKernel = kernel else { return nil }
+
+    // Convert the threshold (0-255) to a normalized range (0.0-1.0)
+    let normalizedThreshold = threshold / 255.0
+
+    // Apply the kernel to the image
+    let arguments = [ciImage, normalizedThreshold] as [Any]
+    guard let outputCIImage = thresholdKernel.apply(extent: ciImage.extent, arguments: arguments) else { return nil }
+
+    // Convert output CIImage to CGImage
+    let context = CIContext()
+    guard let cgImage = context.createCGImage(outputCIImage, from: outputCIImage.extent) else { return nil }
+
+    // Convert CGImage back to UIImage
+    return UIImage(cgImage: cgImage)
+}
