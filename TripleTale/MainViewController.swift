@@ -293,11 +293,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
 
-        // Disable depth semantics if supported
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics = []
-        }
-
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     
@@ -314,9 +309,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         self.boundingBox = boundingBox ?? .zero
     }
     
-    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
-        guard let currentFrame = sceneView.session.currentFrame else { return }
-
+//    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+//        guard let currentFrame = sceneView.session.currentFrame else { return }
+//
 //        // Get the pixel buffer from the current ARFrame
 //        currentBuffer = currentFrame.capturedImage
 //        
@@ -324,22 +319,33 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        CVPixelBufferLockBaseAddress(currentBuffer!, .readOnly)
 //        self.currentImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
 //        CVPixelBufferUnlockBaseAddress(self.currentBuffer!, .readOnly)
-    }
+//    }
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-//        if !(anchor is ARPlaneAnchor) {
-//            // Create a visual representation of the anchor (e.g., a sphere)
-//            let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
-//            
-//            sphere.firstMaterial?.diffuse.contents = UIColor.red // Example color
-//
-//            // Create a node with this geometry
-//            let sphereNode = SCNNode(geometry: sphere)
-//
-//            // Attach the node to the anchor's node
-//            node.addChildNode(sphereNode)
-//        }
+        if !(anchor is ARPlaneAnchor) {
+            // Create a visual representation of the anchor (e.g., a sphere)
+            let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
+            
+            sphere.firstMaterial?.diffuse.contents = UIColor.red // Example color
+
+            // Create a node with this geometry
+            let sphereNode = SCNNode(geometry: sphere)
+
+            // Attach the node to the anchor's node
+            node.addChildNode(sphereNode)
+        } else {
+            // Create a visual representation of the anchor (e.g., a sphere)
+            let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
+            
+            sphere.firstMaterial?.diffuse.contents = UIColor.green // Example color
+
+            // Create a node with this geometry
+            let sphereNode = SCNNode(geometry: sphere)
+
+            // Attach the node to the anchor's node
+            node.addChildNode(sphereNode)
+        }
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
