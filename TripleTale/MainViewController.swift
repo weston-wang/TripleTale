@@ -163,7 +163,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         setupCameraButton()
 
         // DISABLED: Call the function to create and add the gallery button
-//        setupGalleryButton()
+        setupGalleryButton()
 
         // Start AR
         startPlaneDetection()
