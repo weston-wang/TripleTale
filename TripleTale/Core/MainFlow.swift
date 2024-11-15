@@ -129,7 +129,7 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
 //    let tempImage = inputImage.drawBoundingBox(inputBoundingBox!)
-    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: inputBoundingBox!)
+    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: boundingBox)
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
 //    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
     let pt = CGPoint(x: 10, y: inputImage.size.height - 300)

@@ -377,6 +377,7 @@
 				DEVELOPMENT_TEAM = 3PAJYRQ2FL;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "This application will use the camera for Augmented Reality and Computer Vision.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Uses motion sensor for AR";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This application will use the gallery to save images";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
@@ -412,6 +413,7 @@
 				DEVELOPMENT_TEAM = 3PAJYRQ2FL;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "This application will use the camera for Augmented Reality and Computer Vision.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Uses motion sensor for AR";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This application will use the gallery to save images";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
