@@ -27,8 +27,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var bracketView: BracketView?
     private var imagePortion: CGFloat = 1.0
     
-    private var planeAnchors: [UUID: ARPlaneAnchor] = [:]
-
+    private var firstPlaneAnchor: ARPlaneAnchor?
+    
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var depthImage: UIImage?
 //    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
@@ -264,54 +264,51 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        if let planeAnchor = anchor as? ARPlaneAnchor {
-            DispatchQueue.main.async { [weak self] in
-                self?.cameraButton?.isEnabled = true
-                self?.cameraButton?.alpha = 1.0
-                self?.feedbackLabel?.text = "Ready!"
-                self?.feedbackLabel?.textColor = .white
-            }
-            
-            // Get the camera's transform from the current ARFrame
-            guard let cameraTransform = sceneView.session.currentFrame?.camera.transform else {
-                print("Camera transform unavailable.")
-                return
-            }
+        // Check if we've already stored the first plane
+           if firstPlaneAnchor != nil {
+               return
+           }
+           
+           // Store the first horizontal plane
+           if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
+               firstPlaneAnchor = planeAnchor
+               print("First plane detected: \(planeAnchor.identifier)")
 
-            // Extract the gravity vector (up direction relative to the world)
-            let gravityVector = simd_make_float3(cameraTransform.columns.1)
+               // Visualize the plane
+               let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
+               planeGeometry?.update(from: planeAnchor.geometry)
 
-            // Extract the plane's normal vector from its transform
-            let planeNormal = simd_make_float3(planeAnchor.transform.columns.1)
+               let gridMaterial = SCNMaterial()
+               gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
+               gridMaterial.isDoubleSided = true
+               planeGeometry?.materials = [gridMaterial]
 
-            // Calculate the dot product to check alignment
-            let dotProduct = simd_dot(planeNormal, gravityVector)
-
-            // If the plane's normal is nearly perpendicular to gravity, it's a ground plane
-            if abs(dotProduct) > 0.95 {
-                print("Detected a ground plane")
-            } else {
-                print("Horizontal plane detected but not aligned with gravity.")
-            }
-            
-            // Use ARPlaneGeometry to display the plane as a mesh
-            let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
-            planeGeometry?.update(from: planeAnchor.geometry)
-
-            // Create a grid material
-            let gridMaterial = SCNMaterial()
-            gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: .green, backgroundColor: .clear)
-
-            // Apply the grid material to the geometry
-            planeGeometry?.materials = [gridMaterial]
-
-            let meshNode = SCNNode(geometry: planeGeometry)
-            node.addChildNode(meshNode)
-        } else {
+               let meshNode = SCNNode(geometry: planeGeometry)
+               node.addChildNode(meshNode)
+           } else {
             let sphere = SCNSphere(radius: 0.002)
             sphere.firstMaterial?.diffuse.contents = UIColor.red
             let sphereNode = SCNNode(geometry: sphere)
             node.addChildNode(sphereNode)
+        }
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
+        if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.identifier == firstPlaneAnchor?.identifier {
+            // Update the stored plane anchor
+            firstPlaneAnchor = planeAnchor
+
+            // Update the visual representation
+            if let planeGeometry = node.geometry as? ARSCNPlaneGeometry {
+                planeGeometry.update(from: planeAnchor.geometry)
+            }
+        }
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
+        if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.identifier == firstPlaneAnchor?.identifier {
+            print("First plane removed. Resetting.")
+            firstPlaneAnchor = nil
         }
     }
     
