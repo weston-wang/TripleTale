@@ -177,6 +177,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
         
+        
+        let normVector = normalVector(from: fishAnchors.3)
+        let testHeight = distanceToPlane(from: fishAnchors.1, planeAnchor: self.firstPlaneAnchor!, normal: normVector!)
+        
+        print("plane anchor height: \(testHeight), synthetic anchor height: \(height)")
+        
         length = length * Float(self.lengthNudge)
         width = width * Float(self.widthNudge)
         
@@ -264,30 +270,29 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        // Check if we've already stored the first plane
-           if firstPlaneAnchor != nil {
-               return
-           }
-           
-           // Store the first horizontal plane
-           if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
-               firstPlaneAnchor = planeAnchor
-               print("First plane detected: \(planeAnchor.identifier)")
+        // If it's a plane anchor, process only the first plane
+        if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
+            if firstPlaneAnchor == nil {
+                firstPlaneAnchor = planeAnchor
+                print("First plane detected: \(planeAnchor.identifier)")
 
-               // Visualize the plane
-               let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
-               planeGeometry?.update(from: planeAnchor.geometry)
+                // Visualize the plane
+                let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
+                planeGeometry?.update(from: planeAnchor.geometry)
 
-               let gridMaterial = SCNMaterial()
-               gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
-               gridMaterial.isDoubleSided = true
-               planeGeometry?.materials = [gridMaterial]
+                let gridMaterial = SCNMaterial()
+                gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
+                gridMaterial.isDoubleSided = true
+                planeGeometry?.materials = [gridMaterial]
 
-               let meshNode = SCNNode(geometry: planeGeometry)
-               node.addChildNode(meshNode)
-           } else {
-            let sphere = SCNSphere(radius: 0.002)
+                let meshNode = SCNNode(geometry: planeGeometry)
+                node.addChildNode(meshNode)
+            }
+        } else {
+            // Add a red sphere for all other anchors
+            let sphere = SCNSphere(radius: 0.002) // Small red sphere
             sphere.firstMaterial?.diffuse.contents = UIColor.red
+
             let sphereNode = SCNNode(geometry: sphere)
             node.addChildNode(sphereNode)
         }
@@ -317,12 +322,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
-        switch camera.trackingState {
-        case .normal:
-            // Do nothing, everything is fine
-            break
-        case .notAvailable, .limited:
-            DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.async { [weak self] in
+            switch camera.trackingState {
+            case .normal:
+                // Reset button and label when tracking is normal
+                self?.cameraButton?.isEnabled = true
+                self?.cameraButton?.alpha = 1.0
+                self?.feedbackLabel?.text = "Ready"
+                self?.feedbackLabel?.textColor = .green
+
+            case .notAvailable, .limited:
+                // Disable button and show reinitiating message
                 self?.cameraButton?.isEnabled = false
                 self?.cameraButton?.alpha = 0.5
                 self?.feedbackLabel?.text = "Reinitiating..."
