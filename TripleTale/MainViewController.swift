@@ -188,12 +188,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
         
-        
         let normVector = normalVector(from: fishAnchors.3)
-        let testHeight = distanceToPlane(from: fishAnchors.1, planeAnchor: self.firstPlaneAnchor!, normal: normVector!)
-        
-        print("plane anchor height: \(testHeight), synthetic anchor height: \(height)")
-        
+        height = distanceToPlane(from: fishAnchors.1, planeAnchor: self.firstPlaneAnchor!, normal: normVector!)
+                
         length = length * Float(self.lengthNudge)
         width = width * Float(self.widthNudge)
         
