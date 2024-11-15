@@ -24,20 +24,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
     
-    var bracketView: BracketView?
+    private var bracketView: BracketView?
     private var imagePortion: CGFloat = 1.0
+    
+    private var planeAnchors: [UUID: ARPlaneAnchor] = [:]
 
-    private var isForwardFacing = false
-    
-    // Classification results
-    private var identifierString = ""
-    private var confidence: VNConfidence = 0.0
-    private var boundingBox: CGRect?
-    
     // The pixel buffer being held for analysis; used to serialize Vision requests.
-    private var currentBuffer: CVPixelBuffer?
-    private var currentImage: UIImage?
-    private var galleryImage: UIImage?
     private var depthImage: UIImage?
 //    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
 
@@ -192,7 +184,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
                           
-        if let combinedImage = generateResultImage(image, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, self.identifierString) {
+        if let combinedImage = generateResultImage(image, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -247,23 +239,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func updateBracketSize() {
         guard let bracketView = bracketView else { return }
+             
+        imagePortion = 0.85
         
-        // Define different sizes for forward-facing and not forward-facing
-        let width: CGFloat
-        let height: CGFloat
-        
-        if isForwardFacing {
-            imagePortion = 0.6
-            
-            width = view.bounds.width * imagePortion // Example size for forward-facing, adjust as needed
-            height = width * 16 / 9 // Maintain 9:16 aspect ratio
-        } else {
-            imagePortion = 0.85
-            
-            width = view.bounds.width * imagePortion // Example size for not forward-facing, adjust as needed
-            height = width * 16 / 9 // Maintain 9:16 aspect ratio
-        }
-        
+        let width = view.bounds.width * imagePortion // Example size for not forward-facing, adjust as needed
+        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
+    
         let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
         bracketView.updateBracket(rect: rect)
     }
@@ -283,36 +264,53 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        if !(anchor is ARPlaneAnchor) {
-            // Create a visual representation of the anchor (e.g., a sphere)
-            let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
-            
-            sphere.firstMaterial?.diffuse.contents = UIColor.red // Example color
-
-            // Create a node with this geometry
-            let sphereNode = SCNNode(geometry: sphere)
-
-            // Attach the node to the anchor's node
-            node.addChildNode(sphereNode)
-        } else {
-            // Enable the camera button
+        if let planeAnchor = anchor as? ARPlaneAnchor {
             DispatchQueue.main.async { [weak self] in
                 self?.cameraButton?.isEnabled = true
-                self?.cameraButton?.alpha = 1.0 // Reset the alpha for enabled state
-                
+                self?.cameraButton?.alpha = 1.0
                 self?.feedbackLabel?.text = "Ready!"
-                self?.feedbackLabel?.textColor = .white // Change text color for clarity
+                self?.feedbackLabel?.textColor = .white
             }
             
-            // Create a visual representation of the anchor (e.g., a sphere)
-            let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
+            // Get the camera's transform from the current ARFrame
+            guard let cameraTransform = sceneView.session.currentFrame?.camera.transform else {
+                print("Camera transform unavailable.")
+                return
+            }
+
+            // Extract the gravity vector (up direction relative to the world)
+            let gravityVector = simd_make_float3(cameraTransform.columns.1)
+
+            // Extract the plane's normal vector from its transform
+            let planeNormal = simd_make_float3(planeAnchor.transform.columns.1)
+
+            // Calculate the dot product to check alignment
+            let dotProduct = simd_dot(planeNormal, gravityVector)
+
+            // If the plane's normal is nearly perpendicular to gravity, it's a ground plane
+            if abs(dotProduct) > 0.95 {
+                print("Detected a ground plane")
+            } else {
+                print("Horizontal plane detected but not aligned with gravity.")
+            }
             
-            sphere.firstMaterial?.diffuse.contents = UIColor.green // Example color
+            // Use ARPlaneGeometry to display the plane as a mesh
+            let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
+            planeGeometry?.update(from: planeAnchor.geometry)
 
-            // Create a node with this geometry
+            // Create a grid material
+            let gridMaterial = SCNMaterial()
+            gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: .green, backgroundColor: .clear)
+
+            // Apply the grid material to the geometry
+            planeGeometry?.materials = [gridMaterial]
+
+            let meshNode = SCNNode(geometry: planeGeometry)
+            node.addChildNode(meshNode)
+        } else {
+            let sphere = SCNSphere(radius: 0.002)
+            sphere.firstMaterial?.diffuse.contents = UIColor.red
             let sphereNode = SCNNode(geometry: sphere)
-
-            // Attach the node to the anchor's node
             node.addChildNode(sphereNode)
         }
     }
@@ -340,6 +338,38 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         print("Frame updated at: \(frame.timestamp)")
     }
     
+    func createGridTexture(size: Int, gridColor: UIColor, backgroundColor: UIColor = .clear) -> UIImage {
+        let scale = UIScreen.main.scale
+        let gridSize = CGFloat(size)
+
+        UIGraphicsBeginImageContextWithOptions(CGSize(width: gridSize, height: gridSize), false, scale)
+        let context = UIGraphicsGetCurrentContext()!
+
+        // Fill the background with transparent color
+        context.setFillColor(backgroundColor.cgColor)
+        context.fill(CGRect(x: 0, y: 0, width: gridSize, height: gridSize))
+
+        // Draw vertical lines with semi-transparent grid color
+        context.setStrokeColor(gridColor.withAlphaComponent(0.5).cgColor) // Adjust alpha here
+        context.setLineWidth(1.0)
+        for x in stride(from: 0, to: Int(gridSize), by: size / 10) {
+            context.move(to: CGPoint(x: x, y: 0))
+            context.addLine(to: CGPoint(x: x, y: Int(gridSize)))
+        }
+
+        // Draw horizontal lines with semi-transparent grid color
+        for y in stride(from: 0, to: Int(gridSize), by: size / 10) {
+            context.move(to: CGPoint(x: 0, y: y))
+            context.addLine(to: CGPoint(x: Int(gridSize), y: y))
+        }
+
+        context.strokePath()
+
+        let image = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+
+        return image
+    }
 }
 
 
