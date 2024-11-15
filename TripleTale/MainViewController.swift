@@ -165,6 +165,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Capture the current frame
         if let image = captureFrameAsUIImage(from: sceneView) {
             calculateAndDisplayWeight(with: image)
+            
+//            if let inputImage = image.downscale(to: 1280) {
+//                let resizedImage = resizeImageForModel(inputImage)
+//                processDepthImage(from: resizedImage!) { depthImage in
+//                    let resizedDepthImage = resizeDepthMap(depthImage, to: inputImage.size)
+//                    
+//                    let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
+//                    saveImageToGallery(thresholdedImage!)
+//                    saveImageToGallery(resizedDepthImage!)
+//                }
+//            }
         } else {
             self.view.showToast(message: "Could not capture image from scene!")
         }
