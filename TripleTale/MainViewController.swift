@@ -22,6 +22,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var widthNudge: Double = 1.2
     
     private var cameraButton: UIButton?
+    private var feedbackLabel: UILabel?
     
     var bracketView: BracketView?
     private var imagePortion: CGFloat = 1.0
@@ -40,38 +41,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var depthImage: UIImage?
 //    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
 
-    /// The ML model to be used for detection of fish
-    private var tripleTaleModel: TripleTaleV2 = {
-        do {
-            let configuration = MLModelConfiguration()
-            return try TripleTaleV2(configuration: configuration)
-        } catch {
-            fatalError("Couldn't create TripleTaleV2 due to: \(error)")
-        }
-    }()
-    
-    private lazy var mlRequest: VNCoreMLRequest = {
-        do {
-            // Instantiate the model from its generated Swift class.
-            let model = try VNCoreMLModel(for: tripleTaleModel.model)
-            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-                if let result = processObservations(for: request, error: error) {
-                    DispatchQueue.main.async {
-                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
-                    }
-                }
-            })
-
-            return request
-        } catch {
-            fatalError("Failed to load Vision ML model: \(error)")
-        }
-    }()
-    
     private var depthQueue = DispatchQueue(label: "com.tripleTale.depthQueue")
 
     /// The ML model to be used for detection of fish
@@ -243,12 +212,22 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         button.imageView?.contentMode = .scaleAspectFill
 
-        button.isHidden = false
+        button.isEnabled = false // Start disabled
+        button.alpha = 0.5 // Visually indicate the disabled state
 
         button.addTarget(self, action: #selector(handleCameraButtonPress), for: .touchUpInside)
 
-        // Add the button to the view
         view.addSubview(button)
+        self.cameraButton = button
+
+        // Add feedback label below the button
+        let label = UILabel(frame: CGRect(x: button.frame.minX, y: button.frame.maxY + 10, width: button.frame.width, height: 20))
+        label.text = "Initiating..."
+        label.textAlignment = .center
+        label.textColor = .gray
+        label.font = UIFont.systemFont(ofSize: 14)
+        view.addSubview(label)
+        self.feedbackLabel = label
     }
     
     func createCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) {
@@ -302,25 +281,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         return image
     }
     
-    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
-        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
-        self.identifierString = identifier
-        self.confidence = confidence
-        self.boundingBox = boundingBox ?? .zero
-    }
-    
-//    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
-//        guard let currentFrame = sceneView.session.currentFrame else { return }
-//
-//        // Get the pixel buffer from the current ARFrame
-//        currentBuffer = currentFrame.capturedImage
-//        
-//        // Lock the pixel buffer base address
-//        CVPixelBufferLockBaseAddress(currentBuffer!, .readOnly)
-//        self.currentImage = pixelBufferToUIImage(pixelBuffer: self.currentBuffer!)
-//        CVPixelBufferUnlockBaseAddress(self.currentBuffer!, .readOnly)
-//    }
-    
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         if !(anchor is ARPlaneAnchor) {
@@ -335,6 +295,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             // Attach the node to the anchor's node
             node.addChildNode(sphereNode)
         } else {
+            // Enable the camera button
+            DispatchQueue.main.async { [weak self] in
+                self?.cameraButton?.isEnabled = true
+                self?.cameraButton?.alpha = 1.0 // Reset the alpha for enabled state
+                
+                self?.feedbackLabel?.text = "Ready!"
+                self?.feedbackLabel?.textColor = .white // Change text color for clarity
+            }
+            
             // Create a visual representation of the anchor (e.g., a sphere)
             let sphere = SCNSphere(radius: 0.002) // 0.2 cm sphere
             
@@ -355,11 +324,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
         switch camera.trackingState {
         case .normal:
-            print("Camera tracking state: normal")
-        case .notAvailable:
-            print("Camera tracking state: not available")
-        case .limited(let reason):
-            print("Camera tracking state limited: \(reason)")
+            // Do nothing, everything is fine
+            break
+        case .notAvailable, .limited:
+            DispatchQueue.main.async { [weak self] in
+                self?.cameraButton?.isEnabled = false
+                self?.cameraButton?.alpha = 0.5
+                self?.feedbackLabel?.text = "Reinitiating..."
+                self?.feedbackLabel?.textColor = .gray
+            }
         }
     }
 
