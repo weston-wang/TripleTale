@@ -10,6 +10,7 @@
 		4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E28C98E2C8B75E4007BE96D /* ArmPose3DDetector.swift */; };
 		4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */; };
 		4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */; };
+		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
 		4EA250AA2C88D31F00E671E7 /* DepthAnythingV2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */; };
 		4EA49E242C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
@@ -32,6 +33,7 @@
 		4E28C98E2C8B75E4007BE96D /* ArmPose3DDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArmPose3DDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerWidthDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandBoundingBoxDetector.swift; sourceTree = "<group>"; };
+		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2.mlpackage; sourceTree = "<group>"; };
 		4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
 		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */,
 				4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */,
 				4EA91EA62C730A27001ACC69 /* Main.storyboard */,
+				4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */,
 				4EA91EAB2C730A28001ACC69 /* LaunchScreen.storyboard */,
 			);
 			path = Resources;
@@ -196,6 +199,7 @@
 			files = (
 				4EA91EAA2C730A28001ACC69 /* Assets.xcassets in Resources */,
 				4EA91EA82C730A27001ACC69 /* Base in Resources */,
+				4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */,
 				4EA91EAD2C730A28001ACC69 /* Base in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

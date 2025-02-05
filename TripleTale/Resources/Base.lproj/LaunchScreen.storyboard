@@ -15,24 +15,26 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView hidden="YES" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="shimano" translatesAutoresizingMaskIntoConstraints="NO" id="KU4-DC-pt1">
-                                <rect key="frame" x="132.66666666666666" y="362" width="127.99999999999997" height="128"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="128" id="6Dz-ba-2JP"/>
-                                    <constraint firstAttribute="height" constant="128" id="XWg-ZJ-tvw"/>
-                                </constraints>
-                                <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="default"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="tt_scren" translatesAutoresizingMaskIntoConstraints="NO" id="ufU-zb-3cN">
+                                <rect key="frame" x="-599" y="0.0" width="1627" height="852"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </imageView>
-                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="presented by" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qjY-Pi-M9N">
-                                <rect key="frame" x="156.66666666666666" y="397" width="80" height="15"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="12"/>
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="TripleTale" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hyM-Uk-vDR">
+                                <rect key="frame" x="140.33333333333334" y="334" width="112.33333333333334" height="33"/>
+                                <fontDescription key="fontDescription" name="AvenirNext-Bold" family="Avenir Next" pointSize="24"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="TripleTale" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hyM-Uk-vDR">
-                                <rect key="frame" x="56" y="320" width="281" height="82"/>
-                                <fontDescription key="fontDescription" name="AvenirNext-Bold" family="Avenir Next" pointSize="60"/>
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="presented by" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="qjY-Pi-M9N">
+                                <rect key="frame" x="156.66666666666666" y="311" width="80" height="15"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="12"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Fish Estimator" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FKM-9U-2Xu">
+                                <rect key="frame" x="19" y="232" width="355" height="63"/>
+                                <fontDescription key="fontDescription" name="Futura-Bold" family="Futura" pointSize="48"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
@@ -40,21 +42,24 @@
                         <color key="backgroundColor" red="0.30196079609999998" green="0.66666668650000005" blue="0.92156863209999995" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="KU4-DC-pt1" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4j8-Nz-Lr6"/>
-                            <constraint firstItem="KU4-DC-pt1" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="E1r-qD-2JN"/>
-                            <constraint firstItem="hyM-Uk-vDR" firstAttribute="bottom" secondItem="qjY-Pi-M9N" secondAttribute="bottom" constant="-10" id="FYf-1k-DCb"/>
-                            <constraint firstItem="qjY-Pi-M9N" firstAttribute="bottom" secondItem="KU4-DC-pt1" secondAttribute="top" constant="50" id="GyY-4w-35n"/>
+                            <constraint firstItem="qjY-Pi-M9N" firstAttribute="centerY" secondItem="FKM-9U-2Xu" secondAttribute="bottom" constant="23.5" id="FYf-1k-DCb"/>
+                            <constraint firstItem="qjY-Pi-M9N" firstAttribute="top" secondItem="FKM-9U-2Xu" secondAttribute="bottom" constant="16" id="J9U-o3-Bqz"/>
+                            <constraint firstItem="FKM-9U-2Xu" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="N9A-gR-Pm1"/>
+                            <constraint firstItem="qjY-Pi-M9N" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="OMq-BG-Fli"/>
+                            <constraint firstItem="hyM-Uk-vDR" firstAttribute="top" secondItem="qjY-Pi-M9N" secondAttribute="bottom" constant="8" symbolic="YES" id="WR0-LB-R4W"/>
                             <constraint firstItem="qjY-Pi-M9N" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Xzw-8w-hsg"/>
+                            <constraint firstItem="hyM-Uk-vDR" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="ehe-KD-Fcz"/>
+                            <constraint firstItem="FKM-9U-2Xu" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="173" id="lDT-Oh-cqG"/>
                             <constraint firstItem="hyM-Uk-vDR" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="vbG-fU-5c0"/>
                         </constraints>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="53" y="375"/>
+            <point key="canvasLocation" x="52.671755725190835" y="374.64788732394368"/>
         </scene>
     </scenes>
     <resources>
-        <image name="shimano" width="225" height="225"/>
+        <image name="tt_scren" width="2000" height="1125"/>
     </resources>
 </document>

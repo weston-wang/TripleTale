@@ -18,9 +18,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
-    var lengthNudge: Double = 1.2
-    var widthNudge: Double = 1.2
-    
+    var lengthNudge: Double = 1.34
+    var widthNudge: Double = 1.32
+    var heightNudge: Double = 1.90
+
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
     
@@ -28,6 +29,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var imagePortion: CGFloat = 1.0
     
     private var firstPlaneAnchor: ARPlaneAnchor?
+    private var isGroundPlaneDetected = false
     
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var depthImage: UIImage?
@@ -193,7 +195,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
         length = length * Float(self.lengthNudge)
         width = width * Float(self.widthNudge)
-        
+        height = width * Float(self.heightNudge)
+
         let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
         
         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
@@ -282,7 +285,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
             if firstPlaneAnchor == nil {
                 firstPlaneAnchor = planeAnchor
+                isGroundPlaneDetected = true // ✅ Mark ground plane detected
+
                 print("First plane detected: \(planeAnchor.identifier)")
+                
+                DispatchQueue.main.async { [weak self] in
+                    self?.updateCameraButtonState()
+                }
 
                 // Visualize the plane
                 let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
@@ -293,16 +302,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 gridMaterial.isDoubleSided = true
                 planeGeometry?.materials = [gridMaterial]
 
-                let meshNode = SCNNode(geometry: planeGeometry)
-                node.addChildNode(meshNode)
+//                let meshNode = SCNNode(geometry: planeGeometry)
+//                node.addChildNode(meshNode)
             }
         } else {
             // Add a red sphere for all other anchors
             let sphere = SCNSphere(radius: 0.002) // Small red sphere
             sphere.firstMaterial?.diffuse.contents = UIColor.red
 
-            let sphereNode = SCNNode(geometry: sphere)
-            node.addChildNode(sphereNode)
+//            let sphereNode = SCNNode(geometry: sphere)
+//            node.addChildNode(sphereNode)
         }
     }
     
@@ -330,23 +339,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
-        DispatchQueue.main.async { [weak self] in
-            switch camera.trackingState {
-            case .normal:
-                // Reset button and label when tracking is normal
-                self?.cameraButton?.isEnabled = true
-                self?.cameraButton?.alpha = 1.0
-                self?.feedbackLabel?.text = "Ready"
-                self?.feedbackLabel?.textColor = .green
-
-            case .notAvailable, .limited:
-                // Disable button and show reinitiating message
-                self?.cameraButton?.isEnabled = false
-                self?.cameraButton?.alpha = 0.5
-                self?.feedbackLabel?.text = "Reinitiating..."
-                self?.feedbackLabel?.textColor = .gray
-            }
-        }
+        updateCameraButtonState()
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
@@ -384,6 +377,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         UIGraphicsEndImageContext()
 
         return image
+    }
+    
+    private func updateCameraButtonState() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            let isTrackingNormal = self.sceneView.session.currentFrame?.camera.trackingState == .normal
+            let isPlaneAvailable = self.isGroundPlaneDetected
+
+            if isTrackingNormal && isPlaneAvailable {
+                self.cameraButton?.isEnabled = true
+                self.cameraButton?.alpha = 1.0
+                self.feedbackLabel?.text = "Ready"
+                self.feedbackLabel?.textColor = .green
+            } else {
+                self.cameraButton?.isEnabled = false
+                self.cameraButton?.alpha = 0.5
+                self.feedbackLabel?.text = "Reinitiating..."
+                self.feedbackLabel?.textColor = .gray
+            }
+        }
     }
 }
 
