@@ -201,7 +201,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
                           
-        if let combinedImage = generateResultImage(image, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
+        
+        imagePortion = 0.85
+   
+        let resultImageWidth = image.size.width * imagePortion // Example size for not forward-facing, adjust as needed
+        let resultImageHeight = resultImageWidth * 16 / 9 // Maintain 9:16 aspect ratio
+
+
+        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: CGFloat(resultImageWidth), height: CGFloat(resultImageHeight)))
+        if let combinedImage = generateResultImage(croppedImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
