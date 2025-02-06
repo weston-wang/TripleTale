@@ -140,7 +140,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             showInputPopup(title: "Developer Mode", message: "Update Values Below", placeholders: [
                 "Weight Scale: \(self.scaleFactor)",
                 "Length Scale: \(self.lengthNudge)",
-                "Width Scale: \(self.widthNudge)"
+                "Width Scale: \(self.widthNudge)",
+                "Height Scale: \(self.heightNudge)"
             ]) { inputs in
                 // Handle the user inputs here
                 if let value1 = inputs[0] {
@@ -153,6 +154,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 if let value3 = inputs[2] {
                     self.widthNudge = value3
+                }
+                
+                if let value4 = inputs[3] {
+                    self.heightNudge = value4
                 }
             }
         }
@@ -195,7 +200,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
         length = length * Float(self.lengthNudge)
         width = width * Float(self.widthNudge)
-        height = width * Float(self.heightNudge)
+        height = height * Float(self.heightNudge)
 
         let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
         
