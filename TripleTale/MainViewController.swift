@@ -18,9 +18,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
-    var lengthNudge: Double = 1.34
-    var widthNudge: Double = 1.32
-    var heightNudge: Double = 1.90
+    var lengthNudge: Double = 1.5
+    var widthNudge: Double = 1.3
+    var heightNudge: Double = 1.4
 
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
@@ -189,7 +189,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     func calculateAndDisplayWeight(with image: UIImage) {
-        let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: true)!
+        let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: false)!
 
         let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
