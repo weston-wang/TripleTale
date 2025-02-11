@@ -30,7 +30,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var firstPlaneAnchor: ARPlaneAnchor?
     private var isGroundPlaneDetected = false
-    
+
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var depthImage: UIImage?
 //    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
@@ -193,6 +193,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
+        // Handle failure: If no valid anchors were returned, show an error popup
+        if fishAnchors.0.isEmpty || fishAnchors.3.isEmpty {
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "Failed to place anchors for measurement. Please try again.")
+            }
+            return
+        }
+        
         var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
         
         let normVector = normalVector(from: fishAnchors.3)
@@ -344,6 +352,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.identifier == firstPlaneAnchor?.identifier {
             print("First plane removed. Resetting.")
             firstPlaneAnchor = nil
+            isGroundPlaneDetected = false
+            
+            DispatchQueue.main.async { [weak self] in
+                self?.updateCameraButtonState()
+            }
         }
     }
     
@@ -405,6 +418,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.feedbackLabel?.text = "Ready"
                 self.feedbackLabel?.textColor = .green
             } else {
+                print("tracking: \(isTrackingNormal), plane: \(isPlaneAvailable)")
                 self.cameraButton?.isEnabled = false
                 self.cameraButton?.alpha = 0.5
                 self.feedbackLabel?.text = "Reinitiating..."

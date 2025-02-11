@@ -107,6 +107,12 @@ func buildRealWorldVerticesAnchors(_ currentView: ARSCNView, _ normalizedVertice
 
     let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // first one is tall, second is wide
     let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
+    
+    // Handle error: Show popup if corner anchors fail
+    if cornerAnchors.isEmpty {
+        return ([], centroidAboveAnchor!, centroidAboveAnchor!, []) // Return empty arrays to indicate failure
+    }
+    
     let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors)
 
     let distanceToFish = calculateDistanceToObject(centroidAboveAnchor!)
@@ -129,15 +135,15 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
 //    let tempImage = inputImage.drawBoundingBox(inputBoundingBox!)
-    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: boundingBox)
+//    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: boundingBox)
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
 //    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
-    let pt = CGPoint(x: 10, y: inputImage.size.height - 300)
-
-    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
+//    let pt = CGPoint(x: 10, y: inputImage.size.height - 300)
+//
+//    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
 
 //    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    let weightTextImage = tempImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
+    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
 
     let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
 

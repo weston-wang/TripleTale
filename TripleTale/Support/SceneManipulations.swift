@@ -26,8 +26,8 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 }
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-    // First, attempt to use the raycast method
-    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
+    // First, try raycasting on an existing plane
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .existingPlaneGeometry, alignment: .any) {
         let raycastResults = currentView.session.raycast(raycastQuery)
         
         if let result = raycastResults.first {
@@ -37,8 +37,19 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
         }
     }
     
-    // Fallback to the hit-test method if raycast fails or is unavailable
-    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
+    // If no existing planes, try raycasting with estimated planes
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
+        let raycastResults = currentView.session.raycast(raycastQuery)
+        
+        if let result = raycastResults.first {
+            let anchor = ARAnchor(transform: result.worldTransform)
+            currentView.session.add(anchor: anchor)
+            return anchor
+        }
+    }
+
+    // Fallback: Use feature point hit-test if raycasting fails
+    let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
     
     if let result = hitTestResults.first {
         let anchor = ARAnchor(transform: result.worldTransform)
@@ -48,7 +59,6 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
     
     return nil
 }
-
 //func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
 //    
@@ -149,17 +159,19 @@ func getAngledCorners(_ currentView: ARSCNView, _ corners: [CGPoint], _ captured
     var cornerAnchors: [ARAnchor] = []
     
     let leftTop = getScreenPosition(currentView, corners[0].x, corners[0].y, capturedImageSize)
-    let anchorLT = addAnchor(currentView, leftTop)!
-
     let rightTop = getScreenPosition(currentView, corners[1].x, corners[1].y, capturedImageSize)
-    let anchorRT = addAnchor(currentView, rightTop)!
-    
     let leftBottom = getScreenPosition(currentView, corners[2].x, corners[2].y, capturedImageSize)
-    let anchorLB = addAnchor(currentView, leftBottom)!
-    
     let rightBottom = getScreenPosition(currentView, corners[3].x, corners[3].y, capturedImageSize)
-    let anchorRB = addAnchor(currentView, rightBottom)!
     
+    // Attempt to add anchors, return an empty array if any fail
+    guard let anchorLT = addAnchor(currentView, leftTop),
+          let anchorRT = addAnchor(currentView, rightTop),
+          let anchorLB = addAnchor(currentView, leftBottom),
+          let anchorRB = addAnchor(currentView, rightBottom) else {
+        print("❌ Failed to add one or more anchors in getAngledCorners")
+        return []
+    }
+
     cornerAnchors.append(anchorLT)
     cornerAnchors.append(anchorRT)
     cornerAnchors.append(anchorLB)
