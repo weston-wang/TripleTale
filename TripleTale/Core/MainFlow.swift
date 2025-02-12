@@ -100,33 +100,55 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
 
 }
 
-func buildRealWorldVerticesAnchors(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], ARAnchor, ARAnchor, [ARAnchor]) {
+func buildRealWorldVerticesAnchors(
+    _ currentView: ARSCNView,
+    _ normalizedVertices: [CGPoint],
+    _ capturedImageSize: CGSize
+) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
+    
+    // Attempt to get vertices anchors
     var verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
     
-    let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize)
-
+    if verticesAnchors.count < 4 {
+        print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
+        return ([], nil, nil, []) // Return safe fallback values
+    }
+    
+    // Attempt to get centroid anchor
+    guard let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize) else {
+        print("Error: Failed to retrieve centroid above anchor.")
+        return ([], nil, nil, []) // Return safe fallback values
+    }
+    
     let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // first one is tall, second is wide
     let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
     
-    // Handle error: Show popup if corner anchors fail
     if cornerAnchors.isEmpty {
-        return ([], centroidAboveAnchor!, centroidAboveAnchor!, []) // Return empty arrays to indicate failure
+        print("Error: Failed to retrieve corner anchors.")
+        return ([], centroidAboveAnchor, nil, []) // At least return the above centroid
     }
     
-    let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors)
+    guard let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors) else {
+        print("Error: Failed to create centroid below anchor.")
+        return ([], centroidAboveAnchor, nil, cornerAnchors) // Return corner anchors at least
+    }
 
-    let distanceToFish = calculateDistanceToObject(centroidAboveAnchor!)
-    let distanceToGround = calculateDistanceToObject(centroidBelowAnchor!)
-    let scalingFactor = distanceToFish / distanceToGround * 1.1
+    // Attempt distance calculations safely
+    guard let distanceToFish = calculateDistanceToObject(centroidAboveAnchor),
+          let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
+          distanceToGround != 0 else {
+        print("Error: Invalid distances for scaling factor computation.")
+        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+    }
     
+    let scalingFactor = distanceToFish / distanceToGround * 1.1
     verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor, horizontalScaleFactor: scalingFactor)
     
-    
-    return (verticesAnchors, centroidAboveAnchor!, centroidBelowAnchor!, cornerAnchors)
+    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
 }
 
 func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = nil, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
-    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
+//    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
 
     let formattedLength = String(format: "%.2f", lengthInInches.value)
     let formattedWeight = String(format: "%.2f", weightInLb.value)
@@ -152,10 +174,10 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
 
 //    let overlayImage = UIImage(named: "shimano_logo")!
 //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-    let combinedImage = weightTextImage
+    let combinedImage = measurementTextImage
 
     saveImageToGallery(combinedImage!)
-//    saveImageToGallery(inputImage)
+    saveImageToGallery(inputImage)
 
     return combinedImage!
 }

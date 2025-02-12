@@ -16,6 +16,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var sceneView: ARSCNView!
     var frameCounter = 0
 
+    private var planeDetectionTimer: Timer?
+    
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.5
@@ -188,41 +190,61 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
+    @objc private func showPlaneDetectionHint() {
+        DispatchQueue.main.async {
+            if !self.isGroundPlaneDetected {
+                self.showPopupMessage(title: "Move Your Phone", message: "Try slowly moving your phone around to help detect the ground.")
+            }
+        }
+    }
+    
     func calculateAndDisplayWeight(with image: UIImage) {
-        let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: false)!
+        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: false) else {
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
+            }
+            return
+        }
 
-        let fishAnchors = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
         // Handle failure: If no valid anchors were returned, show an error popup
-        if fishAnchors.0.isEmpty || fishAnchors.3.isEmpty {
+        if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Failed to place anchors for measurement. Please try again.")
             }
             return
         }
         
-        var (width, length, height) = measureVertices(fishAnchors.0, fishAnchors.3, fishAnchors.1, fishAnchors.2)
+        var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
         
-        let normVector = normalVector(from: fishAnchors.3)
-        height = distanceToPlane(from: fishAnchors.1, planeAnchor: self.firstPlaneAnchor!, normal: normVector!)
-                
-        length = length * Float(self.lengthNudge)
-        width = width * Float(self.widthNudge)
-        height = height * Float(self.heightNudge)
+        if let planeAnchor = self.firstPlaneAnchor {
+            if let normVector = normalVector(from: cornerAnchors) {
+                height = distanceToPlane(from: centroidAboveAnchor!, planeAnchor: planeAnchor, normal: normVector)
+            }
+        } else {
+            print("❌ No detected ground plane. Cannot measure height.")
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
+            }
+            return
+        }
+
+        length *= Float(self.lengthNudge)
+        width *= Float(self.widthNudge)
+        height *= Float(self.heightNudge)
 
         let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
-        
+
         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
-                          
-        
+
         imagePortion = 0.85
-   
-        let resultImageWidth = image.size.width * imagePortion // Example size for not forward-facing, adjust as needed
-        let resultImageHeight = resultImageWidth * 16 / 9 // Maintain 9:16 aspect ratio
 
+        let resultImageWidth = image.size.width * imagePortion
+        let resultImageHeight = resultImageWidth * 16 / 9
 
-        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: CGFloat(resultImageWidth), height: CGFloat(resultImageHeight)))
-        if let combinedImage = generateResultImage(croppedImage!, nil , widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
+        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
+        if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -292,6 +314,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         configuration.planeDetection = [.horizontal]
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+
+        // Cancel any existing timer and start a new one
+        planeDetectionTimer?.invalidate()
+        planeDetectionTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(showPlaneDetectionHint), userInfo: nil, repeats: false)
     }
     
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
@@ -313,7 +339,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 DispatchQueue.main.async { [weak self] in
                     self?.updateCameraButtonState()
                 }
-
+                
+                // ✅ Cancel the popup timer since the plane is found
+                planeDetectionTimer?.invalidate()
+                
                 // Visualize the plane
                 let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
                 planeGeometry?.update(from: planeAnchor.geometry)
@@ -350,12 +379,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
         if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.identifier == firstPlaneAnchor?.identifier {
-            print("First plane removed. Resetting.")
+            print("⚠️ First plane removed. Searching for a new one.")
+
             firstPlaneAnchor = nil
             isGroundPlaneDetected = false
-            
+
             DispatchQueue.main.async { [weak self] in
                 self?.updateCameraButtonState()
+            }
+
+            // ✅ Restart plane detection so a new one can be assigned
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.startPlaneDetection()
             }
         }
     }
