@@ -27,7 +27,7 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
     // First, try raycasting on an existing plane
-    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .existingPlaneGeometry, alignment: .any) {
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
         let raycastResults = currentView.session.raycast(raycastQuery)
         
         if let result = raycastResults.first {
