@@ -112,7 +112,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
+        sceneView.debugOptions = [.showFeaturePoints]
         view.addSubview(sceneView)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapToPlacePlane))
+        sceneView.addGestureRecognizer(tapGesture)
         
         // Add the bracket view to the main view
         bracketView = BracketView(frame: view.bounds)
@@ -192,9 +196,31 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     @objc private func showPlaneDetectionHint() {
         DispatchQueue.main.async {
+            let isLidarAvailable = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
+
             if !self.isGroundPlaneDetected {
-                self.showPopupMessage(title: "Move Your Phone", message: "Try slowly moving your phone around to help detect the ground.")
+                let message = isLidarAvailable ?
+                    "Try slowly moving your phone to help detect the ground." :
+                    "Your device doesn't have LiDAR. Try moving the phone more and pointing at a textured surface."
+
+                self.showPopupMessage(title: "Move Your Phone", message: message)
             }
+        }
+    }
+    
+    @objc func handleTapToPlacePlane(_ sender: UITapGestureRecognizer) {
+        let location = sender.location(in: sceneView)
+        let hitResults = sceneView.hitTest(location, types: [.featurePoint])
+
+        if let hitResult = hitResults.first {
+            let planeAnchor = ARAnchor(transform: hitResult.worldTransform)
+            sceneView.session.add(anchor: planeAnchor)
+
+            firstPlaneAnchor = planeAnchor as? ARPlaneAnchor
+            isGroundPlaneDetected = true
+            updateCameraButtonState()
+            
+            print("✅ Manual plane placed at feature point.")
         }
     }
     
@@ -310,8 +336,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     func startPlaneDetection() {
+
+        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 30 {
+            print("🚨 Not enough feature points! Ask user to scan more.")
+            showPlaneDetectionHint()
+        }
+        
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
+        configuration.isLightEstimationEnabled = true // Helps in low-light conditions
+        configuration.worldAlignment = .gravity // Ensures detected plane aligns with gravity
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
@@ -352,16 +386,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 gridMaterial.isDoubleSided = true
                 planeGeometry?.materials = [gridMaterial]
 
-//                let meshNode = SCNNode(geometry: planeGeometry)
-//                node.addChildNode(meshNode)
+                let meshNode = SCNNode(geometry: planeGeometry)
+                node.addChildNode(meshNode)
             }
         } else {
             // Add a red sphere for all other anchors
             let sphere = SCNSphere(radius: 0.002) // Small red sphere
             sphere.firstMaterial?.diffuse.contents = UIColor.red
 
-//            let sphereNode = SCNNode(geometry: sphere)
-//            node.addChildNode(sphereNode)
+            let sphereNode = SCNNode(geometry: sphere)
+            node.addChildNode(sphereNode)
         }
     }
     
@@ -391,6 +425,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             // ✅ Restart plane detection so a new one can be assigned
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                 self?.startPlaneDetection()
+                self?.showPlaneDetectionHint()
             }
         }
     }
