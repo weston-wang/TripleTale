@@ -195,15 +195,19 @@ extension UIImage {
         
         // Create a shadow for the text (optional)
         let shadow = NSShadow()
-        shadow.shadowColor = UIColor.gray
+        shadow.shadowColor = UIColor.black
         shadow.shadowOffset = CGSize(width: 2, height: 2)
         shadow.shadowBlurRadius = 1
+        
         
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.boldSystemFont(ofSize: fontSize),
             .foregroundColor: textColor,
             .paragraphStyle: paragraphStyle,
-            .shadow: shadow
+            .strokeColor: UIColor.black, // Border color
+            .strokeWidth: -3 // Negative value keeps text visible inside the border
+            //            .shadow: shadow,
+
         ]
         
         // Start drawing image context

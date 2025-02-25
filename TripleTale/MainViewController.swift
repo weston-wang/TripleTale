@@ -345,7 +345,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
-        configuration.worldAlignment = .gravity // Ensures detected plane aligns with gravity
+        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
+        configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
