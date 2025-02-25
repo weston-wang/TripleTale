@@ -112,12 +112,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
-        sceneView.debugOptions = [.showFeaturePoints]
+        sceneView.debugOptions = [.showFeaturePoints, .showWorldOrigin ]
         view.addSubview(sceneView)
-        
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapToPlacePlane))
-        sceneView.addGestureRecognizer(tapGesture)
-        
+
         // Add the bracket view to the main view
         bracketView = BracketView(frame: view.bounds)
         bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
@@ -205,22 +202,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
                 self.showPopupMessage(title: "Move Your Phone", message: message)
             }
-        }
-    }
-    
-    @objc func handleTapToPlacePlane(_ sender: UITapGestureRecognizer) {
-        let location = sender.location(in: sceneView)
-        let hitResults = sceneView.hitTest(location, types: [.featurePoint])
-
-        if let hitResult = hitResults.first {
-            let planeAnchor = ARAnchor(transform: hitResult.worldTransform)
-            sceneView.session.add(anchor: planeAnchor)
-
-            firstPlaneAnchor = planeAnchor as? ARPlaneAnchor
-            isGroundPlaneDetected = true
-            updateCameraButtonState()
-            
-            print("✅ Manual plane placed at feature point.")
         }
     }
     
