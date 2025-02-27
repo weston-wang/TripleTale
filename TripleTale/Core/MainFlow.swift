@@ -111,7 +111,7 @@ func buildRealWorldVerticesAnchors(
     
     // 🔄 Retry with small dithers until we get at least 4 anchors
     var attempt = 0
-    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
+    while verticesAnchors.count < 4 && attempt < 3 {  // Limit retries to prevent infinite loops
         attempt += 1
         adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
         verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)

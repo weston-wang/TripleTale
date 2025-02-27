@@ -115,6 +115,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         sceneView.debugOptions = [.showFeaturePoints]
         view.addSubview(sceneView)
 
+        // ✅ Start a stabilization phase before allowing anchors
+        performPreTrackingPhase()
+        
         // Add the bracket view to the main view
         bracketView = BracketView(frame: view.bounds)
         bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
@@ -202,6 +205,36 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
                 self.showPopupMessage(title: "Move Your Phone", message: message)
             }
+        }
+    }
+    
+    func performPreTrackingPhase() {
+        let config = ARWorldTrackingConfiguration()
+        config.planeDetection = [.horizontal]
+        config.isLightEstimationEnabled = true
+        config.worldAlignment = .gravity
+        config.isAutoFocusEnabled = true
+
+        // ✅ Step 1: Reset tracking & remove previous anchors to force rescan
+        sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            var featurePointCount = 0
+            var attempts = 0
+
+            // ✅ Step 2: Wait until ARKit has detected a sufficient number of feature points
+            while featurePointCount < 50 && attempts < 10 { // Adjust threshold as needed
+                if let featurePoints = self.sceneView.session.currentFrame?.rawFeaturePoints?.points {
+                    featurePointCount = featurePoints.count
+                }
+                print("🔍 Feature points detected: \(featurePointCount)")
+
+                usleep(500_000) // Wait 0.5 seconds before checking again
+                attempts += 1
+            }
+
+            // ✅ Step 3: Once stable, start normal plane detection
+            DispatchQueue.main.async { self.startPlaneDetection() }
         }
     }
     
