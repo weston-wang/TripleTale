@@ -216,8 +216,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let (verticesAnchors,
              centroidAboveAnchor,
              centroidBelowAnchor,
-             cornerAnchors,
-             distanceScale) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
         // Handle failure: If no valid anchors were returned, show an error popup
         if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
@@ -228,9 +227,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
-        
-        width = width * distanceScale
-        length = length * distanceScale
         
         if let planeAnchor = self.firstPlaneAnchor {
             if let normVector = normalVector(from: cornerAnchors) {
