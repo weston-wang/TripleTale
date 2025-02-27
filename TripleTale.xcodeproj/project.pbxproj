@@ -33,6 +33,7 @@
 		4E28C98E2C8B75E4007BE96D /* ArmPose3DDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArmPose3DDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerWidthDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandBoundingBoxDetector.swift; sourceTree = "<group>"; };
+		4E53AF062D70393200873F4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2.mlpackage; sourceTree = "<group>"; };
 		4EA49E232C73A2FB00CDA5C9 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
@@ -130,6 +131,7 @@
 		4EA91E9F2C730A27001ACC69 /* TripleTale */ = {
 			isa = PBXGroup;
 			children = (
+				4E53AF062D70393200873F4D /* Info.plist */,
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
 				4EA49E292C74160900CDA5C9 /* Core */,
 				4EA49E2A2C74160F00CDA5C9 /* Support */,
@@ -377,9 +379,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 3PAJYRQ2FL;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TripleTale/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "This application will use the camera for Augmented Reality and Computer Vision.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Uses motion sensor for AR";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This application will use the gallery to save images";
@@ -413,9 +416,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 3PAJYRQ2FL;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TripleTale/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "This application will use the camera for Augmented Reality and Computer Vision.";
 				INFOPLIST_KEY_NSMotionUsageDescription = "Uses motion sensor for AR";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This application will use the gallery to save images";

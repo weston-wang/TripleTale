@@ -219,12 +219,34 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
              cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
         // Handle failure: If no valid anchors were returned, show an error popup
-        if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
+        if verticesAnchors.isEmpty {
             DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchors for measurement. Please try again.")
+                self.showPopupMessage(title: "Error", message: "Failed to place anchors at vertices.")
             }
             return
         }
+        
+        if cornerAnchors.isEmpty {
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "Failed to place anchors at corners.")
+            }
+            return
+        }
+        
+        if centroidAboveAnchor == nil {
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "Failed to place anchor on fish.")
+            }
+            return
+        }
+        
+        if centroidBelowAnchor == nil {
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "Failed to place anchor below fish.")
+            }
+            return
+        }
+        
         
         var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
         

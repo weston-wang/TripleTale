@@ -27,37 +27,38 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
     if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
-          let raycastResults = currentView.session.raycast(raycastQuery)
-          
-          if let result = raycastResults.first {
-              let anchor = ARAnchor(transform: result.worldTransform)
-              currentView.session.add(anchor: anchor)
-              return anchor
-          }
-      }
+        let raycastResults = currentView.session.raycast(raycastQuery)
+        
+        if let result = raycastResults.first {
+            let anchor = ARAnchor(transform: result.worldTransform)
+            currentView.session.add(anchor: anchor)
+            return anchor
+        }
+    }
     
-       // If no existing planes, try raycasting with estimated planes
-       if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
-           let raycastResults = currentView.session.raycast(raycastQuery)
-           
-           if let result = raycastResults.first {
-               let anchor = ARAnchor(transform: result.worldTransform)
-               currentView.session.add(anchor: anchor)
-               return anchor
-           }
-       }
-
-       // Fallback: Use feature point hit-test if raycasting fails
-       let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
-       
-       if let result = hitTestResults.first {
-           let anchor = ARAnchor(transform: result.worldTransform)
-           currentView.session.add(anchor: anchor)
-           return anchor
-       }
-       
-       return nil
+//    // If no existing planes, try raycasting with estimated planes
+//    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
+//        let raycastResults = currentView.session.raycast(raycastQuery)
+//        
+//        if let result = raycastResults.first {
+//            let anchor = ARAnchor(transform: result.worldTransform)
+//            currentView.session.add(anchor: anchor)
+//            return anchor
+//        }
+//    }
+//    
+//    // Fallback: Use feature point hit-test if raycasting fails
+//    let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
+//    
+//    if let result = hitTestResults.first {
+//        let anchor = ARAnchor(transform: result.worldTransform)
+//        currentView.session.add(anchor: anchor)
+//        return anchor
+//    }
+    
+    return nil
 }
+
 //func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
 //    
