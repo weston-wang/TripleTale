@@ -106,21 +106,29 @@ func buildRealWorldVerticesAnchors(
     _ capturedImageSize: CGSize
 ) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
     
-    // Attempt to get vertices anchors
-    var verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
+    var adjustedVertices = normalizedVertices
+    var verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
     
+    // 🔄 Retry with small dithers until we get at least 4 anchors
+    var attempt = 0
+    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
+        attempt += 1
+        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
+        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
+    }
+
     if verticesAnchors.count < 4 {
         print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
         return ([], nil, nil, []) // Return safe fallback values
     }
     
     // Attempt to get centroid anchor
-    guard let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize) else {
+    guard let centroidAboveAnchor = getVerticesCenter(currentView, adjustedVertices, capturedImageSize) else {
         print("Error: Failed to retrieve centroid above anchor.")
         return ([], nil, nil, []) // Return safe fallback values
     }
     
-    let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // first one is tall, second is wide
+    let corners = calculateRectangleCorners(adjustedVertices, 0.0, 0.7) // First one is tall, second is wide
     let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
     
     if cornerAnchors.isEmpty {

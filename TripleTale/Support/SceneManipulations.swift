@@ -46,15 +46,16 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //            return anchor
 //        }
 //    }
-//    
-//    // Fallback: Use feature point hit-test if raycasting fails
-//    let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
-//    
-//    if let result = hitTestResults.first {
-//        let anchor = ARAnchor(transform: result.worldTransform)
-//        currentView.session.add(anchor: anchor)
-//        return anchor
-//    }
+    
+    
+    // Fallback: Use feature point hit-test if raycasting fails
+    let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
+    
+    if let result = hitTestResults.first {
+        let anchor = ARAnchor(transform: result.worldTransform)
+        currentView.session.add(anchor: anchor)
+        return anchor
+    }
     
     return nil
 }
