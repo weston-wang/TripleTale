@@ -25,30 +25,37 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
     return distance
 }
 
-func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-    // First, try raycasting on an existing plane
-    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .existingPlaneInfinite, alignment: .any) {
-        let raycastResults = currentView.session.raycast(raycastQuery)
-        
-        if let result = raycastResults.first {
-            let anchor = ARAnchor(transform: result.worldTransform)
-            currentView.session.add(anchor: anchor)
-            return anchor
+func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, useRaycast: Bool = true) -> ARAnchor? {
+    let supportsLiDAR = ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification)
+
+    if useRaycast {
+        // First, try raycasting on an existing plane
+        if let raycastQuery = currentView.raycastQuery(from: point, allowing: .existingPlaneInfinite, alignment: .any) {
+            let raycastResults = currentView.session.raycast(raycastQuery)
+            
+            if let result = raycastResults.first {
+                let anchor = ARAnchor(transform: result.worldTransform)
+                currentView.session.add(anchor: anchor)
+                return anchor
+            }
         }
+
     }
     
-    // If no existing planes, try raycasting with estimated planes
-    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
-        let raycastResults = currentView.session.raycast(raycastQuery)
-        
-        if let result = raycastResults.first {
-            let anchor = ARAnchor(transform: result.worldTransform)
-            currentView.session.add(anchor: anchor)
-            return anchor
+    if supportsLiDAR {
+        // If no existing planes, try raycasting with estimated planes
+        if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
+            let raycastResults = currentView.session.raycast(raycastQuery)
+            
+            if let result = raycastResults.first {
+                let anchor = ARAnchor(transform: result.worldTransform)
+                currentView.session.add(anchor: anchor)
+                return anchor
+            }
         }
     }
 
-    // Fallback: Use feature point hit-test if raycasting fails
+    // Fallback: Use feature point hit-test if raycasting fails or useRaycast is false
     let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
     
     if let result = hitTestResults.first {
@@ -150,7 +157,7 @@ func getVerticesCenter(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint]
     
     let centroidOnScreen = getScreenPosition(currentView, centroid.x, centroid.y, capturedImageSize)
 
-    let centroidAnchor = addAnchor(currentView, centroidOnScreen)
+    let centroidAnchor = addAnchor(currentView, centroidOnScreen, useRaycast: false)
 
     return centroidAnchor
 }

@@ -104,20 +104,20 @@ func buildRealWorldVerticesAnchors(
     _ currentView: ARSCNView,
     _ normalizedVertices: [CGPoint],
     _ capturedImageSize: CGSize
-) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
+) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor], Float) {
     
     // Attempt to get vertices anchors
     var verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
     
     if verticesAnchors.count < 4 {
         print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
-        return ([], nil, nil, []) // Return safe fallback values
+        return ([], nil, nil, [], 1.0) // Return safe fallback values
     }
     
     // Attempt to get centroid anchor
     guard let centroidAboveAnchor = getVerticesCenter(currentView, normalizedVertices, capturedImageSize) else {
         print("Error: Failed to retrieve centroid above anchor.")
-        return ([], nil, nil, []) // Return safe fallback values
+        return ([], nil, nil, [], 1.0) // Return safe fallback values
     }
     
     let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // first one is tall, second is wide
@@ -125,12 +125,12 @@ func buildRealWorldVerticesAnchors(
     
     if cornerAnchors.isEmpty {
         print("Error: Failed to retrieve corner anchors.")
-        return ([], centroidAboveAnchor, nil, []) // At least return the above centroid
+        return ([], centroidAboveAnchor, nil, [], 1.0) // At least return the above centroid
     }
     
     guard let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors) else {
         print("Error: Failed to create centroid below anchor.")
-        return ([], centroidAboveAnchor, nil, cornerAnchors) // Return corner anchors at least
+        return ([], centroidAboveAnchor, nil, cornerAnchors, 1.0) // Return corner anchors at least
     }
 
     // Attempt distance calculations safely
@@ -138,13 +138,15 @@ func buildRealWorldVerticesAnchors(
           let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
           distanceToGround != 0 else {
         print("Error: Invalid distances for scaling factor computation.")
-        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors, 1.0)
     }
     
-    let scalingFactor = distanceToFish / distanceToGround * 1.1
-    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: scalingFactor, horizontalScaleFactor: scalingFactor)
+    let scalingFactor = distanceToFish / distanceToGround
+    let outwardedScalingFactor = scalingFactor * 1.1
     
-    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
+    
+    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors, 1/scalingFactor)
 }
 
 func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = nil, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
@@ -165,7 +167,8 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
 //    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
 
 //    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
+//    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
+    let weightTextImage = inputImage.imageWithCenteredText("\(formattedLength) in", fontSize: 180, textColor: UIColor.white)
 
     let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
 
@@ -174,7 +177,7 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
 
 //    let overlayImage = UIImage(named: "shimano_logo")!
 //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-    let combinedImage = measurementTextImage
+    let combinedImage = weightTextImage
 
     saveImageToGallery(combinedImage!)
     saveImageToGallery(inputImage)

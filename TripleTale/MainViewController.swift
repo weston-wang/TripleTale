@@ -20,7 +20,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
-    var lengthNudge: Double = 1.5
+    var lengthNudge: Double = 1.3
     var widthNudge: Double = 1.3
     var heightNudge: Double = 1.4
 
@@ -112,7 +112,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
-        sceneView.debugOptions = [.showFeaturePoints, .showWorldOrigin ]
+        sceneView.debugOptions = [.showFeaturePoints]
         view.addSubview(sceneView)
 
         // Add the bracket view to the main view
@@ -213,7 +213,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
 
-        let (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+        let (verticesAnchors,
+             centroidAboveAnchor,
+             centroidBelowAnchor,
+             cornerAnchors,
+             distanceScale) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
         // Handle failure: If no valid anchors were returned, show an error popup
         if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
@@ -224,6 +228,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
+        
+        width = width * distanceScale
+        length = length * distanceScale
         
         if let planeAnchor = self.firstPlaneAnchor {
             if let normVector = normalVector(from: cornerAnchors) {
