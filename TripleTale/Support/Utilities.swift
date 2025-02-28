@@ -435,7 +435,7 @@ func createUIImageFromGrayscalePixelData(pixelData: [UInt8], width: Int, height:
 }
 
 func applySmallDither(to vertices: [CGPoint]) -> [CGPoint] {
-    let ditherAmount: CGFloat = 0.0005 // Small dither in normalized coordinates
+    let ditherAmount: CGFloat = 0.0001 // Small dither in normalized coordinates
     return vertices.map { point in
         let dx = (CGFloat.random(in: -ditherAmount...ditherAmount))
         let dy = (CGFloat.random(in: -ditherAmount...ditherAmount))

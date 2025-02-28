@@ -212,7 +212,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let config = ARWorldTrackingConfiguration()
         config.planeDetection = [.horizontal]
         config.isLightEstimationEnabled = true
-        config.worldAlignment = .gravity
+        config.worldAlignment = .gravityAndHeading
         config.isAutoFocusEnabled = true
 
         // ✅ Step 1: Reset tracking & remove previous anchors to force rescan
