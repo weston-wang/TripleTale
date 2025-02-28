@@ -19,6 +19,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var planeDetectionTimer: Timer?
     
     private var tapCounter = 0
+    private var debugCounter = 0
+    
+    private var debugNodes: [SCNNode] = []
+    
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.3
     var widthNudge: Double = 1.3
@@ -112,7 +116,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
-        sceneView.debugOptions = [.showFeaturePoints]
         view.addSubview(sceneView)
 
         // ✅ Start a stabilization phase before allowing anchors
@@ -164,6 +167,35 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 if let value4 = inputs[3] {
                     self.heightNudge = value4
+                }
+            }
+        }
+    }
+    
+    @objc private func handleDebugGesture() {
+        debugCounter += 1
+
+        if debugCounter == 3 {
+            debugCounter = 0 // Reset counter after activation
+
+            // Toggle debug options
+            if sceneView.debugOptions.isEmpty {
+                // Enable debug mode
+                sceneView.debugOptions = [.showFeaturePoints]
+                print("🔍 Debug mode ENABLED")
+
+                // Show debug nodes (mesh and spheres)
+                for node in debugNodes {
+                    node.isHidden = false
+                }
+            } else {
+                // Disable debug mode
+                sceneView.debugOptions = []
+                print("🚫 Debug mode DISABLED")
+
+                // Hide debug nodes
+                for node in debugNodes {
+                    node.isHidden = true
                 }
             }
         }
@@ -362,6 +394,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         view.addSubview(cornerView)
     }
     
+    func createDebugCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) {
+        let cornerView = UIView()
+        cornerView.backgroundColor = backgroundColor
+        
+        // Set the frame to place the view near the bottom left corner
+        let xPosition: CGFloat = view.bounds.width - size - 20 // Adjust as needed
+        let yPosition: CGFloat = view.bounds.height - size - 20 // Adjust as needed
+        cornerView.frame = CGRect(x: xPosition, y: yPosition, width: size, height: size)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleDebugGesture))
+        cornerView.addGestureRecognizer(tapGesture)
+
+        view.addSubview(cornerView)
+    }
+    
     func updateBracketSize() {
         guard let bracketView = bracketView else { return }
              
@@ -428,6 +475,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
                 let meshNode = SCNNode(geometry: planeGeometry)
                 node.addChildNode(meshNode)
+                
+                // ✅ Store reference for toggling later
+                debugNodes.append(meshNode)
             }
         } else {
             // Add a red sphere for all other anchors
@@ -436,6 +486,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             let sphereNode = SCNNode(geometry: sphere)
             node.addChildNode(sphereNode)
+            
+            // ✅ Store reference for toggling later
+            debugNodes.append(sphereNode)
         }
     }
     
