@@ -16,6 +16,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var sceneView: ARSCNView!
     var frameCounter = 0
 
+    private var trackingStatusLabel: UILabel!
+    
     private var planeDetectionTimer: Timer?
     
     private var tapCounter = 0
@@ -119,7 +121,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         view.addSubview(sceneView)
 
         // ✅ Start a stabilization phase before allowing anchors
-        performPreTrackingPhase()
+//        performPreTrackingPhase()
         
         // Add the bracket view to the main view
         bracketView = BracketView(frame: view.bounds)
@@ -140,6 +142,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         // Initial bracket update
         updateBracketSize()
+        
+        // Call this function inside `viewDidLoad()`
+        setupTrackingStatusLabel()
     }
     
     @objc private func handleTapGesture() {
@@ -437,7 +442,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
 //        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
-
+        
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
         // Cancel any existing timer and start a new one
@@ -478,6 +483,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 planeGeometry?.materials = [gridMaterial]
                 
                 let meshNode = SCNNode(geometry: planeGeometry)
+                meshNode.eulerAngles.x = -.pi / 2
+
                 meshNode.isHidden = true
                 
                 node.addChildNode(meshNode)
@@ -539,6 +546,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
         updateCameraButtonState()
+        updateTrackingStatusLabel(for: camera.trackingState)
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
@@ -596,6 +604,47 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.cameraButton?.alpha = 0.5
                 self.feedbackLabel?.text = "Reinitiating..."
                 self.feedbackLabel?.textColor = .gray
+            }
+        }
+    }
+    
+    private func setupTrackingStatusLabel() {
+        trackingStatusLabel = UILabel(frame: CGRect(x: 10, y: 50, width: 300, height: 30))
+        trackingStatusLabel.text = "Tracking: Initializing..."
+        trackingStatusLabel.textColor = .white
+        trackingStatusLabel.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        trackingStatusLabel.textAlignment = .left
+        trackingStatusLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        trackingStatusLabel.layer.cornerRadius = 5
+        trackingStatusLabel.layer.masksToBounds = true
+        view.addSubview(trackingStatusLabel)
+    }
+    
+    private func updateTrackingStatusLabel(for trackingState: ARCamera.TrackingState) {
+        DispatchQueue.main.async {
+            switch trackingState {
+            case .normal:
+                self.trackingStatusLabel.text = "Tracking: ✅ Normal"
+                self.trackingStatusLabel.textColor = .green
+            case .notAvailable:
+                self.trackingStatusLabel.text = "Tracking: ❌ Not Available"
+                self.trackingStatusLabel.textColor = .red
+            case .limited(let reason):
+                var reasonText = "Unknown"
+                switch reason {
+                case .excessiveMotion:
+                    reasonText = "⚠️ Excessive Motion"
+                case .insufficientFeatures:
+                    reasonText = "⚠️ Insufficient Features"
+                case .initializing:
+                    reasonText = "⌛ Initializing"
+                case .relocalizing:
+                    reasonText = "📍 Relocalizing"
+                @unknown default:
+                    break
+                }
+                self.trackingStatusLabel.text = "Tracking: \(reasonText)"
+                self.trackingStatusLabel.textColor = .yellow
             }
         }
     }
