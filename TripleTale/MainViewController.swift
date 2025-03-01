@@ -21,7 +21,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     private var debugCounter = 0
     
-    private var debugMode: Bool = false
+    private var debugNodes: [SCNNode] = []
 
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.3
@@ -180,21 +180,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         if debugCounter == 3 {
             debugCounter = 0 // Reset counter after activation
-
-            debugMode.toggle()
             
             // Toggle debug options
             if sceneView.debugOptions.isEmpty {
                 // Enable debug mode
                 sceneView.debugOptions = [.showFeaturePoints]
-                print("🔍 Debug mode ENABLED")
-                self.showPopupMessage(title: "Debug Mode", message: "Debug mode ENABLED")
+//                print("🔍 Debug mode ENABLED")
+//                self.showPopupMessage(title: "Debug Mode", message: "Debug mode ENABLED")
+                
+                for node in debugNodes {
+                    node.isHidden = false
+                }
 
             } else {
                 // Disable debug mode
                 sceneView.debugOptions = []
-                print("🚫 Debug mode DISABLED")
-                self.showPopupMessage(title: "Debug Mode", message: "Debug mode DISABLED")
+//                print("🚫 Debug mode DISABLED")
+//                self.showPopupMessage(title: "Debug Mode", message: "Debug mode DISABLED")
+                
+                for node in debugNodes {
+                    node.isHidden = true
+                }
             }
         }
     }
@@ -461,30 +467,38 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 // ✅ Cancel the popup timer since the plane is found
                 planeDetectionTimer?.invalidate()
+            
+                // Visualize the plane
+                let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
+                planeGeometry?.update(from: planeAnchor.geometry)
                 
-                if debugMode {
-                    // Visualize the plane
-                    let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
-                    planeGeometry?.update(from: planeAnchor.geometry)
-                    
-                    let gridMaterial = SCNMaterial()
-                    gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
-                    gridMaterial.isDoubleSided = true
-                    planeGeometry?.materials = [gridMaterial]
-                    
-                    let meshNode = SCNNode(geometry: planeGeometry)
-                    node.addChildNode(meshNode)
-                }
+                let gridMaterial = SCNMaterial()
+                gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
+                gridMaterial.isDoubleSided = true
+                planeGeometry?.materials = [gridMaterial]
+                
+                let meshNode = SCNNode(geometry: planeGeometry)
+                meshNode.isHidden = true
+                
+                node.addChildNode(meshNode)
+                
+                // ✅ Store reference for toggling later
+                debugNodes.append(meshNode)
+            
             }
         } else {
-            if debugMode {
-                // Add a red sphere for all other anchors
-                let sphere = SCNSphere(radius: 0.002) // Small red sphere
-                sphere.firstMaterial?.diffuse.contents = UIColor.red
-                
-                let sphereNode = SCNNode(geometry: sphere)
-                node.addChildNode(sphereNode)
-            }
+            // Add a red sphere for all other anchors
+            let sphere = SCNSphere(radius: 0.002) // Small red sphere
+            sphere.firstMaterial?.diffuse.contents = UIColor.red
+            
+            let sphereNode = SCNNode(geometry: sphere)
+            sphereNode.isHidden = true
+            
+            node.addChildNode(sphereNode)
+            
+            // ✅ Store reference for toggling later
+            debugNodes.append(sphereNode)
+        
         }
     }
     
