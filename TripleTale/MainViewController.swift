@@ -21,8 +21,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     private var debugCounter = 0
     
-    private var debugNodes: [SCNNode] = []
-    
+    private var debugMode: Bool = false
+
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.3
     var widthNudge: Double = 1.3
@@ -129,6 +129,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Create a transparent view for the bottom left corner
         createCornerView(withSize: 100)
         
+        // Create a transparent view for the bottom right corner
+        createDebugCornerView(withSize: 100)
+        
         // Call the function to create and add the camera button
         setupCameraButton()
 
@@ -178,25 +181,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         if debugCounter == 3 {
             debugCounter = 0 // Reset counter after activation
 
+            debugMode.toggle()
+            
             // Toggle debug options
             if sceneView.debugOptions.isEmpty {
                 // Enable debug mode
                 sceneView.debugOptions = [.showFeaturePoints]
                 print("🔍 Debug mode ENABLED")
+                self.showPopupMessage(title: "Debug Mode", message: "Debug mode ENABLED")
 
-                // Show debug nodes (mesh and spheres)
-                for node in debugNodes {
-                    node.isHidden = false
-                }
             } else {
                 // Disable debug mode
                 sceneView.debugOptions = []
                 print("🚫 Debug mode DISABLED")
-
-                // Hide debug nodes
-                for node in debugNodes {
-                    node.isHidden = true
-                }
+                self.showPopupMessage(title: "Debug Mode", message: "Debug mode DISABLED")
             }
         }
     }
@@ -244,7 +242,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let config = ARWorldTrackingConfiguration()
         config.planeDetection = [.horizontal]
         config.isLightEstimationEnabled = true
-        config.worldAlignment = .gravityAndHeading
+//        config.worldAlignment = .gravityAndHeading
         config.isAutoFocusEnabled = true
 
         // ✅ Step 1: Reset tracking & remove previous anchors to force rescan
@@ -431,7 +429,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
-        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
+//        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -464,31 +462,29 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 // ✅ Cancel the popup timer since the plane is found
                 planeDetectionTimer?.invalidate()
                 
-                // Visualize the plane
-                let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
-                planeGeometry?.update(from: planeAnchor.geometry)
-
-                let gridMaterial = SCNMaterial()
-                gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
-                gridMaterial.isDoubleSided = true
-                planeGeometry?.materials = [gridMaterial]
-
-                let meshNode = SCNNode(geometry: planeGeometry)
-                node.addChildNode(meshNode)
-                
-                // ✅ Store reference for toggling later
-                debugNodes.append(meshNode)
+                if debugMode {
+                    // Visualize the plane
+                    let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
+                    planeGeometry?.update(from: planeAnchor.geometry)
+                    
+                    let gridMaterial = SCNMaterial()
+                    gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
+                    gridMaterial.isDoubleSided = true
+                    planeGeometry?.materials = [gridMaterial]
+                    
+                    let meshNode = SCNNode(geometry: planeGeometry)
+                    node.addChildNode(meshNode)
+                }
             }
         } else {
-            // Add a red sphere for all other anchors
-            let sphere = SCNSphere(radius: 0.002) // Small red sphere
-            sphere.firstMaterial?.diffuse.contents = UIColor.red
-
-            let sphereNode = SCNNode(geometry: sphere)
-            node.addChildNode(sphereNode)
-            
-            // ✅ Store reference for toggling later
-            debugNodes.append(sphereNode)
+            if debugMode {
+                // Add a red sphere for all other anchors
+                let sphere = SCNSphere(radius: 0.002) // Small red sphere
+                sphere.firstMaterial?.diffuse.contents = UIColor.red
+                
+                let sphereNode = SCNNode(geometry: sphere)
+                node.addChildNode(sphereNode)
+            }
         }
     }
     
