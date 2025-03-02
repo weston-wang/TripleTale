@@ -18,6 +18,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     private var trackingStatusLabel: UILabel!
     
+    let motionManager = CMMotionManager()
+    var isBoatMode = false // Default to land mode
+    var motionHistory: [Double] = [] // Track recent tilt changes
+    let motionThreshold = 5.0 // Degrees: sensitivity for boat detection
+    let sampleCount = 10 // How many motion samples to analyze
+
+    
+    
     private var planeDetectionTimer: Timer?
     
     private var tapCounter = 0
@@ -142,6 +150,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         // Initial bracket update
         updateBracketSize()
+        
+        // Start checking for boat motion
+        startMotionTracking()
         
         // Call this function inside `viewDidLoad()`
         setupTrackingStatusLabel()
@@ -648,6 +659,60 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
         }
     }
+    
+    func startMotionTracking() {
+        if motionManager.isDeviceMotionAvailable {
+            motionManager.deviceMotionUpdateInterval = 0.5 // Adjust for responsiveness
+            motionManager.startDeviceMotionUpdates(to: .main) { [weak self] (motion, error) in
+                guard let self = self, let motion = motion else { return }
+                
+                let pitch = motion.attitude.pitch * (180.0 / .pi) // Convert to degrees
+                let roll = motion.attitude.roll * (180.0 / .pi)
+
+                let totalTilt = abs(pitch) + abs(roll) // Sum of absolute tilts
+                
+                // Store recent tilts
+                self.motionHistory.append(totalTilt)
+                if self.motionHistory.count > self.sampleCount {
+                    self.motionHistory.removeFirst() // Keep only the latest samples
+                }
+
+                // Determine if on a boat
+                self.checkForBoatMotion()
+            }
+        }
+    }
+    
+    func checkForBoatMotion() {
+        let maxTilt = motionHistory.max() ?? 0
+        let minTilt = motionHistory.min() ?? 0
+        let tiltVariation = maxTilt - minTilt
+
+        if tiltVariation > motionThreshold {
+            if !isBoatMode {
+                isBoatMode = true
+                print("🚤 Detected BOAT mode! Switching to ARObjectAnchor.")
+                switchToBoatMode()
+            }
+        } else {
+            if isBoatMode {
+                isBoatMode = false
+                print("🏞️ Detected LAND mode! Switching to ARPlaneAnchor.")
+                switchToLandMode()
+            }
+        }
+    }
+
+    func switchToBoatMode() {
+        print("🔹 Now using ARObjectAnchor tracking.")
+        // We will implement this in the next step
+    }
+
+    func switchToLandMode() {
+        print("🔹 Now using ARPlaneAnchor tracking.")
+        // We will implement this in the next step
+    }
+
 }
 
 
