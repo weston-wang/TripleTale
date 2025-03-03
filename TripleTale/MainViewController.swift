@@ -24,7 +24,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     let motionThreshold = 5.0 // Degrees: sensitivity for boat detection
     let sampleCount = 10 // How many motion samples to analyze
 
-    
+    private var boatAnchor: ARAnchor?
     
     private var planeDetectionTimer: Timer?
     
@@ -260,35 +260,41 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
-    func performPreTrackingPhase() {
-        let config = ARWorldTrackingConfiguration()
-        config.planeDetection = [.horizontal]
-        config.isLightEstimationEnabled = true
-//        config.worldAlignment = .gravityAndHeading
-        config.isAutoFocusEnabled = true
-
-        // ✅ Step 1: Reset tracking & remove previous anchors to force rescan
-        sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            var featurePointCount = 0
-            var attempts = 0
-
-            // ✅ Step 2: Wait until ARKit has detected a sufficient number of feature points
-            while featurePointCount < 50 && attempts < 10 { // Adjust threshold as needed
-                if let featurePoints = self.sceneView.session.currentFrame?.rawFeaturePoints?.points {
-                    featurePointCount = featurePoints.count
-                }
-                print("🔍 Feature points detected: \(featurePointCount)")
-
-                usleep(500_000) // Wait 0.5 seconds before checking again
-                attempts += 1
-            }
-
-            // ✅ Step 3: Once stable, start normal plane detection
-            DispatchQueue.main.async { self.startPlaneDetection() }
+    @objc private func showBoatAnchorHint() {
+        DispatchQueue.main.async {
+            self.showPopupMessage(title: "Move Your Phone", message: "Try slowly moving your phone to help detect stable points on the boat.")
         }
     }
+    
+//    func performPreTrackingPhase() {
+//        let config = ARWorldTrackingConfiguration()
+//        config.planeDetection = [.horizontal]
+//        config.isLightEstimationEnabled = true
+////        config.worldAlignment = .gravityAndHeading
+//        config.isAutoFocusEnabled = true
+//
+//        // ✅ Step 1: Reset tracking & remove previous anchors to force rescan
+//        sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+//
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            var featurePointCount = 0
+//            var attempts = 0
+//
+//            // ✅ Step 2: Wait until ARKit has detected a sufficient number of feature points
+//            while featurePointCount < 50 && attempts < 10 { // Adjust threshold as needed
+//                if let featurePoints = self.sceneView.session.currentFrame?.rawFeaturePoints?.points {
+//                    featurePointCount = featurePoints.count
+//                }
+//                print("🔍 Feature points detected: \(featurePointCount)")
+//
+//                usleep(500_000) // Wait 0.5 seconds before checking again
+//                attempts += 1
+//            }
+//
+//            // ✅ Step 3: Once stable, start normal plane detection
+//            DispatchQueue.main.async { self.startPlaneDetection() }
+//        }
+//    }
     
     func calculateAndDisplayWeight(with image: UIImage) {
         guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: false) else {
@@ -449,17 +455,58 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal]
+//        configuration.planeDetection = [.horizontal]
+        configuration.planeDetection = []
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
 //        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-
+        
         // Cancel any existing timer and start a new one
         planeDetectionTimer?.invalidate()
         planeDetectionTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(showPlaneDetectionHint), userInfo: nil, repeats: false)
     }
+    
+//    func startBoatAnchorDetection() {
+//        print("⚓ Initializing Boat Anchor...")
+//
+//        // Ensure sufficient feature points before setting the anchor
+//        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 30 {
+//            print("🚨 Not enough feature points! Ask user to scan more.")
+//            showBoatAnchorHint()
+//        }
+//        
+//        // Configure ARSession for object-based anchoring (instead of plane)
+//        let configuration = ARWorldTrackingConfiguration()
+//        configuration.planeDetection = [] // Disable plane detection
+//        configuration.isLightEstimationEnabled = true
+//        configuration.isAutoFocusEnabled = true
+//        
+//        // Reset session to force rescan and avoid drift
+//        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+//
+//        // Drop a reference anchor at the device's current position
+//        if let cameraTransform = sceneView.session.currentFrame?.camera.transform {
+//            let boatAnchor = ARAnchor(name: "BoatAnchor", transform: cameraTransform)
+//            sceneView.session.add(anchor: boatAnchor)
+//            print("✅ Boat anchor placed at device location.")
+//            
+//            // Store the anchor reference for later tracking
+//            self.firstPlaneAnchor = nil // Clear previous ground reference
+//            self.boatAnchor = boatAnchor
+//            isGroundPlaneDetected = false
+//        } else {
+//            print("❌ Failed to retrieve camera position for boat anchor.")
+//        }
+//
+//        // Set up drift correction using IMU
+////        setupBoatDriftCorrection()
+//
+//        // Cancel any existing hint timer and start a new one
+//        planeDetectionTimer?.invalidate()
+//        planeDetectionTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(showBoatAnchorHint), userInfo: nil, repeats: false)
+//    }
     
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
         // Capture the current view as a UIImage
@@ -713,6 +760,24 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // We will implement this in the next step
     }
 
+//    func setupBoatDriftCorrection() {
+//        if motionManager.isDeviceMotionAvailable {
+//            motionManager.deviceMotionUpdateInterval = 0.5
+//            motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
+//                guard let self = self, let motion = motion, let boatAnchor = self.boatAnchor else { return }
+//                
+//                // Check if gravity vector has changed significantly
+//                let deviceGravity = motion.gravity
+//                let arGravity = self.sceneView.session.currentFrame?.camera.transform.columns.1
+//                
+//                let gravityDeviation = abs(Float(deviceGravity.y) - arGravity!.y ?? 0)
+//                if gravityDeviation > 0.05 { // Threshold for drift correction
+//                    print("⚠️ Boat anchor drift detected! Correcting position...")
+//                    self.correctBoatAnchorPosition()
+//                }
+//            }
+//        }
+//    }
 }
 
 
