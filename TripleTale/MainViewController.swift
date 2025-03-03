@@ -45,7 +45,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var imagePortion: CGFloat = 1.0
     
     private var firstPlaneAnchor: ARPlaneAnchor?
-    private var isGroundPlaneDetected = false
+    private var isGroundPlaneDetected = true
 
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var depthImage: UIImage?
@@ -463,9 +463,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         
+        updateCameraButtonState()
+        
         // Cancel any existing timer and start a new one
-        planeDetectionTimer?.invalidate()
-        planeDetectionTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(showPlaneDetectionHint), userInfo: nil, repeats: false)
+//        planeDetectionTimer?.invalidate()
+//        planeDetectionTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(showPlaneDetectionHint), userInfo: nil, repeats: false)
     }
     
 //    func startBoatAnchorDetection() {
@@ -520,16 +522,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
             if firstPlaneAnchor == nil {
                 firstPlaneAnchor = planeAnchor
-                isGroundPlaneDetected = true // ✅ Mark ground plane detected
+//                isGroundPlaneDetected = true // ✅ Mark ground plane detected
 
-                print("First plane detected: \(planeAnchor.identifier)")
-                
-                DispatchQueue.main.async { [weak self] in
-                    self?.updateCameraButtonState()
-                }
-                
-                // ✅ Cancel the popup timer since the plane is found
-                planeDetectionTimer?.invalidate()
+//                print("First plane detected: \(planeAnchor.identifier)")
+//                
+//                DispatchQueue.main.async { [weak self] in
+//                    self?.updateCameraButtonState()
+//                }
+//                
+//                // ✅ Cancel the popup timer since the plane is found
+//                planeDetectionTimer?.invalidate()
             
                 // Visualize the plane
                 let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
@@ -584,7 +586,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             print("⚠️ First plane removed. Searching for a new one.")
 
             firstPlaneAnchor = nil
-            isGroundPlaneDetected = false
+//            isGroundPlaneDetected = false
 
             DispatchQueue.main.async { [weak self] in
                 self?.updateCameraButtonState()
