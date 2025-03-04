@@ -188,7 +188,8 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
     let combinedImage = weightTextImage
 
     saveImageToGallery(combinedImage!)
-    saveImageToGallery(inputImage)
+    saveImageToGallery(measurementTextImage!)
+//    saveImageToGallery(inputImage)
 
     return combinedImage!
 }

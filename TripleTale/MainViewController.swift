@@ -341,17 +341,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
         
-        if let planeAnchor = self.firstPlaneAnchor {
-            if let normVector = normalVector(from: cornerAnchors) {
-                height = distanceToPlane(from: centroidAboveAnchor!, planeAnchor: planeAnchor, normal: normVector)
-            }
-        } else {
-            print("❌ No detected ground plane. Cannot measure height.")
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
-            }
-            return
-        }
+//        if let planeAnchor = self.firstPlaneAnchor {
+//            if let normVector = normalVector(from: cornerAnchors) {
+//                height = distanceToPlane(from: centroidAboveAnchor!, planeAnchor: planeAnchor, normal: normVector)
+//            }
+//        } else {
+//            print("❌ No detected ground plane. Cannot measure height.")
+//            DispatchQueue.main.async {
+//                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
+//            }
+//            return
+//        }
 
         length *= Float(self.lengthNudge)
         width *= Float(self.widthNudge)
@@ -543,9 +543,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 planeGeometry?.materials = [gridMaterial]
                 
                 let meshNode = SCNNode(geometry: planeGeometry)
-                meshNode.eulerAngles.x = -.pi / 2
-
-                meshNode.isHidden = true
+                meshNode.isHidden = false
                 
                 node.addChildNode(meshNode)
                 
@@ -559,7 +557,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             sphere.firstMaterial?.diffuse.contents = UIColor.red
             
             let sphereNode = SCNNode(geometry: sphere)
-            sphereNode.isHidden = true
+            sphereNode.isHidden = false
             
             node.addChildNode(sphereNode)
             
