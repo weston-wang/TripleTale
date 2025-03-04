@@ -119,7 +119,7 @@ func buildRealWorldVerticesAnchors(
 
     if verticesAnchors.count < 4 {
         print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
-        return ([], nil, nil, []) // Return safe fallback values
+        return (verticesAnchors, nil, nil, []) // Return safe fallback values
     }
     
     // Attempt to get centroid anchor

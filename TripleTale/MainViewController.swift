@@ -310,9 +310,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
              cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
         
         // Handle failure: If no valid anchors were returned, show an error popup
-        if verticesAnchors.isEmpty {
+        if verticesAnchors.count < 4 {
             DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchors at vertices.")
+                self.showPopupMessage(title: "Error", message: "Failed to place anchors at vertices, able to place \(verticesAnchors.count).")
             }
             return
         }
@@ -449,7 +449,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func startPlaneDetection() {
 
-        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 30 {
+        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 60 {
             print("🚨 Not enough feature points! Ask user to scan more.")
             showPlaneDetectionHint()
         }
