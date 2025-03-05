@@ -108,14 +108,6 @@ func buildRealWorldVerticesAnchors(
     
     var adjustedVertices = normalizedVertices
     var verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
-    
-    // 🔄 Retry with small dithers until we get at least 4 anchors
-    var attempt = 0
-    while verticesAnchors.count < 4 && attempt < 3 {  // Limit retries to prevent infinite loops
-        attempt += 1
-        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
-        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
-    }
 
     if verticesAnchors.count < 4 {
         print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")

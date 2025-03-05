@@ -26,39 +26,73 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 }
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
-        let raycastResults = currentView.session.raycast(raycastQuery)
-        
-        if let result = raycastResults.first {
+    
+    // ✅ If the device has LiDAR, use raycasting first
+    if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+        print("📡 Device has LiDAR - Using precise raycast")
+
+        if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
+            let raycastResults = currentView.session.raycast(raycastQuery)
+            
+            if let result = raycastResults.first {
+                let anchor = ARAnchor(transform: result.worldTransform)
+                currentView.session.add(anchor: anchor)
+                return anchor
+            }
+        }
+
+        // 🔹 Fallback: Feature Point Hit-Test
+        let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
+        if let result = hitTestResults.first {
             let anchor = ARAnchor(transform: result.worldTransform)
             currentView.session.add(anchor: anchor)
             return anchor
         }
+
+        return nil
     }
-    
-//    // If no existing planes, try raycasting with estimated planes
-//    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) {
-//        let raycastResults = currentView.session.raycast(raycastQuery)
-//        
-//        if let result = raycastResults.first {
-//            let anchor = ARAnchor(transform: result.worldTransform)
-//            currentView.session.add(anchor: anchor)
-//            return anchor
-//        }
-//    }
-    
-    
-    // Fallback: Use feature point hit-test if raycasting fails
+
+    // ✅ If the device has NO LiDAR, use the merged world map
+    print("📡 Device has NO LiDAR - Using integrated motion history")
+
+    if let worldMap = ARSessionManager.shared.savedWorldMap {
+        restoreWorldMap(currentView, worldMap) // Ensure ARKit has world context
+    }
+
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any),
+       let raycastResult = currentView.session.raycast(raycastQuery).first {
+        
+        let anchorPosition = raycastResult.worldTransform
+
+        // ✅ Find closest accumulated feature point for precision
+        let bestFeaturePoint = !ARSessionManager.shared.accumulatedFeaturePoints.isEmpty ?
+            findClosestFeaturePoint(anchorPosition, ARSessionManager.shared.accumulatedFeaturePoints) : nil
+
+        // ✅ Use closest feature point if available
+        let finalPosition = bestFeaturePoint ?? anchorPosition
+
+        // Drop the ARAnchor at the most accurate position
+        let anchor = ARAnchor(transform: finalPosition)
+        currentView.session.add(anchor: anchor)
+
+        print("📌 Placed ARAnchor using integrated motion history.")
+        return anchor
+    }
+
+    // 🔹 Fallback: Feature Point Hit-Test if raycasting fails
+    print("⚠️ Raycast failed - Trying feature point hit-test")
     let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
-    
     if let result = hitTestResults.first {
         let anchor = ARAnchor(transform: result.worldTransform)
         currentView.session.add(anchor: anchor)
+        print("📌 Placed ARAnchor using feature point hit-test as fallback.")
         return anchor
     }
-    
+
+    print("❌ No valid anchor placement found.")
     return nil
 }
+
 
 //func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
@@ -246,4 +280,55 @@ func stretchVertices(_ anchors: [ARAnchor], verticalScaleFactor: Float, horizont
     }
     
     return updatedVerticesAnchors
+}
+
+func restoreWorldMap(_ currentView: ARSCNView, _ worldMap: ARWorldMap?) {
+    guard let loadedWorldMap = worldMap else {
+        print("⚠️ No saved world map available.")
+        return
+    }
+
+    print("🔄 Restoring world map with \(loadedWorldMap.anchors.count) anchors.")
+
+    let configuration = ARWorldTrackingConfiguration()
+    
+    // ✅ Load the world map instead of replacing
+    configuration.initialWorldMap = loadedWorldMap
+
+    // Restart AR session with the restored world map
+    currentView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Wait for stabilization
+        if let frame = currentView.session.currentFrame {
+            print("✅ After restore, tracking state: \(frame.camera.trackingState)")
+        }
+    }
+}
+
+func findClosestFeaturePoint(_ targetTransform: simd_float4x4, _ featurePoints: [simd_float3]) -> simd_float4x4? {
+    let targetPosition = simd_make_float3(targetTransform.columns.3.x, targetTransform.columns.3.y, targetTransform.columns.3.z)
+
+    // Filter feature points to ignore ones that are too far (prevents floating anchors)
+    let validFeaturePoints = featurePoints.filter { feature in
+        let distance = simd_distance(feature, targetPosition)
+        return distance < 0.5 // Adjust this threshold based on testing
+    }
+
+    guard let closestFeature = validFeaturePoints.min(by: {
+        distance($0, targetPosition) < distance($1, targetPosition)
+    }) else {
+        return nil // No close feature points found
+    }
+
+    // Convert closest feature point back to ARKit's 4x4 transform format
+    var newTransform = matrix_identity_float4x4
+    newTransform.columns.3.x = closestFeature.x
+    newTransform.columns.3.y = closestFeature.y
+    newTransform.columns.3.z = closestFeature.z
+
+    return newTransform
+}
+
+func distance(_ p1: simd_float3, _ p2: simd_float3) -> Float {
+    return simd_distance(p1, p2)
 }

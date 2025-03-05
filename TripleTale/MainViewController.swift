@@ -11,8 +11,17 @@ import ARKit
 import Vision
 import CoreMotion
 
-class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-
+class MainViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    private var savedWorldMap: ARWorldMap? {
+        get { return ARSessionManager.shared.savedWorldMap }
+        set { ARSessionManager.shared.savedWorldMap = newValue }
+    }
+    
+    private var accumulatedFeaturePoints: [simd_float3] {
+        get { return ARSessionManager.shared.accumulatedFeaturePoints }
+        set { ARSessionManager.shared.accumulatedFeaturePoints = newValue }
+    }
+    
     var sceneView: ARSCNView!
     var frameCounter = 0
 
@@ -23,6 +32,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var motionHistory: [Double] = [] // Track recent tilt changes
     let motionThreshold = 5.0 // Degrees: sensitivity for boat detection
     let sampleCount = 10 // How many motion samples to analyze
+
+    var stationaryCounter = 0
+    var lastFeatureCount: Int = 0
+    var lowFeatureFrames = 0
+    let lowFeatureThreshold = 15 // Number of frames before triggering motion
 
     private var boatAnchor: ARAnchor?
     
@@ -126,6 +140,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
+        sceneView.session.delegate = self
         view.addSubview(sceneView)
 
         // ✅ Start a stabilization phase before allowing anchors
@@ -152,7 +167,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         updateBracketSize()
         
         // Start checking for boat motion
-        startMotionTracking()
+//        startMotionTracking()
         
         // Call this function inside `viewDidLoad()`
         setupTrackingStatusLabel()
@@ -222,27 +237,29 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     @objc func handleCameraButtonPress() {
-        // Haptic feedback
-        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
-        feedbackGenerator.prepare()
-        feedbackGenerator.impactOccurred()
+        let featureCountBefore = sceneView.session.currentFrame?.rawFeaturePoints?.points.count ?? 0
+        print("📸 Feature points BEFORE capture: \(featureCountBefore)")
 
-        // Capture the current frame
-        if let image = captureFrameAsUIImage(from: sceneView) {
-            calculateAndDisplayWeight(with: image)
-            
-//            if let inputImage = image.downscale(to: 1280) {
-//                let resizedImage = resizeImageForModel(inputImage)
-//                processDepthImage(from: resizedImage!) { depthImage in
-//                    let resizedDepthImage = resizeDepthMap(depthImage, to: inputImage.size)
-//                    
-//                    let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
-//                    saveImageToGallery(thresholdedImage!)
-//                    saveImageToGallery(resizedDepthImage!)
-//                }
-//            }
-        } else {
-            self.view.showToast(message: "Could not capture image from scene!")
+        forceMicroMotion()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
+
+            let featureCountAfterMotion = self.sceneView.session.currentFrame?.rawFeaturePoints?.points.count ?? 0
+            print("🔄 Feature points AFTER micro-motion: \(featureCountAfterMotion)")
+
+            if let image = self.captureFrameAsUIImage(from: self.sceneView) {
+                self.calculateAndDisplayWeight(with: image)
+            } else {
+                self.view.showToast(message: "Could not capture image from scene!")
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                let featureCountBeforeSave = self.sceneView.session.currentFrame?.rawFeaturePoints?.points.count ?? 0
+                print("💾 Feature points BEFORE saving world map: \(featureCountBeforeSave)")
+
+                self.saveWorldMap(self.sceneView.session)
+            }
         }
     }
     
@@ -448,8 +465,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     func startPlaneDetection() {
-
-        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 60 {
+        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 100 {
             print("🚨 Not enough feature points! Ask user to scan more.")
             showPlaneDetectionHint()
         }
@@ -458,7 +474,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        configuration.planeDetection = [.horizontal]
         configuration.planeDetection = []
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
-//        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
+        //        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
+        configuration.worldAlignment = .camera // Ensures detected plane aligns with gravity
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -608,7 +625,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        print("Frame updated at: \(frame.timestamp)")
+        guard let featurePoints = frame.rawFeaturePoints?.points else { return }
+
+        // ✅ Append new feature points to accumulated history
+        accumulatedFeaturePoints.append(contentsOf: featurePoints)
+
+        // ✅ Keep memory in check (limit to 10,000 points max)
+        if accumulatedFeaturePoints.count > 10000 {
+            accumulatedFeaturePoints.removeFirst(accumulatedFeaturePoints.count - 10000)
+        }
+        
+        print("🔄 Accumulating feature points: \(accumulatedFeaturePoints.count)")
+        
+        // ✅ Save world map periodically
+        saveWorldMap(sceneView.session)
     }
     
     func createGridTexture(size: Int, gridColor: UIColor, backgroundColor: UIColor = .clear) -> UIImage {
@@ -758,6 +788,62 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func switchToLandMode() {
         print("🔹 Now using ARPlaneAnchor tracking.")
         // We will implement this in the next step
+    }
+    
+    func saveWorldMap(_ session: ARSession) {
+        guard let featureCount = session.currentFrame?.rawFeaturePoints?.points.count, featureCount > 100 else {
+            print("⚠️ Not enough feature points (\(session.currentFrame?.rawFeaturePoints?.points.count ?? 0)). Skipping world map save.")
+            return
+        }
+
+        session.getCurrentWorldMap { newWorldMap, error in
+            if let error = error {
+                print("❌ Failed to save world map: \(error.localizedDescription)")
+
+                if error.localizedDescription.contains("Insufficient features") {
+                    print("⏳ Waiting for feature recovery before retrying...")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.forceMicroMotion()
+                        self.saveWorldMap(session)
+                    }
+                }
+                return
+            }
+
+            guard let newWorldMap = newWorldMap else {
+                print("⚠️ World map is nil, retrying later.")
+                return
+            }
+
+            var mergedWorldMap = newWorldMap
+            if let oldWorldMap = ARSessionManager.shared.savedWorldMap {
+                print("🔄 Merging with existing world map...")
+                mergedWorldMap.anchors.append(contentsOf: oldWorldMap.anchors)
+            }
+
+            ARSessionManager.shared.savedWorldMap = mergedWorldMap
+            print("📌 World map saved with \(mergedWorldMap.anchors.count) total anchors.")
+        }
+    }
+        
+    func forceMicroMotion() {
+        guard let cameraTransform = sceneView.session.currentFrame?.camera.transform else { return }
+
+        // Apply a forced micro-movement
+        var newTransform = cameraTransform
+        newTransform.columns.3.x += Float.random(in: -0.002...0.002) // Small X-axis shift
+        newTransform.columns.3.y += Float.random(in: -0.002...0.002) // Small Y-axis shift
+
+        let anchor = ARAnchor(transform: newTransform)
+        sceneView.session.add(anchor: anchor)
+
+        print("🔄 Applied forced micro-movement to refresh feature tracking.")
+
+        // Remove the temporary anchor after 0.2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            self.sceneView.session.remove(anchor: anchor)
+            print("♻️ Reset forced motion to stabilize tracking.")
+        }
     }
 
 //    func setupBoatDriftCorrection() {

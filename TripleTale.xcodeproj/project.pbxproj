@@ -27,6 +27,7 @@
 		4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */; };
 		4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EB72C730D28001ACC69 /* BracketView.swift */; };
 		4EA91EBA2C730EBF001ACC69 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EB92C730EBF001ACC69 /* Extensions.swift */; };
+		4EF074282D77E4F800350790 /* ARSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF074272D77E4F800350790 /* ARSessionManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +53,7 @@
 		4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneManipulations.swift; sourceTree = "<group>"; };
 		4EA91EB72C730D28001ACC69 /* BracketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BracketView.swift; sourceTree = "<group>"; };
 		4EA91EB92C730EBF001ACC69 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		4EF074272D77E4F800350790 /* ARSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARSessionManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +97,7 @@
 				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
 				4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */,
 				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
+				4EF074272D77E4F800350790 /* ARSessionManager.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -225,6 +228,7 @@
 				4EA49E2F2C750BED00CDA5C9 /* Measurements.swift in Sources */,
 				4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */,
 				4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */,
+				4EF074282D77E4F800350790 /* ARSessionManager.swift in Sources */,
 				4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */,
 				4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */,
 				4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */,
