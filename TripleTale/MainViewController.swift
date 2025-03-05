@@ -23,6 +23,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var lengthNudge: Double = 1.3
     var widthNudge: Double = 1.3
     var heightNudge: Double = 1.4
+    
+    private var motionManager = CMMotionManager()
+    private var lastKnownPitch: Double = 0.0
+    private var lastKnownRoll: Double = 0.0
+    private var alignmentThreshold: Double = 5.0 // Degrees of tilt change allowed
+    private var isReAligning = false
 
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
@@ -131,6 +137,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         // Initial bracket update
         updateBracketSize()
+        
+        startMotionTracking() // ✅ Start monitoring tilt changes
+
     }
     
     @objc private func handleTapGesture() {
@@ -349,9 +358,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal]
+        configuration.worldAlignment = .camera // Ensures detected plane aligns with camera
+        configuration.planeDetection = .horizontal
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
-        configuration.worldAlignment = .gravityAndHeading // Ensures detected plane aligns with gravity
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -392,6 +401,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
                 gridMaterial.isDoubleSided = true
                 planeGeometry?.materials = [gridMaterial]
+                
+                let normal = planeAnchor.transform.columns.2 // Z-axis gives normal direction
+                let tiltAngle = acos(normal.y) * (180.0 / .pi) // Compute tilt in degrees
+                if tiltAngle > 5 {
+                    print("⚠️ Plane is tilted by \(tiltAngle) degrees!")
+                }
 
                 let meshNode = SCNNode(geometry: planeGeometry)
                 node.addChildNode(meshNode)
@@ -427,13 +442,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             DispatchQueue.main.async { [weak self] in
                 self?.updateCameraButtonState()
+                self?.realignARSession()
             }
 
             // ✅ Restart plane detection so a new one can be assigned
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.startPlaneDetection()
-                self?.showPlaneDetectionHint()
-            }
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+//                self?.startPlaneDetection()
+//                self?.showPlaneDetectionHint()
+//            }
         }
     }
     
@@ -501,6 +517,60 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.feedbackLabel?.text = "Reinitiating..."
                 self.feedbackLabel?.textColor = .gray
             }
+        }
+    }
+    
+    private func startMotionTracking() {
+        guard motionManager.isDeviceMotionAvailable else {
+            print("⚠️ Device Motion not available")
+            return
+        }
+
+        motionManager.deviceMotionUpdateInterval = 0.5 // Update every 0.5 sec
+        motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
+            guard let self = self, let motion = motion else { return }
+
+            let currentPitch = motion.attitude.pitch * (180.0 / .pi) // Convert to degrees
+            let currentRoll = motion.attitude.roll * (180.0 / .pi)
+
+            let pitchDelta = abs(currentPitch - self.lastKnownPitch)
+            let rollDelta = abs(currentRoll - self.lastKnownRoll)
+
+            // Save new values
+            self.lastKnownPitch = currentPitch
+            self.lastKnownRoll = currentRoll
+
+            // ✅ If the tilt exceeds threshold, trigger realignment
+            if (pitchDelta > self.alignmentThreshold || rollDelta > self.alignmentThreshold) {
+                print("🚨 Detected device tilt change: Pitch Δ\(pitchDelta), Roll Δ\(rollDelta)")
+                self.realignARSession()
+            }
+        }
+    }
+    
+    private func realignARSession() {
+        guard !isReAligning else { return } // Prevent multiple triggers
+        isReAligning = true
+
+        DispatchQueue.main.async {
+            self.feedbackLabel?.text = "Realigning..."
+            self.feedbackLabel?.textColor = .red
+        }
+
+        print("🔄 Resetting AR tracking and realigning...")
+        
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.worldAlignment = .camera // Keep boat-relative alignment
+        configuration.planeDetection = .horizontal
+        configuration.isLightEstimationEnabled = true
+        configuration.isAutoFocusEnabled = true
+
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            self?.isReAligning = false
+            self?.feedbackLabel?.text = "Ready"
+            self?.feedbackLabel?.textColor = .green
         }
     }
 }
