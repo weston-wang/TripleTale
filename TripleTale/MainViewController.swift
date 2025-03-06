@@ -17,7 +17,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var frameCounter = 0
 
     private var planeDetectionTimer: Timer?
-    
+    private var detectedPlanes: [UUID: ARPlaneAnchor] = [:] // Store multiple planes
+
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.0
@@ -380,37 +381,28 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         // If it's a plane anchor, process only the first plane
         if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
-            if firstPlaneAnchor == nil {
-                firstPlaneAnchor = planeAnchor
-                isGroundPlaneDetected = true // ✅ Mark ground plane detected
+            detectedPlanes[planeAnchor.identifier] = planeAnchor
 
-                print("First plane detected: \(planeAnchor.identifier)")
-                
-                DispatchQueue.main.async { [weak self] in
-                    self?.updateCameraButtonState()
-                }
-                
-                // ✅ Cancel the popup timer since the plane is found
-                planeDetectionTimer?.invalidate()
-                
-                // Visualize the plane
-                let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
-                planeGeometry?.update(from: planeAnchor.geometry)
+            // Select the closest plane dynamically
+            firstPlaneAnchor = detectedPlanes.values.min(by: { distanceToCamera($0) < distanceToCamera($1) })
+            isGroundPlaneDetected = true
+            DispatchQueue.main.async { [weak self] in self?.updateCameraButtonState() }
 
-                let gridMaterial = SCNMaterial()
-                gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
-                gridMaterial.isDoubleSided = true
-                planeGeometry?.materials = [gridMaterial]
-                
-                let normal = planeAnchor.transform.columns.2 // Z-axis gives normal direction
-                let tiltAngle = acos(normal.y) * (180.0 / .pi) // Compute tilt in degrees
-                if tiltAngle > 5 {
-                    print("⚠️ Plane is tilted by \(tiltAngle) degrees!")
-                }
+            // ✅ Draw plane for every detected plane (instead of only the first one)
+            let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
+            planeGeometry?.update(from: planeAnchor.geometry)
 
-                let meshNode = SCNNode(geometry: planeGeometry)
-                node.addChildNode(meshNode)
-            }
+            let gridMaterial = SCNMaterial()
+            gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
+            gridMaterial.isDoubleSided = true
+            planeGeometry?.materials = [gridMaterial]
+
+            let meshNode = SCNNode(geometry: planeGeometry)
+            meshNode.name = planeAnchor.identifier.uuidString // Tag the node for tracking
+            node.addChildNode(meshNode)
+
+            // ✅ Cancel the hint popup since a plane is found
+            planeDetectionTimer?.invalidate()
         } else {
             // Add a red sphere for all other anchors
             let sphere = SCNSphere(radius: 0.002) // Small red sphere
@@ -422,34 +414,40 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
-        if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.identifier == firstPlaneAnchor?.identifier {
-            // Update the stored plane anchor
-            firstPlaneAnchor = planeAnchor
+        if let planeAnchor = anchor as? ARPlaneAnchor {
+            detectedPlanes[planeAnchor.identifier] = planeAnchor
 
-            // Update the visual representation
-            if let planeGeometry = node.geometry as? ARSCNPlaneGeometry {
-                planeGeometry.update(from: planeAnchor.geometry)
+            // ✅ Update firstPlaneAnchor dynamically
+            firstPlaneAnchor = detectedPlanes.values.min(by: { distanceToCamera($0) < distanceToCamera($1) })
+
+            // ✅ Update the correct plane geometry (look for the node with matching identifier)
+            for child in node.childNodes {
+                if let planeGeometry = child.geometry as? ARSCNPlaneGeometry, child.name == planeAnchor.identifier.uuidString {
+                    planeGeometry.update(from: planeAnchor.geometry)
+                }
             }
         }
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
-        if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.identifier == firstPlaneAnchor?.identifier {
-            print("⚠️ First plane removed. Searching for a new one.")
+        if let planeAnchor = anchor as? ARPlaneAnchor {
+            detectedPlanes.removeValue(forKey: planeAnchor.identifier)
 
-            firstPlaneAnchor = nil
-            isGroundPlaneDetected = false
+            // ✅ If the removed plane was firstPlaneAnchor, pick a new closest one
+            if planeAnchor.identifier == firstPlaneAnchor?.identifier {
+                firstPlaneAnchor = detectedPlanes.values.min(by: { distanceToCamera($0) < distanceToCamera($1) })
+                isGroundPlaneDetected = (firstPlaneAnchor != nil)
+            }
+
+            // ✅ Remove visualization by clearing child nodes
+            node.enumerateChildNodes { (child, _) in
+                child.removeFromParentNode()
+            }
 
             DispatchQueue.main.async { [weak self] in
                 self?.updateCameraButtonState()
                 self?.realignARSession()
             }
-
-            // ✅ Restart plane detection so a new one can be assigned
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-//                self?.startPlaneDetection()
-//                self?.showPlaneDetectionHint()
-//            }
         }
     }
     
