@@ -82,15 +82,12 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     // find ellipse tips to use for measurements
     let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
     let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
-    
+    let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 5)
+
     // for debug display only
-    if true {
+    if debug {
         let maskUiImage = maskImage.toUIImage()!
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
-        
-        
-        let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0)
-
         let dotsImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: intersections!)
 
         saveImageToGallery(image)
@@ -98,7 +95,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         saveImageToGallery(dotsImage!)
     }
     
-    let tipsNormalized = tips.map { point in
+    let tipsNormalized = intersections!.map { point in        // tips for ellipse, intersections for boundary
         CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
     }
     
@@ -255,13 +252,13 @@ func findEllipseAxisIntersections(
     
     let center = ellipse.center
     let angle = ellipse.rotationInDegrees * .pi / 180.0  // Convert to radians
-
+    
     // Compute unit vectors for major and minor axes
     let majorAxisDir = CGPoint(x: cos(angle), y: sin(angle))  // Major axis direction
     let minorAxisDir = CGPoint(x: -sin(angle), y: cos(angle)) // Minor axis direction
-
+    
     let threshold: CGFloat = 3.0  // Allowable distance from the infinite axis
-
+    
     // Function to find the extreme intersection points along an axis
     func findExtremeIntersections(direction: CGPoint) -> [CGPoint] {
         var intersections: [CGPoint] = []
@@ -269,7 +266,7 @@ func findEllipseAxisIntersections(
         var negExtreme: CGPoint? = nil
         var maxPosProj: CGFloat = -CGFloat.infinity
         var maxNegProj: CGFloat = CGFloat.infinity
-
+        
         for point in contour {
             let relativePoint = CGPoint(x: point.x - center.x, y: point.y - center.y)
             
@@ -291,41 +288,65 @@ func findEllipseAxisIntersections(
                 }
             }
         }
-
+        
         if let pos = posExtreme { intersections.append(pos) }
         if let neg = negExtreme { intersections.append(neg) }
-
+        
         return intersections
     }
-
+    
     // Find intersections for both major and minor axes
     var majorIntersections = findExtremeIntersections(direction: majorAxisDir)
     var minorIntersections = findExtremeIntersections(direction: minorAxisDir)
-
+    
     // Ensure exactly 4 intersections (2 per axis)
     guard majorIntersections.count == 2, minorIntersections.count == 2 else {
         return nil
     }
-
+    
     // Function to extend a point along a given direction vector
     func extendPoint(_ point: CGPoint, direction: CGPoint, distance: CGFloat) -> CGPoint {
         return CGPoint(x: point.x + direction.x * distance, y: point.y + direction.y * distance)
     }
-
+    
     // Compute extension distances
     let majorDist = distanceBetween(majorIntersections[0], majorIntersections[1])
     let minorDist = distanceBetween(minorIntersections[0], minorIntersections[1])
-
+    
     let majorExtension = majorDist * extendPercentage / 100.0
     let minorExtension = minorDist * extendPercentage / 100.0
-
+    
     // Extend the intersection points outward
     majorIntersections[0] = extendPoint(majorIntersections[0], direction: majorAxisDir, distance: majorExtension)
     majorIntersections[1] = extendPoint(majorIntersections[1], direction: majorAxisDir, distance: -majorExtension)
-
+    
     minorIntersections[0] = extendPoint(minorIntersections[0], direction: minorAxisDir, distance: minorExtension)
     minorIntersections[1] = extendPoint(minorIntersections[1], direction: minorAxisDir, distance: -minorExtension)
+    
+    // Sort into consistent order: [top, right, bottom, left]
+    var top: CGPoint?, right: CGPoint?, bottom: CGPoint?, left: CGPoint?
 
-    return majorIntersections + minorIntersections
+    for point in minorIntersections {
+        if point.y < center.y {
+            top = point
+        } else {
+            bottom = point
+        }
+    }
+
+    for point in majorIntersections {
+        if point.x > center.x {
+            right = point
+        } else {
+            left = point
+        }
+    }
+
+    // Ensure correct order: [top, right, bottom, left]
+    guard let topFinal = top, let rightFinal = right, let bottomFinal = bottom, let leftFinal = left else {
+        return nil
+    }
+
+    return [topFinal, rightFinal, bottomFinal, leftFinal]
 }
 

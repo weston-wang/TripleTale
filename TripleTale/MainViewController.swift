@@ -20,8 +20,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
-    var lengthNudge: Double = 1.3
-    var widthNudge: Double = 1.3
+    var lengthNudge: Double = 1.0
+    var widthNudge: Double = 1.0
     var heightNudge: Double = 1.4
     
     private var motionManager = CMMotionManager()
