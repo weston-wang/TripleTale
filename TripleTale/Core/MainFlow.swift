@@ -84,12 +84,24 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
     
     // for debug display only
-    if debug {
+    if true {
         let maskUiImage = maskImage.toUIImage()!
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
         
+        
+        let intersections = findEllipseAxisIntersections(
+            ellipse: ellipse,
+            contour: closestContour // ✅ Pass contour instead of mask
+        )
+
+        print("Tips:", tips)
+        print("Intersections:", intersections)
+
+        let dotsImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: intersections!)
+
         saveImageToGallery(image)
         saveImageToGallery(resultImage!)
+        saveImageToGallery(dotsImage!)
     }
     
     let tipsNormalized = tips.map { point in
@@ -241,56 +253,68 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
     return wristImage
 }
 
-func findEllipseAxisIntersections(closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), extensionFactor: CGFloat = 0.0) -> [CGPoint] {
-    let rotation = ellipse.rotationInDegrees * .pi / 180.0 // Convert degrees to radians
-    let a = ellipse.size.width / 2.0  // Semimajor axis
-    let b = ellipse.size.height / 2.0 // Semiminor axis
+func findEllipseAxisIntersections(
+    ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat),
+    contour: [CGPoint]
+) -> [CGPoint]? {
+    
     let center = ellipse.center
+    let angle = ellipse.rotationInDegrees * .pi / 180.0  // Convert to radians
 
-    // Compute axis points in the local ellipse frame
-    let localAxisPoints = [
-        CGPoint(x: a, y: 0),  // Right along semimajor
-        CGPoint(x: -a, y: 0), // Left along semimajor
-        CGPoint(x: 0, y: b),  // Top along semiminor
-        CGPoint(x: 0, y: -b)  // Bottom along semiminor
-    ]
+    // Compute unit vectors for major and minor axes
+    let majorAxisDir = CGPoint(x: cos(angle), y: sin(angle))  // Major axis direction
+    let minorAxisDir = CGPoint(x: -sin(angle), y: cos(angle)) // Minor axis direction
 
-    // Rotate and translate points to the ellipse's coordinate system
-    var rotatedAxisPoints = localAxisPoints.map { point -> CGPoint in
-        let xRotated = center.x + point.x * cos(rotation) - point.y * sin(rotation)
-        let yRotated = center.y + point.x * sin(rotation) + point.y * cos(rotation)
-        return CGPoint(x: xRotated, y: yRotated)
+    // Find intersections for both axes
+    let majorIntersections = findContourLineIntersections(center: center, direction: majorAxisDir, contour: contour)
+    let minorIntersections = findContourLineIntersections(center: center, direction: minorAxisDir, contour: contour)
+
+    // Ensure exactly 4 intersections (2 per axis)
+    guard majorIntersections.count == 2, minorIntersections.count == 2 else {
+        return nil
     }
 
-    // Extend the intersection points slightly outward
-    rotatedAxisPoints = rotatedAxisPoints.map { point -> CGPoint in
-        guard extensionFactor > 0 else { return point }
-        let dx = point.x - center.x
-        let dy = point.y - center.y
-        let extensionX = dx * extensionFactor
-        let extensionY = dy * extensionFactor
-        return CGPoint(x: point.x + extensionX, y: point.y + extensionY)
-    }
-
-    // Find actual intersection points by checking where these axes cross the mask boundary
-    let intersections = rotatedAxisPoints.map { point -> CGPoint in
-        findClosestIntersection(contour: closestContour, from: center, towards: point)
-    }
-
-    return intersections
+    return majorIntersections + minorIntersections
 }
 
-func findClosestIntersection(contour: [CGPoint], from center: CGPoint, towards point: CGPoint) -> CGPoint {
-    var closestPoint = point
-    var minDistance = CGFloat.greatestFiniteMagnitude
+func findContourLineIntersections(
+    center: CGPoint,
+    direction: CGPoint,
+    contour: [CGPoint]
+) -> [CGPoint] {
+    
+    var intersections: [CGPoint] = []
+    let threshold: CGFloat = 3.0  // Allowable distance from the infinite axis
 
-    for contourPoint in contour {
-        let distance = hypot(contourPoint.x - point.x, contourPoint.y - point.y)
-        if distance < minDistance {
-            minDistance = distance
-            closestPoint = contourPoint
+    var posExtreme: CGPoint? = nil
+    var negExtreme: CGPoint? = nil
+    var maxPosProj: CGFloat = -CGFloat.infinity
+    var maxNegProj: CGFloat = CGFloat.infinity
+
+    for point in contour {
+        let relativePoint = CGPoint(x: point.x - center.x, y: point.y - center.y)
+        
+        // Projection of the point onto the axis
+        let projection = relativePoint.x * direction.x + relativePoint.y * direction.y
+        
+        // Compute distance from the axis (perpendicular distance)
+        let distanceToAxis = abs(relativePoint.x * direction.y - relativePoint.y * direction.x)
+        
+        // Keep only points near the infinite axis
+        if distanceToAxis < threshold {
+            if projection > maxPosProj {
+                maxPosProj = projection
+                posExtreme = point
+            }
+            if projection < maxNegProj {
+                maxNegProj = projection
+                negExtreme = point
+            }
         }
     }
 
-    return closestPoint
+    if let pos = posExtreme { intersections.append(pos) }
+    if let neg = negExtreme { intersections.append(neg) }
+
+    return intersections
 }
