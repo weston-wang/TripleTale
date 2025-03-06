@@ -241,3 +241,56 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
     return wristImage
 }
 
+func findEllipseAxisIntersections(closestContour: [CGPoint], ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), extensionFactor: CGFloat = 0.0) -> [CGPoint] {
+    let rotation = ellipse.rotationInDegrees * .pi / 180.0 // Convert degrees to radians
+    let a = ellipse.size.width / 2.0  // Semimajor axis
+    let b = ellipse.size.height / 2.0 // Semiminor axis
+    let center = ellipse.center
+
+    // Compute axis points in the local ellipse frame
+    let localAxisPoints = [
+        CGPoint(x: a, y: 0),  // Right along semimajor
+        CGPoint(x: -a, y: 0), // Left along semimajor
+        CGPoint(x: 0, y: b),  // Top along semiminor
+        CGPoint(x: 0, y: -b)  // Bottom along semiminor
+    ]
+
+    // Rotate and translate points to the ellipse's coordinate system
+    var rotatedAxisPoints = localAxisPoints.map { point -> CGPoint in
+        let xRotated = center.x + point.x * cos(rotation) - point.y * sin(rotation)
+        let yRotated = center.y + point.x * sin(rotation) + point.y * cos(rotation)
+        return CGPoint(x: xRotated, y: yRotated)
+    }
+
+    // Extend the intersection points slightly outward
+    rotatedAxisPoints = rotatedAxisPoints.map { point -> CGPoint in
+        guard extensionFactor > 0 else { return point }
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        let extensionX = dx * extensionFactor
+        let extensionY = dy * extensionFactor
+        return CGPoint(x: point.x + extensionX, y: point.y + extensionY)
+    }
+
+    // Find actual intersection points by checking where these axes cross the mask boundary
+    let intersections = rotatedAxisPoints.map { point -> CGPoint in
+        findClosestIntersection(contour: closestContour, from: center, towards: point)
+    }
+
+    return intersections
+}
+
+func findClosestIntersection(contour: [CGPoint], from center: CGPoint, towards point: CGPoint) -> CGPoint {
+    var closestPoint = point
+    var minDistance = CGFloat.greatestFiniteMagnitude
+
+    for contourPoint in contour {
+        let distance = hypot(contourPoint.x - point.x, contourPoint.y - point.y)
+        if distance < minDistance {
+            minDistance = distance
+            closestPoint = contourPoint
+        }
+    }
+
+    return closestPoint
+}

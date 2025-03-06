@@ -27,7 +27,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var motionManager = CMMotionManager()
     private var lastKnownPitch: Double = 0.0
     private var lastKnownRoll: Double = 0.0
-    private var alignmentThreshold: Double = 5.0 // Degrees of tilt change allowed
+    private var alignmentThreshold: Double = 75.0 // Degrees of tilt change allowed
     private var isReAligning = false
 
     private var cameraButton: UIButton?
