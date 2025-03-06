@@ -82,7 +82,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     // find ellipse tips to use for measurements
     let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
     let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
-    let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 5)
+    let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0)
 
     // for debug display only
     if debug {
@@ -155,7 +155,7 @@ func buildRealWorldVerticesAnchors(
     let scalingFactor = distanceToFish / distanceToGround
     let outwardedScalingFactor = scalingFactor * 1.1
     
-    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
+//    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
     
     return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
 }
