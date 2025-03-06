@@ -89,13 +89,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
         
         
-        let intersections = findEllipseAxisIntersections(
-            ellipse: ellipse,
-            contour: closestContour // ✅ Pass contour instead of mask
-        )
-
-        print("Tips:", tips)
-        print("Intersections:", intersections)
+        let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0)
 
         let dotsImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: intersections!)
 
@@ -255,7 +249,8 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
 
 func findEllipseAxisIntersections(
     ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat),
-    contour: [CGPoint]
+    contour: [CGPoint],
+    extendPercentage: CGFloat = 0.0  // Default: no extension
 ) -> [CGPoint]? {
     
     let center = ellipse.center
@@ -265,56 +260,72 @@ func findEllipseAxisIntersections(
     let majorAxisDir = CGPoint(x: cos(angle), y: sin(angle))  // Major axis direction
     let minorAxisDir = CGPoint(x: -sin(angle), y: cos(angle)) // Minor axis direction
 
-    // Find intersections for both axes
-    let majorIntersections = findContourLineIntersections(center: center, direction: majorAxisDir, contour: contour)
-    let minorIntersections = findContourLineIntersections(center: center, direction: minorAxisDir, contour: contour)
+    let threshold: CGFloat = 3.0  // Allowable distance from the infinite axis
+
+    // Function to find the extreme intersection points along an axis
+    func findExtremeIntersections(direction: CGPoint) -> [CGPoint] {
+        var intersections: [CGPoint] = []
+        var posExtreme: CGPoint? = nil
+        var negExtreme: CGPoint? = nil
+        var maxPosProj: CGFloat = -CGFloat.infinity
+        var maxNegProj: CGFloat = CGFloat.infinity
+
+        for point in contour {
+            let relativePoint = CGPoint(x: point.x - center.x, y: point.y - center.y)
+            
+            // Projection of the point onto the axis
+            let projection = relativePoint.x * direction.x + relativePoint.y * direction.y
+            
+            // Compute distance from the axis (perpendicular distance)
+            let distanceToAxis = abs(relativePoint.x * direction.y - relativePoint.y * direction.x)
+            
+            // Keep only points near the infinite axis
+            if distanceToAxis < threshold {
+                if projection > maxPosProj {
+                    maxPosProj = projection
+                    posExtreme = point
+                }
+                if projection < maxNegProj {
+                    maxNegProj = projection
+                    negExtreme = point
+                }
+            }
+        }
+
+        if let pos = posExtreme { intersections.append(pos) }
+        if let neg = negExtreme { intersections.append(neg) }
+
+        return intersections
+    }
+
+    // Find intersections for both major and minor axes
+    var majorIntersections = findExtremeIntersections(direction: majorAxisDir)
+    var minorIntersections = findExtremeIntersections(direction: minorAxisDir)
 
     // Ensure exactly 4 intersections (2 per axis)
     guard majorIntersections.count == 2, minorIntersections.count == 2 else {
         return nil
     }
 
+    // Function to extend a point along a given direction vector
+    func extendPoint(_ point: CGPoint, direction: CGPoint, distance: CGFloat) -> CGPoint {
+        return CGPoint(x: point.x + direction.x * distance, y: point.y + direction.y * distance)
+    }
+
+    // Compute extension distances
+    let majorDist = distanceBetween(majorIntersections[0], majorIntersections[1])
+    let minorDist = distanceBetween(minorIntersections[0], minorIntersections[1])
+
+    let majorExtension = majorDist * extendPercentage / 100.0
+    let minorExtension = minorDist * extendPercentage / 100.0
+
+    // Extend the intersection points outward
+    majorIntersections[0] = extendPoint(majorIntersections[0], direction: majorAxisDir, distance: majorExtension)
+    majorIntersections[1] = extendPoint(majorIntersections[1], direction: majorAxisDir, distance: -majorExtension)
+
+    minorIntersections[0] = extendPoint(minorIntersections[0], direction: minorAxisDir, distance: minorExtension)
+    minorIntersections[1] = extendPoint(minorIntersections[1], direction: minorAxisDir, distance: -minorExtension)
+
     return majorIntersections + minorIntersections
 }
 
-func findContourLineIntersections(
-    center: CGPoint,
-    direction: CGPoint,
-    contour: [CGPoint]
-) -> [CGPoint] {
-    
-    var intersections: [CGPoint] = []
-    let threshold: CGFloat = 3.0  // Allowable distance from the infinite axis
-
-    var posExtreme: CGPoint? = nil
-    var negExtreme: CGPoint? = nil
-    var maxPosProj: CGFloat = -CGFloat.infinity
-    var maxNegProj: CGFloat = CGFloat.infinity
-
-    for point in contour {
-        let relativePoint = CGPoint(x: point.x - center.x, y: point.y - center.y)
-        
-        // Projection of the point onto the axis
-        let projection = relativePoint.x * direction.x + relativePoint.y * direction.y
-        
-        // Compute distance from the axis (perpendicular distance)
-        let distanceToAxis = abs(relativePoint.x * direction.y - relativePoint.y * direction.x)
-        
-        // Keep only points near the infinite axis
-        if distanceToAxis < threshold {
-            if projection > maxPosProj {
-                maxPosProj = projection
-                posExtreme = point
-            }
-            if projection < maxNegProj {
-                maxNegProj = projection
-                negExtreme = point
-            }
-        }
-    }
-
-    if let pos = posExtreme { intersections.append(pos) }
-    if let neg = negExtreme { intersections.append(neg) }
-
-    return intersections
-}
