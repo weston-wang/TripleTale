@@ -571,6 +571,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self?.feedbackLabel?.textColor = .green
         }
     }
+    
+    // 📌 Helper function to calculate distance from camera to plane
+    private func distanceToCamera(_ planeAnchor: ARPlaneAnchor) -> Float {
+        guard let frame = sceneView.session.currentFrame else { return Float.greatestFiniteMagnitude }
+        let cameraPosition = frame.camera.transform.columns.3 // Camera position in world space
+        let planePosition = planeAnchor.transform.columns.3
+        let dx = cameraPosition.x - planePosition.x
+        let dy = cameraPosition.y - planePosition.y
+        let dz = cameraPosition.z - planePosition.z
+        return sqrt(dx * dx + dy * dy + dz * dz)
+    }
+
 }
 
 

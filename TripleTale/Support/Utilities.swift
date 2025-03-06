@@ -443,14 +443,3 @@ func applySmallDither(to vertices: [CGPoint]) -> [CGPoint] {
                        y: min(1.0, max(0.0, point.y + dy))) // Keep within [0,1] range
     }
 }
-
-// 📌 Helper function to calculate distance from camera to plane
-func distanceToCamera(_ planeAnchor: ARPlaneAnchor) -> Float {
-    guard let frame = sceneView.session.currentFrame else { return Float.greatestFiniteMagnitude }
-    let cameraPosition = frame.camera.transform.columns.3 // Camera position in world space
-    let planePosition = planeAnchor.transform.columns.3
-    let dx = cameraPosition.x - planePosition.x
-    let dy = cameraPosition.y - planePosition.y
-    let dz = cameraPosition.z - planePosition.z
-    return sqrt(dx * dx + dy * dy + dz * dz)
-}
