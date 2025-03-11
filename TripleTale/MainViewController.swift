@@ -15,6 +15,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     var sceneView: ARSCNView!
     var frameCounter = 0
+    
+    private var isProcessingCameraPress = false
 
     private var planeDetectionTimer: Timer?
     private var detectedPlanes: [UUID: ARPlaneAnchor] = [:] // Store multiple planes
@@ -177,6 +179,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     @objc func handleCameraButtonPress() {
+        guard !isProcessingCameraPress else {
+            print("⏳ Button press ignored: Please wait for processing to complete...")
+            return
+        }
+
+        isProcessingCameraPress = true
+
         // Haptic feedback
         let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
         feedbackGenerator.prepare()
@@ -184,22 +193,28 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         // Capture the current frame
         if let image = captureFrameAsUIImage(from: sceneView) {
-            calculateAndDisplayWeight(with: image)
-            
+            calculateAndDisplayWeight(with: image) { [weak self] in
+                DispatchQueue.main.async {
+                    self?.isProcessingCameraPress = false
+                }
+            }
+        } else {
+            self.view.showToast(message: "Could not capture image from scene!")
+            isProcessingCameraPress = false
+        }
+    }
+
+    
 //            if let inputImage = image.downscale(to: 1280) {
 //                let resizedImage = resizeImageForModel(inputImage)
 //                processDepthImage(from: resizedImage!) { depthImage in
 //                    let resizedDepthImage = resizeDepthMap(depthImage, to: inputImage.size)
-//                    
+//
 //                    let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
 //                    saveImageToGallery(thresholdedImage!)
 //                    saveImageToGallery(resizedDepthImage!)
 //                }
 //            }
-        } else {
-            self.view.showToast(message: "Could not capture image from scene!")
-        }
-    }
     
     @objc private func showPlaneDetectionHint() {
         DispatchQueue.main.async {
@@ -215,10 +230,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
-    func calculateAndDisplayWeight(with image: UIImage) {
+
+    func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
         guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: false) else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
+                completion()
             }
             return
         }
@@ -227,47 +244,23 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
              centroidAboveAnchor,
              centroidBelowAnchor,
              cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
-        
-        // Handle failure: If no valid anchors were returned, show an error popup
-        if verticesAnchors.isEmpty {
+
+        if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
             DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchors at vertices.")
+                self.showPopupMessage(title: "Error", message: "Failed to place anchors properly.")
+                completion()
             }
             return
         }
-        
-        if cornerAnchors.isEmpty {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchors at corners.")
-            }
-            return
-        }
-        
-        if centroidAboveAnchor == nil {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchor on fish.")
-            }
-            return
-        }
-        
-        if centroidBelowAnchor == nil {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchor below fish.")
-            }
-            return
-        }
-        
-        
+
         var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
-        
-        if let planeAnchor = self.firstPlaneAnchor {
-            if let normVector = normalVector(from: cornerAnchors) {
-                height = distanceToPlane(from: centroidAboveAnchor!, planeAnchor: planeAnchor, normal: normVector)
-            }
+
+        if let planeAnchor = self.firstPlaneAnchor, let normVector = normalVector(from: cornerAnchors) {
+            height = distanceToPlane(from: centroidAboveAnchor!, planeAnchor: planeAnchor, normal: normVector)
         } else {
-            print("❌ No detected ground plane. Cannot measure height.")
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
+                completion()
             }
             return
         }
@@ -278,7 +271,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
 
-        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) = calculateWeight(width, length, height, circumference, self.scaleFactor)
+        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) =
+            calculateWeight(width, length, height, circumference, self.scaleFactor)
 
         imagePortion = 0.85
 
@@ -286,10 +280,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let resultImageHeight = resultImageWidth * 16 / 9
 
         let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
+
         if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+        }
+
+        DispatchQueue.main.async {
+            completion()
         }
     }
     
