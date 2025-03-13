@@ -32,6 +32,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var widthNudge: Double = 1.0
     var heightNudge: Double = 1.4
     
+    var lengthAngleScale: Double = 1.0
+    var widthAngleScale: Double = 1.0
+    
     private var motionManager = CMMotionManager()
     private var lastKnownPitch: Double = 0.0
     private var lastKnownRoll: Double = 0.0
@@ -310,6 +313,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         width *= Float(self.widthNudge)
         height *= Float(self.heightNudge)
 
+        length *= Float(self.lengthAngleScale)
+        width *= Float(self.widthAngleScale)
+        
         let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
 
         let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) =
@@ -599,6 +605,33 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             // Save new values
             self.lastKnownPitch = currentPitch
             self.lastKnownRoll = currentRoll
+            
+            print("🚨 Detected device tilt: Pitch \(currentPitch), Roll \(currentRoll)")
+            
+            if let planeAnchor = firstPlaneAnchor {
+                let transform = planeAnchor.transform
+
+                // Extract rotation matrix
+                let r11 = transform.columns.0.x
+                let r21 = transform.columns.0.y
+                let r31 = transform.columns.0.z
+                let r32 = transform.columns.2.z
+                let r33 = transform.columns.2.y
+                
+                // Calculate Euler angles (roll, pitch, yaw)
+                let roll = atan2(r32, r33) * (180.0 / .pi)   // Rotation around X-axis
+                let pitch = atan2(-r31, sqrt(r11 * r11 + r21 * r21)) * (180.0 / .pi) // Rotation around Y-axis
+                
+                // Adjust plane tilt relative to current phone tilt
+                let relativePitch = Double(pitch) - currentPitch
+                let relativeRoll = Double(roll) - currentRoll
+                
+                lengthAngleScale = cos(relativePitch * .pi / 180)
+                widthAngleScale = cos(relativeRoll * .pi / 180)
+
+                print("🚨 Current relative tilt: Pitch \(pitch), Roll \(roll)")
+
+            }
 
             // ✅ If the tilt exceeds threshold, trigger realignment
             if (pitchDelta > self.alignmentThreshold || rollDelta > self.alignmentThreshold) {
