@@ -188,10 +188,10 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
 
 //    let overlayImage = UIImage(named: "shimano_logo")!
 //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-    let combinedImage = measurementTextImage
+    let combinedImage = weightTextImage
 
     saveImageToGallery(combinedImage!)
-    saveImageToGallery(inputImage)
+//    saveImageToGallery(inputImage)
 
     return combinedImage!
 }

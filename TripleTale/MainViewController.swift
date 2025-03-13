@@ -20,6 +20,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     private var planeDetectionTimer: Timer?
     private var detectedPlanes: [UUID: ARPlaneAnchor] = [:] // Store multiple planes
+    
+    private var debugCounter = 0
+    private var debugNodes: [SCNNode] = []
+    private var debugMode: Bool = false
+
 
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
@@ -121,7 +126,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
-        sceneView.debugOptions = [.showFeaturePoints]
+        if debugMode {
+            sceneView.debugOptions = [.showFeaturePoints]
+        }
         view.addSubview(sceneView)
 
         // Add the bracket view to the main view
@@ -131,6 +138,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         // Create a transparent view for the bottom left corner
         createCornerView(withSize: 100)
+        
+        // Create a transparent view for the bottom right corner
+        createDebugCornerView(withSize: 100)
         
         // Call the function to create and add the camera button
         setupCameraButton()
@@ -177,6 +187,37 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
         }
     }
+    
+    @objc private func handleDebugGesture() {
+          debugCounter += 1
+
+          if debugCounter == 3 {
+              debugCounter = 0 // Reset counter after activation
+
+              debugMode.toggle()
+
+              // Toggle debug options
+              if debugMode {
+                  // Enable debug mode
+                  sceneView.debugOptions = [.showFeaturePoints]
+                  self.view.showToast(message: "Debug Mode ENABLED")
+
+                  // Show debug nodes (mesh and spheres)
+                  for node in debugNodes {
+                      node.isHidden = false
+                  }
+              } else {
+                  // Disable debug mode
+                  sceneView.debugOptions = []
+                  self.view.showToast(message: "Debug Mode DISABLED")
+
+                  // Hide debug nodes
+                  for node in debugNodes {
+                      node.isHidden = true
+                  }
+              }
+          }
+      }
     
     @objc func handleCameraButtonPress() {
         guard !isProcessingCameraPress else {
@@ -338,6 +379,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         view.addSubview(cornerView)
     }
     
+    func createDebugCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) {
+        let cornerView = UIView()
+        cornerView.backgroundColor = backgroundColor
+        
+        // Set the frame to place the view near the bottom left corner
+        let xPosition: CGFloat = view.bounds.width - size - 20 // Adjust as needed
+        let yPosition: CGFloat = view.bounds.height - size - 20 // Adjust as needed
+        cornerView.frame = CGRect(x: xPosition, y: yPosition, width: size, height: size)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleDebugGesture))
+        cornerView.addGestureRecognizer(tapGesture)
+
+        view.addSubview(cornerView)
+    }
+    
     func updateBracketSize() {
         guard let bracketView = bracketView else { return }
              
@@ -398,7 +454,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             let meshNode = SCNNode(geometry: planeGeometry)
             meshNode.name = planeAnchor.identifier.uuidString // Tag the node for tracking
+            meshNode.isHidden = debugMode
+            
             node.addChildNode(meshNode)
+            
+            debugNodes.append(meshNode)
 
             // ✅ Cancel the hint popup since a plane is found
             planeDetectionTimer?.invalidate()
@@ -408,7 +468,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             sphere.firstMaterial?.diffuse.contents = UIColor.red
 
             let sphereNode = SCNNode(geometry: sphere)
+            sphereNode.isHidden = debugMode
+            
             node.addChildNode(sphereNode)
+            
+            debugNodes.append(sphereNode)
         }
     }
     
@@ -425,6 +489,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     planeGeometry.update(from: planeAnchor.geometry)
                 }
             }
+            
+            
+            // ✅ Ensure debugNodes stay updated
+            if let debugNode = debugNodes.first(where: { $0.name == planeAnchor.identifier.uuidString }) {
+                debugNode.position = node.position
+            }
         }
     }
     
@@ -438,10 +508,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 isGroundPlaneDetected = (firstPlaneAnchor != nil)
             }
 
-            // ✅ Remove visualization by clearing child nodes
-            node.enumerateChildNodes { (child, _) in
-                child.removeFromParentNode()
+            // ✅ Remove only the corresponding plane visualization
+            node.childNodes.forEach { child in
+                if child.name == planeAnchor.identifier.uuidString {
+                    child.removeFromParentNode()
+                }
             }
+            
+            // ✅ Remove only the corresponding debug node
+            debugNodes.removeAll { $0.name == planeAnchor.identifier.uuidString }
 
             DispatchQueue.main.async { [weak self] in
                 self?.updateCameraButtonState()
@@ -561,6 +636,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         configuration.planeDetection = .horizontal
         configuration.isLightEstimationEnabled = true
         configuration.isAutoFocusEnabled = true
+        
+        // ✅ Clear debug nodes before resetting tracking
+        for node in debugNodes {
+            node.removeFromParentNode()
+        }
+        debugNodes.removeAll()
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
