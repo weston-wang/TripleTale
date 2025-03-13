@@ -273,7 +273,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: false) else {
+        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode) else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
                 completion()
@@ -322,7 +322,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
 
-        if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches, circumferenceInInches, weightInLb, "") {
+        if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches,
+                                                   circumferenceInInches, weightInLb, "", debug: self.debugMode) {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -448,18 +449,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             planeGeometry?.update(from: planeAnchor.geometry)
 
             let gridMaterial = SCNMaterial()
-            gridMaterial.diffuse.contents = createGridTexture(size: 512, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
+            gridMaterial.diffuse.contents = createGridTexture(size: 1024, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
             gridMaterial.isDoubleSided = true
             planeGeometry?.materials = [gridMaterial]
 
             let meshNode = SCNNode(geometry: planeGeometry)
             meshNode.name = planeAnchor.identifier.uuidString // Tag the node for tracking
-            meshNode.isHidden = debugMode
             
             node.addChildNode(meshNode)
-            
-            debugNodes.append(meshNode)
-
             // ✅ Cancel the hint popup since a plane is found
             planeDetectionTimer?.invalidate()
         } else {
@@ -489,12 +486,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     planeGeometry.update(from: planeAnchor.geometry)
                 }
             }
-            
-            
-            // ✅ Ensure debugNodes stay updated
-            if let debugNode = debugNodes.first(where: { $0.name == planeAnchor.identifier.uuidString }) {
-                debugNode.position = node.position
-            }
         }
     }
     
@@ -515,9 +506,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 }
             }
             
-            // ✅ Remove only the corresponding debug node
-            debugNodes.removeAll { $0.name == planeAnchor.identifier.uuidString }
-
             DispatchQueue.main.async { [weak self] in
                 self?.updateCameraButtonState()
                 self?.realignARSession()
@@ -550,7 +538,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         // Draw vertical lines with semi-transparent grid color
         context.setStrokeColor(gridColor.withAlphaComponent(0.5).cgColor) // Adjust alpha here
-        context.setLineWidth(1.0)
+        context.setLineWidth(2.0)
         for x in stride(from: 0, to: Int(gridSize), by: size / 10) {
             context.move(to: CGPoint(x: x, y: 0))
             context.addLine(to: CGPoint(x: x, y: Int(gridSize)))

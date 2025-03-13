@@ -153,18 +153,26 @@ func buildRealWorldVerticesAnchors(
     }
     
     let scalingFactor = distanceToFish / distanceToGround
-    let outwardedScalingFactor = scalingFactor * 1.1
+//    let outwardedScalingFactor = scalingFactor * 1.1
     
 //    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
     
     return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
 }
 
-func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = nil, _ widthInInches: Measurement<UnitLength>, _ lengthInInches: Measurement<UnitLength>, _ heightInInches: Measurement<UnitLength>, _ circumferenceInInches: Measurement<UnitLength>, _ weightInLb: Measurement<UnitMass>, _ fishName: String) -> UIImage? {
+func generateResultImage(_ inputImage: UIImage,
+                         _ inputBoundingBox: CGRect? = nil,
+                         _ widthInInches: Measurement<UnitLength>,
+                         _ lengthInInches: Measurement<UnitLength>,
+                         _ heightInInches: Measurement<UnitLength>,
+                         _ circumferenceInInches: Measurement<UnitLength>,
+                         _ weightInLb: Measurement<UnitMass>,
+                         _ fishName: String,
+                         debug: Bool = false) -> UIImage? {
 //    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
 
     let formattedLength = String(format: "%.2f", lengthInInches.value)
-    let formattedWeight = String(format: "%.2f", weightInLb.value)
+//    let formattedWeight = String(format: "%.2f", weightInLb.value)
     let formattedWidth = String(format: "%.2f", widthInInches.value)
     let formattedHeight = String(format: "%.2f", heightInInches.value)
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
@@ -183,16 +191,19 @@ func generateResultImage(_ inputImage: UIImage, _ inputBoundingBox: CGRect? = ni
 
     let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
 
-    let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
-    
 
-//    let overlayImage = UIImage(named: "shimano_logo")!
-//    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
     let combinedImage = weightTextImage
 
     saveImageToGallery(combinedImage!)
-//    saveImageToGallery(inputImage)
 
+    if debug {
+        let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
+        
+        //    let overlayImage = UIImage(named: "shimano_logo")!
+        //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
+        
+        saveImageToGallery(measurementTextImage!)
+    }
     return combinedImage!
 }
 
