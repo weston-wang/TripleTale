@@ -95,10 +95,15 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         saveImageToGallery(dotsImage!)
     }
     
-    let tipsNormalized = intersections!.map { point in        // tips for ellipse, intersections for boundary
+    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0) else {
+        print("Error: Failed to find ellipse axis intersections.")
+        return nil
+    }
+
+    let tipsNormalized = intersections.map { point in
         CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
     }
-    
+
     return tipsNormalized
 
 }
