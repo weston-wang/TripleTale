@@ -626,8 +626,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 let relativePitch = Double(pitch) - currentPitch
                 let relativeRoll = Double(roll) - currentRoll
                 
-                lengthAngleScale = cos(relativePitch * .pi / 180)
-                widthAngleScale = cos(relativeRoll * .pi / 180)
+                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
+                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
 
                 print("🚨 Current relative tilt: Pitch \(pitch), Roll \(roll)")
 
