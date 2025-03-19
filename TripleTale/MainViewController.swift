@@ -471,7 +471,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             sphere.firstMaterial?.diffuse.contents = UIColor.red
 
             let sphereNode = SCNNode(geometry: sphere)
-            sphereNode.isHidden = debugMode
+            sphereNode.isHidden = !debugMode
             
             node.addChildNode(sphereNode)
             

@@ -68,7 +68,7 @@ func drawContoursEllipseAndTips(on image: UIImage, contours: [[CGPoint]], closes
         
         // Draw the tips
         for tip in tips {
-            context.cgContext.fillEllipse(in: CGRect(x: tip.x, y: tip.y, width: 12, height: 12))
+            context.cgContext.fillEllipse(in: CGRect(x: tip.x, y: tip.y, width: 15, height: 15))
         }
     }
 
@@ -266,6 +266,41 @@ func drawContourAndDots(on image: UIImage, closestContour: [CGPoint], tips: [CGP
             let rect = CGRect(x: tip.x - dotSize / 2, y: tip.y - dotSize / 2, width: dotSize, height: dotSize)
             context.cgContext.fillEllipse(in: rect)
         }
+    }
+
+    return renderedImage
+}
+
+func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20.0, lineWidth: CGFloat = 5.0) -> UIImage? {
+    guard points.count == 2 else {
+        print("Error: The function requires exactly two points.")
+        return nil
+    }
+
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = image.scale // Match the input image scale
+
+    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+
+        // Set the drawing properties
+        context.cgContext.setFillColor(UIColor.red.cgColor)  // Dot color
+        context.cgContext.setStrokeColor(UIColor.blue.cgColor)  // Line color
+        context.cgContext.setLineWidth(lineWidth)
+
+        // Draw dots
+        for point in points {
+            let rect = CGRect(x: point.x - dotSize / 2, y: point.y - dotSize / 2, width: dotSize, height: dotSize)
+            context.cgContext.fillEllipse(in: rect)
+        }
+
+        // Draw line connecting the two points
+        context.cgContext.move(to: points[0])
+        context.cgContext.addLine(to: points[1])
+        context.cgContext.strokePath()
     }
 
     return renderedImage
