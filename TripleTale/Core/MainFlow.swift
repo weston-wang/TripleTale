@@ -71,7 +71,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     // find all contours
     let width = cgImage.width
     let height = cgImage.height
-    let (contours, _) = extractContours(from: pixelData, width: width, height: height)
+    let (contours, perimeters) = extractContours(from: pixelData, width: width, height: height)
     
     // find center contour
     guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
@@ -89,9 +89,13 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         let maskUiImage = maskImage.toUIImage()!
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
         let dotsImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: intersections!)
+        
+        print("perimeters: \(perimeters.count)")
+        
+        let perimImage = drawPerimeterDots(on: image, perimeter: perimeters[1])
 
         let pcaPoints = findFishTips(from: closestContour)
-        let lineImage = drawDotsAndLine(on: image, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
+        let lineImage = drawDotsAndLine(on: perimImage!, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
         let testImage = drawDotsAndLine(on: lineImage!, points: [intersections![1], intersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
         
 //        saveImageToGallery(image)
