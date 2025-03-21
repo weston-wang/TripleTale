@@ -271,7 +271,7 @@ func drawContourAndDots(on image: UIImage, closestContour: [CGPoint], tips: [CGP
     return renderedImage
 }
 
-func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20.0, lineWidth: CGFloat = 5.0) -> UIImage? {
+func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20.0, lineWidth: CGFloat = 5.0, dotColor: UIColor? = nil, lineColor: UIColor? = nil) -> UIImage? {
     guard points.count == 2 else {
         print("Error: The function requires exactly two points.")
         return nil
@@ -287,8 +287,11 @@ func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20
         image.draw(at: .zero)
 
         // Set the drawing properties
-        context.cgContext.setFillColor(UIColor.red.cgColor)  // Dot color
-        context.cgContext.setStrokeColor(UIColor.blue.cgColor)  // Line color
+        let dotUIColor = dotColor ?? UIColor.red
+        let lineUIColor = lineColor ?? UIColor.blue
+
+        context.cgContext.setFillColor(dotUIColor.cgColor)  // Dot color
+        context.cgContext.setStrokeColor(lineUIColor.cgColor)  // Line color
         context.cgContext.setLineWidth(lineWidth)
 
         // Draw dots

@@ -276,6 +276,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
+        var testImage = UIImage(named: "1_0")
+        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
+        
         guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode) else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")

@@ -90,9 +90,14 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
         let dotsImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: intersections!)
 
-        saveImageToGallery(image)
-        saveImageToGallery(resultImage!)
-        saveImageToGallery(dotsImage!)
+        let pcaPoints = findFishTips(from: closestContour)
+        let lineImage = drawDotsAndLine(on: image, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
+        let testImage = drawDotsAndLine(on: lineImage!, points: [intersections![1], intersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        
+//        saveImageToGallery(image)
+//        saveImageToGallery(resultImage!)
+//        saveImageToGallery(dotsImage!)
+        saveImageToGallery(testImage!)
     }
     
     guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0) else {
@@ -366,3 +371,70 @@ func findEllipseAxisIntersections(
     return [topFinal, rightFinal, bottomFinal, leftFinal]
 }
 
+func findFishTips(from contour: [CGPoint]) -> (mouthTip: CGPoint, tailTip: CGPoint)? {
+    
+    guard contour.count > 1 else { return nil }
+
+    // Compute the centroid of the contour
+    let centerX = contour.map { $0.x }.reduce(0, +) / CGFloat(contour.count)
+    let centerY = contour.map { $0.y }.reduce(0, +) / CGFloat(contour.count)
+    let centroid = CGPoint(x: centerX, y: centerY)
+
+    // Perform Principal Component Analysis (PCA) to get the major axis direction
+    let (eigenvector, _) = performPCA(on: contour)
+
+    // Project contour points onto the major axis
+    var minProj: CGFloat = CGFloat.infinity
+    var maxProj: CGFloat = -CGFloat.infinity
+    var mouthTip: CGPoint? = nil
+    var tailTip: CGPoint? = nil
+
+    for point in contour {
+        let relativePoint = CGPoint(x: point.x - centroid.x, y: point.y - centroid.y)
+        let projection = relativePoint.x * eigenvector.x + relativePoint.y * eigenvector.y
+
+        if projection < minProj {
+            minProj = projection
+            mouthTip = point
+        }
+        if projection > maxProj {
+            maxProj = projection
+            tailTip = point
+        }
+    }
+
+    guard let mouth = mouthTip, let tail = tailTip else { return nil }
+    return (mouth, tail)
+}
+
+func performPCA(on points: [CGPoint]) -> (direction: CGPoint, eigenvalues: (CGFloat, CGFloat)) {
+    let meanX = points.map { $0.x }.reduce(0, +) / CGFloat(points.count)
+    let meanY = points.map { $0.y }.reduce(0, +) / CGFloat(points.count)
+
+    var covXX: CGFloat = 0, covXY: CGFloat = 0, covYY: CGFloat = 0
+
+    for point in points {
+        let dx = point.x - meanX
+        let dy = point.y - meanY
+        covXX += dx * dx
+        covXY += dx * dy
+        covYY += dy * dy
+    }
+
+    let trace = covXX + covYY
+    let det = covXX * covYY - covXY * covXY
+    let lambda1 = (trace + sqrt(trace * trace - 4 * det)) / 2
+    let lambda2 = (trace - sqrt(trace * trace - 4 * det)) / 2
+
+    let majorDirection: CGPoint
+    if covXY != 0 {
+        let vX = lambda1 - covYY
+        let vY = covXY
+        let length = sqrt(vX * vX + vY * vY)
+        majorDirection = CGPoint(x: vX / length, y: vY / length)
+    } else {
+        majorDirection = covXX > covYY ? CGPoint(x: 1, y: 0) : CGPoint(x: 0, y: 1)
+    }
+
+    return (majorDirection, (lambda1, lambda2))
+}
