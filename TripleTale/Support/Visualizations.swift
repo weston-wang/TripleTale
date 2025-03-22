@@ -213,14 +213,14 @@ func drawEllipse(on image: UIImage, ellipse: (center: CGPoint, size: CGSize, rot
         
         // Draw the tips
         for tip in tips {
-            context.cgContext.fillEllipse(in: CGRect(x: tip.x - 2, y: tip.y - 2, width: 15, height: 15))
+            context.cgContext.fillEllipse(in: CGRect(x: tip.x, y: tip.y, width: 15, height: 15))
         }
     }
 
     return renderedImage
 }
 
-func drawPerimeterDots(on image: UIImage, perimeter: [CGPoint], dotSize: CGFloat = 3.0) -> UIImage? {
+func drawPerimeterDots(on image: UIImage, perimeter: [CGPoint], dotSize: CGFloat = 5.0) -> UIImage? {
     // Create a renderer format with the appropriate scale
     let format = UIGraphicsImageRendererFormat()
     format.scale = image.scale // Match the input image scale
@@ -232,7 +232,7 @@ func drawPerimeterDots(on image: UIImage, perimeter: [CGPoint], dotSize: CGFloat
         image.draw(at: .zero)
 
         // Set the dot drawing properties for the perimeter
-        context.cgContext.setFillColor(UIColor.cyan.cgColor)
+        context.cgContext.setFillColor(UIColor.purple.cgColor)
 
         // Draw each perimeter point as a dot
         for point in perimeter {

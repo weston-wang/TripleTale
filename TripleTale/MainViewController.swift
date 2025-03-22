@@ -464,6 +464,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             let meshNode = SCNNode(geometry: planeGeometry)
             meshNode.name = planeAnchor.identifier.uuidString // Tag the node for tracking
+            meshNode.isHidden = !debugMode
             
             node.addChildNode(meshNode)
             // ✅ Cancel the hint popup since a plane is found
