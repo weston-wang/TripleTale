@@ -184,9 +184,12 @@ func generateResultImage(_ inputImage: UIImage,
                          _ fishName: String,
                          debug: Bool = false) -> UIImage? {
 //    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
+    
+    let rawLength = lengthInInches.value
+    let roundedLength = floor(rawLength * 4) / 4.0
+    let formattedLength = String(format: "%.2f", roundedLength)
 
-    let formattedLength = String(format: "%.2f", lengthInInches.value)
-//    let formattedWeight = String(format: "%.2f", weightInLb.value)
+    //    let formattedWeight = String(format: "%.2f", weightInLb.value)
     let formattedWidth = String(format: "%.2f", widthInInches.value)
     let formattedHeight = String(format: "%.2f", heightInInches.value)
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)

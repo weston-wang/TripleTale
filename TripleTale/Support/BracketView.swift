@@ -62,26 +62,28 @@ class BracketView: UIView {
         let centerX = (rect.minX + rect.maxX) / 2
         let tStartX = centerX - tWidth / 2
         let tEndX = centerX + tWidth / 2
+        
+        let verticalOffset = 50.0
 
-//        // Top-left bracket
-//        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-//        path.addLine(to: CGPoint(x: rect.minX + bracketLength, y: rect.maxY))
-//        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
-//        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - bracketLength))
-//
-//        // Top-right bracket
-//        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY))
-//        path.addLine(to: CGPoint(x: rect.maxX - bracketLength, y: rect.maxY))
-//        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY))
-//        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bracketLength))
-//
 //        // Bottom-left bracket
+//        path.move(to: CGPoint(x: rect.minX, y: rect.maxY - verticalOffset))
+//        path.addLine(to: CGPoint(x: rect.minX + bracketLength, y: rect.maxY - verticalOffset))
+//        path.move(to: CGPoint(x: rect.minX, y: rect.maxY - verticalOffset))
+//        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - bracketLength - verticalOffset))
+//
+//        // Bottom-right bracket
+//        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY - verticalOffset))
+//        path.addLine(to: CGPoint(x: rect.maxX - bracketLength, y: rect.maxY - verticalOffset))
+//        path.move(to: CGPoint(x: rect.maxX, y: rect.maxY - verticalOffset))
+//        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bracketLength - verticalOffset))
+//
+//        // Top-left bracket
 //        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
 //        path.addLine(to: CGPoint(x: rect.minX + bracketLength, y: rect.minY))
 //        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
 //        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + bracketLength))
 //
-//        // Bottom-right bracket
+//        // Top-right bracket
 //        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
 //        path.addLine(to: CGPoint(x: rect.maxX - bracketLength, y: rect.minY))
 //        path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
@@ -96,7 +98,6 @@ class BracketView: UIView {
         imageView.isHidden = false
         
         // Bottom upside-down "T" shape (shorter horizontal + vertical)
-        let verticalOffset = 50.0
         path.move(to: CGPoint(x: tStartX, y: rect.maxY - verticalOffset)) // Horizontal part
         path.addLine(to: CGPoint(x: tEndX, y: rect.maxY  - verticalOffset))
         path.move(to: CGPoint(x: centerX, y: rect.maxY  - verticalOffset)) // Vertical part
