@@ -78,15 +78,19 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     
     // fit ellipse
     guard let ellipse = fitEllipseMinimax(to: closestContour) else { return nil }
-    
-    // find ellipse tips to use for measurements
-    let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
-    let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
-    let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0)
 
+    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0) else {
+        print("Error: Failed to find ellipse axis intersections.")
+        return nil
+    }
+    
     // for debug display only
     if debug {
 //        let maskUiImage = maskImage.toUIImage()!
+        
+        // find ellipse tips to use for measurements
+        let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+        let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
         
         let ellipseImage = drawEllipse(on: image, ellipse: (center: ellipse.center, size: size, rotationInDegrees: ellipse.rotationInDegrees), tips: tips)
 
@@ -96,18 +100,15 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
         let pcaPoints = findFishTips(from: closestContour)
         let lineImage = drawDotsAndLine(on: perimImage!, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
         
-        let testImage = drawDotsAndLine(on: lineImage!, points: [intersections![1], intersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
-        
+        let vertImage = drawDotsAndLine(on: lineImage!, points: [intersections[1], intersections[3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        let finalImage = drawDotsAndLine(on: vertImage!, points: [intersections[0], intersections[2]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+
 //        saveImageToGallery(image)
 //        saveImageToGallery(resultImage!)
 //        saveImageToGallery(dotsImage!)
-        saveImageToGallery(testImage!)
+        saveImageToGallery(finalImage!)
     }
-    
-    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0) else {
-        print("Error: Failed to find ellipse axis intersections.")
-        return nil
-    }
+
 
     let tipsNormalized = intersections.map { point in
         CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
@@ -166,7 +167,7 @@ func buildRealWorldVerticesAnchors(
         return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
     }
     
-    let scalingFactor = distanceToFish / distanceToGround
+//    let scalingFactor = distanceToFish / distanceToGround
 //    let outwardedScalingFactor = scalingFactor * 1.1
     
 //    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
