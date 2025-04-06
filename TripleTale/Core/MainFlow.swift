@@ -121,19 +121,20 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
 func buildRealWorldVerticesAnchors(
     _ currentView: ARSCNView,
     _ normalizedVertices: [CGPoint],
-    _ capturedImageSize: CGSize
+    _ capturedImageSize: CGSize,
+    _ plaenAnchor: ARPlaneAnchor
 ) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
     
     var adjustedVertices = normalizedVertices
     var verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
     
     // 🔄 Retry with small dithers until we get at least 4 anchors
-    var attempt = 0
-    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
-        attempt += 1
-        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
-        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
-    }
+//    var attempt = 0
+//    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
+//        attempt += 1
+//        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
+//        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
+//    }
 
     if verticesAnchors.count < 4 {
         print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
@@ -188,9 +189,10 @@ func generateResultImage(_ inputImage: UIImage,
     
     let rawLength = lengthInInches.value
     let roundedLength = floor(rawLength * 4) / 4.0
-    let formattedLength = String(format: "%.2f", roundedLength)
+    let formattedLength = String(format: "%.2f", rawLength)
 
-    //    let formattedWeight = String(format: "%.2f", weightInLb.value)
+    let formattedWeight = String(format: "%.2f", weightInLb.value)
+    
     let formattedWidth = String(format: "%.2f", widthInInches.value)
     let formattedHeight = String(format: "%.2f", heightInInches.value)
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
@@ -204,8 +206,8 @@ func generateResultImage(_ inputImage: UIImage,
 //    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
 
 //    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-//    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
-    let weightTextImage = inputImage.imageWithCenteredText("\(formattedLength) in", fontSize: 180, textColor: UIColor.white)
+    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
+//    let weightTextImage = inputImage.imageWithCenteredText("\(formattedLength) in", fontSize: 180, textColor: UIColor.white)
 
     let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
 

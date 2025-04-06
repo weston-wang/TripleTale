@@ -23,7 +23,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
-    private var debugMode: Bool = false
+    private var debugMode: Bool = true
 
 
     private var tapCounter = 0
@@ -279,6 +279,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        var testImage = UIImage(named: "1_0")
 //        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
         
+        guard let planeAnchor = self.firstPlaneAnchor else {
+            DispatchQueue.main.async {
+                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
+                completion()
+            }
+            return
+        }
+        
         guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode) else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
@@ -290,7 +298,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let (verticesAnchors,
              centroidAboveAnchor,
              centroidBelowAnchor,
-             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size)
+             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size, planeAnchor)
 
         if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
             DispatchQueue.main.async {
@@ -301,16 +309,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
 
         var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
-
-        if let planeAnchor = self.firstPlaneAnchor, let normVector = normalVector(from: cornerAnchors) {
-            height = distanceToPlane(from: centroidAboveAnchor!, planeAnchor: planeAnchor, normal: normVector)
-        } else {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
-                completion()
-            }
-            return
-        }
 
         length *= Float(self.lengthNudge)
         width *= Float(self.widthNudge)

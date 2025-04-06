@@ -25,10 +25,13 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
     return distance
 }
 
-func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
+func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool = false) -> ARAnchor? {
+    var raycastMethod:ARRaycastQuery.Target = .existingPlaneInfinite
+    
+    if !projectToGround { raycastMethod = .estimatedPlane }
     
     // use estimatedPlane for dots on fish, existingPlaneInfinite for projection on ground
-    if let raycastQuery = currentView.raycastQuery(from: point, allowing: .existingPlaneInfinite, alignment: .any) {
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: raycastMethod, alignment: .any) {
         let raycastResults = currentView.session.raycast(raycastQuery)
         
         if let result = raycastResults.first {
@@ -37,7 +40,7 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
             return anchor
         }
     }
-
+    
     // Fallback: Use feature point hit-test if raycasting fails
     let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
     
@@ -141,7 +144,8 @@ func getVerticesCenter(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint]
     
     let centroidOnScreen = getScreenPosition(currentView, centroid.x, centroid.y, capturedImageSize)
 
-    let centroidAnchor = addAnchor(currentView, centroidOnScreen)
+    // TODO: add sanity check against ground plane
+    let centroidAnchor = addAnchor(currentView, centroidOnScreen, projectToGround: false)
 
     return centroidAnchor
 }
