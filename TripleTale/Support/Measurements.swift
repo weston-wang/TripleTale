@@ -166,12 +166,18 @@ func calculateWeightFromFork(_ forkIn: CGFloat, _ species: String) -> (Measureme
     return (weightInLb, forkInInches)
 }
 
-func measureVertices(_ verticesAnchors: [ARAnchor], _ cornersAnchors: [ARAnchor], _ aboveAnchor: ARAnchor, _ belowAnchor: ARAnchor) ->  (Float, Float, Float) {
-    let width = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
-    let length = calculateDistanceBetweenAnchors2D(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
+func measureVertices( _ verticesAnchors: [ARAnchor] ) ->  (Float, Float) {
+    let width = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[0], anchor2: verticesAnchors[2])
+    let length = calculateDistanceBetweenAnchors(anchor1: verticesAnchors[1], anchor2: verticesAnchors[3])
     
+    return (width, length)
+}
+
+func measureHeight( _ cornersAnchors: [ARAnchor],
+                    _ aboveAnchor: ARAnchor,
+                    _ belowAnchor: ARAnchor ) -> Float {
     let normVector = normalVector(from: cornersAnchors)
     let height = distanceToPlane(from: aboveAnchor, planeAnchor: belowAnchor, normal: normVector!)
     
-    return (width, length, height)
+    return height
 }

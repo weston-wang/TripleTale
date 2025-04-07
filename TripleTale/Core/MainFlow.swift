@@ -122,11 +122,10 @@ func buildRealWorldVerticesAnchors(
     _ currentView: ARSCNView,
     _ normalizedVertices: [CGPoint],
     _ capturedImageSize: CGSize,
-    _ plaenAnchor: ARPlaneAnchor
+    _ planeAnchor: ARPlaneAnchor
 ) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
     
-    var adjustedVertices = normalizedVertices
-    var verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
+    let verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
     
     // 🔄 Retry with small dithers until we get at least 4 anchors
 //    var attempt = 0
@@ -142,12 +141,15 @@ func buildRealWorldVerticesAnchors(
     }
     
     // Attempt to get centroid anchor
-    guard let centroidAboveAnchor = getVerticesCenter(currentView, adjustedVertices, capturedImageSize) else {
+    guard let centroidAboveAnchor = getVerticesCenter(currentView,
+                                                      normalizedVertices,
+                                                      capturedImageSize,
+                                                      planeAnchor) else {
         print("Error: Failed to retrieve centroid above anchor.")
         return ([], nil, nil, []) // Return safe fallback values
     }
     
-    let corners = calculateRectangleCorners(adjustedVertices, 0.0, 0.7) // First one is tall, second is wide
+    let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // First one is tall, second is wide
     let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
     
     if cornerAnchors.isEmpty {
@@ -161,12 +163,12 @@ func buildRealWorldVerticesAnchors(
     }
 
     // Attempt distance calculations safely
-    guard let distanceToFish = calculateDistanceToObject(centroidAboveAnchor),
-          let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
-          distanceToGround != 0 else {
-        print("Error: Invalid distances for scaling factor computation.")
-        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
-    }
+//    guard let distanceToFish = calculateDistanceToObject(centroidAboveAnchor),
+//          let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
+//          distanceToGround != 0 else {
+//        print("Error: Invalid distances for scaling factor computation.")
+//        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+//    }
     
 //    let scalingFactor = distanceToFish / distanceToGround
 //    let outwardedScalingFactor = scalingFactor * 1.1

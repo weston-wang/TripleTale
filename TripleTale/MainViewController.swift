@@ -30,7 +30,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.0
     var widthNudge: Double = 1.0
-    var heightNudge: Double = 1.4
+    var heightNudge: Double = 1.0
     
     var lengthAngleScale: Double = 1.0
     var widthAngleScale: Double = 1.0
@@ -129,9 +129,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
-        if debugMode {
-            sceneView.debugOptions = [.showFeaturePoints]
-        }
+//        if debugMode {
+//            sceneView.debugOptions = [.showFeaturePoints]
+//        }
         view.addSubview(sceneView)
 
         // Add the bracket view to the main view
@@ -298,7 +298,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let (verticesAnchors,
              centroidAboveAnchor,
              centroidBelowAnchor,
-             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView, normalizedVertices, image.size, planeAnchor)
+             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView,
+                                                            normalizedVertices,
+                                                            image.size,
+                                                            planeAnchor)
 
         if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
             DispatchQueue.main.async {
@@ -308,7 +311,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
 
-        var (width, length, height) = measureVertices(verticesAnchors, cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
+        var (width, length) = measureVertices(verticesAnchors)
+//        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
+        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, planeAnchor)
 
         length *= Float(self.lengthNudge)
         width *= Float(self.widthNudge)

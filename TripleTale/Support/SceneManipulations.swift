@@ -136,7 +136,11 @@ func getScreenPosition(_ currentView: ARSCNView, _ normalizedX: CGFloat, _ norma
     return actualPosition
 }
 
-func getVerticesCenter(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ARAnchor? {
+func getVerticesCenter(
+    _ currentView: ARSCNView,
+    _ normalizedVertices: [CGPoint],
+    _ capturedImageSize: CGSize,
+    _ planeAnchor: ARPlaneAnchor) -> ARAnchor? {
     let centroid = CGPoint(
         x: (normalizedVertices[0].x + normalizedVertices[1].x + normalizedVertices[2].x + normalizedVertices[3].x) / 4,
         y: (normalizedVertices[0].y + normalizedVertices[1].y + normalizedVertices[2].y + normalizedVertices[3].y) / 4
