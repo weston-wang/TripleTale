@@ -35,6 +35,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var lengthAngleScale: Double = 1.0
     var widthAngleScale: Double = 1.0
     
+    var bodyRatio: Double = 2.2
+    
     private var motionManager = CMMotionManager()
     private var lastKnownPitch: Double = 0.0
     private var lastKnownRoll: Double = 0.0
@@ -169,23 +171,24 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 "Weight Scale: \(self.scaleFactor)",
                 "Length Scale: \(self.lengthNudge)",
                 "Width Scale: \(self.widthNudge)",
-                "Height Scale: \(self.heightNudge)"
+                "Height Scale: \(self.heightNudge)",
+                "Body Ratio: \(self.bodyRatio)"
             ]) { inputs in
                 // Handle the user inputs here
                 if let value1 = inputs[0] {
                     self.scaleFactor = value1
                 }
-                
                 if let value2 = inputs[1] {
                     self.lengthNudge = value2
                 }
-                
                 if let value3 = inputs[2] {
                     self.widthNudge = value3
                 }
-                
                 if let value4 = inputs[3] {
                     self.heightNudge = value4
+                }
+                if let value5 = inputs[4] {
+                    self.bodyRatio = value5
                 }
             }
         }
@@ -295,15 +298,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
 
-        let (verticesAnchors,
-             centroidAboveAnchor,
-             centroidBelowAnchor,
-             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView,
-                                                            normalizedVertices,
-                                                            image.size,
-                                                            planeAnchor)
+//        let (verticesAnchors,
+//             centroidAboveAnchor,
+//             centroidBelowAnchor,
+//             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView,
+//                                                            normalizedVertices,
+//                                                            image.size,
+//                                                            planeAnchor)
+        
+        let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
 
-        if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
+//        if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
+        if verticesAnchors.count < 4 {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Failed to place anchors properly.")
                 completion()
@@ -313,19 +319,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         var (width, length) = measureVertices(verticesAnchors)
 //        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
-        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, planeAnchor)
-
+//        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, planeAnchor)
+        let height: Float = 0.0
+        
         length *= Float(self.lengthNudge)
         width *= Float(self.widthNudge)
-        height *= Float(self.heightNudge)
+//        height *= Float(self.heightNudge)
 
         length *= Float(self.lengthAngleScale)
         width *= Float(self.widthAngleScale)
         
-        let circumference = calculateCircumference(majorAxis: width, minorAxis: height)
+//        let girth = calculateCircumference(majorAxis: width, minorAxis: height)
+        let girth = width * Float(self.bodyRatio)
 
-        let (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches) =
-            calculateWeight(width, length, height, circumference, self.scaleFactor)
+        let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
+            calculateWeight(width, length, height, girth, self.scaleFactor)
 
         imagePortion = 0.85
 
@@ -335,7 +343,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
 
         if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches,
-                                                   circumferenceInInches, weightInLb, "", debug: self.debugMode) {
+                                                   girthInInches, weightInLb, "", debug: self.debugMode) {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -633,8 +641,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 let relativePitch = Double(pitch) - currentPitch
                 let relativeRoll = Double(roll) - currentRoll
                 
-                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
-                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
+//                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
+//                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
 
                 print("🚨 Current relative tilt: Pitch \(pitch), Roll \(roll)")
 

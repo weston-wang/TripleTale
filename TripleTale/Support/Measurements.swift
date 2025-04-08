@@ -127,22 +127,22 @@ func calculateCircumference(majorAxis: Float, minorAxis: Float) -> Float {
     return Float(Double.pi) * (term1 - term2)
 }
 
-func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ circumference: Float, _ scale: Double) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
+func calculateWeight(_ width: Float, _ length: Float, _ height: Float, _ girth: Float, _ scale: Double) -> (Measurement<UnitMass>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>, Measurement<UnitLength>){
     
     let widthInMeters = Measurement(value: Double(width), unit: UnitLength.meters)
     let lengthInMeters = Measurement(value: Double(length), unit: UnitLength.meters)
     let heightInMeters = Measurement(value: Double(height), unit: UnitLength.meters)
-    let circumferenceInMeters = Measurement(value: Double(circumference), unit: UnitLength.meters)
+    let girthInMeters = Measurement(value: Double(girth), unit: UnitLength.meters)
     
     let widthInInches = widthInMeters.converted(to: .inches)
     let lengthInInches = lengthInMeters.converted(to: .inches)
     let heightInInches = heightInMeters.converted(to: .inches)
-    let circumferenceInInches = circumferenceInMeters.converted(to: .inches)
+    let girthInInches = girthInMeters.converted(to: .inches)
     
-    let weight = lengthInInches.value * circumferenceInInches.value * circumferenceInInches.value / scale
+    let weight = lengthInInches.value * girthInInches.value * girthInInches.value / scale
     let weightInLb = Measurement(value: weight, unit: UnitMass.pounds)
     
-    return (weightInLb, widthInInches, lengthInInches, heightInInches, circumferenceInInches)
+    return (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches)
 }
 
 func calculateWeightFromFork(_ forkIn: CGFloat, _ species: String) -> (Measurement<UnitMass>, Measurement<UnitLength>) {
@@ -180,4 +180,10 @@ func measureHeight( _ cornersAnchors: [ARAnchor],
     let height = distanceToPlane(from: aboveAnchor, planeAnchor: belowAnchor, normal: normVector!)
     
     return height
+}
+
+func distanceBetweenPoints(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
+    let dx = p2.x - p1.x
+    let dy = p2.y - p1.y
+    return sqrt(dx * dx + dy * dy)
 }
