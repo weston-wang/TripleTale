@@ -25,7 +25,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var debugNodes: [SCNNode] = []
     private var debugMode: Bool = true
 
-
+    private var currentBuffer: CVPixelBuffer?
+    private var isProcessingML = false
+    private var lastMLTimestamp: TimeInterval = 0
+    
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     var lengthNudge: Double = 1.0
@@ -36,6 +39,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var widthAngleScale: Double = 1.0
     
     var bodyRatio: Double = 2.2
+    
+    // Classification results
+    private var identifierString = ""
+    private var confidence: VNConfidence = 0.0
+    private var boundingBox: CGRect?
     
     private var motionManager = CMMotionManager()
     private var lastKnownPitch: Double = 0.0
@@ -52,6 +60,53 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var firstPlaneAnchor: ARPlaneAnchor?
     private var isGroundPlaneDetected = false
 
+//    // Queue for dispatching vision classification requests
+//    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
+//    
+//    /// The ML model to be used for detection of arbitrary objects
+//    private var _tripleTaleModel: TripleTaleV2!
+//    private var tripleTaleModel: TripleTaleV2! {
+//        get {
+//            if let model = _tripleTaleModel { return model }
+//            _tripleTaleModel = {
+//                do {
+//                    let configuration = MLModelConfiguration()
+//                    return try TripleTaleV2(configuration: configuration)
+//                } catch {
+//                    fatalError("Couldn't create TripleTale due to: \(error)")
+//                }
+//            }()
+//            return _tripleTaleModel
+//        }
+//    }
+//    
+//    private lazy var mlRequest: VNCoreMLRequest = {
+//        do {
+//            // Instantiate the model from its generated Swift class.
+//            let model = try VNCoreMLModel(for: tripleTaleModel.model)
+//            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
+//                if let result = processObservations(for: request, error: error) {
+//                    DispatchQueue.main.async {
+//                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
+//                    }
+//                } else {
+//                    DispatchQueue.main.async {
+//                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
+//                    }
+//                }
+//            })
+//
+//            return request
+//        } catch {
+//            fatalError("Failed to load Vision ML model: \(error)")
+//        }
+//    }()
+//    
+//    // The view controller that displays the status and "restart experience" UI.
+//    private lazy var statusViewController: StatusViewController = {
+//        return children.lazy.compactMap({ $0 as? StatusViewController }).first!
+//    }()
+    
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var depthImage: UIImage?
 //    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
@@ -534,6 +589,29 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
     
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        // Limit to ~1 inference per second
+//        guard time - lastMLTimestamp > 1.0 else { return }
+//
+//        guard !isProcessingML,
+//              let frame = sceneView.session.currentFrame,
+//              case .normal = frame.camera.trackingState else {
+//            return
+//        }
+//
+//        let pixelBuffer = frame.capturedImage
+//        isProcessingML = true
+//        lastMLTimestamp = time
+//
+//        // Optional: Save image for inspection
+////        self.saveImage = pixelBufferToUIImage(pixelBuffer: pixelBuffer)
+//
+//        // Store buffer for detectCurrentImage
+//        self.currentBuffer = pixelBuffer
+//
+//        detectCurrentImage()
+    }
+    
     func session(_ session: ARSession, didFailWithError error: Error) {
         print("Session error: \(error.localizedDescription)")
     }
@@ -638,8 +716,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 let pitch = atan2(-r31, sqrt(r11 * r11 + r21 * r21)) * (180.0 / .pi) // Rotation around Y-axis
                 
                 // Adjust plane tilt relative to current phone tilt
-                let relativePitch = Double(pitch) - currentPitch
-                let relativeRoll = Double(roll) - currentRoll
+//                let relativePitch = Double(pitch) - currentPitch
+//                let relativeRoll = Double(roll) - currentRoll
                 
 //                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
 //                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
@@ -699,6 +777,41 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         return sqrt(dx * dx + dy * dy + dz * dz)
     }
 
+//    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
+//        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
+//        self.identifierString = identifier
+//        self.confidence = confidence
+//        self.boundingBox = boundingBox ?? .zero
+//        
+//        self.displayClassifierResults()
+//    }
+//    
+//    
+//    // Show the classification results in the UI.
+//    private func displayClassifierResults() {
+//        let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
+//        
+//        statusViewController.showMessage(message)
+//    }
+//    
+//    private func detectCurrentImage() {
+//        let orientation = CGImagePropertyOrientation(UIDevice.current.orientation)
+//        
+//        let requestHandler = VNImageRequestHandler(cvPixelBuffer: currentBuffer!, orientation: orientation)
+//        
+//        visionQueue.async {
+//            defer {
+//                self.currentBuffer = nil
+//                self.isProcessingML = false // ✅ Release the lock
+//            }
+//
+//            do {
+//                try requestHandler.perform([self.mlRequest])
+//            } catch {
+//                print("Error: Vision request failed with error \"\(error)\"")
+//            }
+//        }
+//    }
 }
 
 
