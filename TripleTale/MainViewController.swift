@@ -58,7 +58,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var imagePortion: CGFloat = 1.0
     
     private var firstPlaneAnchor: ARPlaneAnchor?
-    private var isGroundPlaneDetected = false
+    private var isGroundPlaneDetected = true
 
 //    // Queue for dispatching vision classification requests
 //    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
@@ -103,8 +103,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //    }()
 //    
 //    // The view controller that displays the status and "restart experience" UI.
-//    private lazy var statusViewController: StatusViewController = {
-//        return children.lazy.compactMap({ $0 as? StatusViewController }).first!
+//    private lazy var statusViewController: StatusViewController? = {
+//        return children.lazy.compactMap { $0 as? StatusViewController }.first
 //    }()
     
     // The pixel buffer being held for analysis; used to serialize Vision requests.
@@ -211,7 +211,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Initial bracket update
         updateBracketSize()
         
-        startMotionTracking() // ✅ Start monitoring tilt changes
+//        startMotionTracking() // ✅ Start monitoring tilt changes
 
     }
     
@@ -484,10 +484,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func startPlaneDetection() {
 
-        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 30 {
-            print("🚨 Not enough feature points! Ask user to scan more.")
-            showPlaneDetectionHint()
-        }
+//        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 30 {
+//            print("🚨 Not enough feature points! Ask user to scan more.")
+//            showPlaneDetectionHint()
+//        }
         
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .camera // Ensures detected plane aligns with camera

@@ -26,8 +26,9 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 }
 
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool = false) -> ARAnchor? {
-    var raycastMethod:ARRaycastQuery.Target = .existingPlaneInfinite
-    
+//    let raycastMethod:ARRaycastQuery.Target = .existingPlaneInfinite
+    let raycastMethod:ARRaycastQuery.Target = .estimatedPlane
+
 //    if projectToGround { raycastMethod = .estimatedPlane }
     
     // use estimatedPlane for dots on fish, existingPlaneInfinite for projection on ground

@@ -79,7 +79,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     // fit ellipse
     guard let ellipse = fitEllipseMinimax(to: closestContour) else { return nil }
 
-    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 0) else {
+    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 5) else {
         print("Error: Failed to find ellipse axis intersections.")
         return nil
     }
@@ -342,6 +342,10 @@ func findEllipseAxisIntersections(
         return CGPoint(x: point.x + direction.x * distance, y: point.y + direction.y * distance)
     }
     
+    func reducePoint(_ point: CGPoint, direction: CGPoint, distance: CGFloat) -> CGPoint {
+        return CGPoint(x: point.x - direction.x * distance, y: point.y - direction.y * distance)
+    }
+    
     // Compute extension distances
     let majorDist = distanceBetween(majorIntersections[0], majorIntersections[1])
     let minorDist = distanceBetween(minorIntersections[0], minorIntersections[1])
@@ -350,11 +354,18 @@ func findEllipseAxisIntersections(
     let minorExtension = minorDist * extendPercentage / 100.0
     
     // Extend the intersection points outward
-    majorIntersections[0] = extendPoint(majorIntersections[0], direction: majorAxisDir, distance: majorExtension)
-    majorIntersections[1] = extendPoint(majorIntersections[1], direction: majorAxisDir, distance: -majorExtension)
+//    majorIntersections[0] = extendPoint(majorIntersections[0], direction: majorAxisDir, distance: majorExtension)
+//    majorIntersections[1] = extendPoint(majorIntersections[1], direction: majorAxisDir, distance: -majorExtension)
+//    
+//    minorIntersections[0] = extendPoint(minorIntersections[0], direction: minorAxisDir, distance: minorExtension)
+//    minorIntersections[1] = extendPoint(minorIntersections[1], direction: minorAxisDir, distance: -minorExtension)
     
-    minorIntersections[0] = extendPoint(minorIntersections[0], direction: minorAxisDir, distance: minorExtension)
-    minorIntersections[1] = extendPoint(minorIntersections[1], direction: minorAxisDir, distance: -minorExtension)
+    // Reduce the intersection points outward
+    majorIntersections[0] = reducePoint(majorIntersections[0], direction: majorAxisDir, distance: majorExtension)
+    majorIntersections[1] = reducePoint(majorIntersections[1], direction: majorAxisDir, distance: -majorExtension)
+    
+    minorIntersections[0] = reducePoint(minorIntersections[0], direction: minorAxisDir, distance: minorExtension)
+    minorIntersections[1] = reducePoint(minorIntersections[1], direction: minorAxisDir, distance: -minorExtension)
     
     // Sort into consistent order: [top, right, bottom, left]
     var top: CGPoint?, right: CGPoint?, bottom: CGPoint?, left: CGPoint?
