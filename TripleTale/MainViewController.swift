@@ -345,13 +345,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        var testImage = UIImage(named: "1_0")
 //        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
         
-        guard let planeAnchor = self.firstPlaneAnchor else {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
-                completion()
-            }
-            return
-        }
+//        guard let planeAnchor = self.firstPlaneAnchor else {
+//            DispatchQueue.main.async {
+//                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
+//                completion()
+//            }
+//            return
+//        }
         
         guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode) else {
             DispatchQueue.main.async {
