@@ -79,7 +79,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool 
     // fit ellipse
     guard let ellipse = fitEllipseMinimax(to: closestContour) else { return nil }
 
-    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 5) else {
+    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 25) else {
         print("Error: Failed to find ellipse axis intersections.")
         return nil
     }

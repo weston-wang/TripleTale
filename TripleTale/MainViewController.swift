@@ -17,7 +17,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var frameCounter = 0
     
     private var isProcessingCameraPress = false
-
+    private var classifierLabel: UILabel?
+    
+    // Labels for classified objects by ARAnchor UUID
+    private var anchorLabels = [UUID: String]()
+    
     private var planeDetectionTimer: Timer?
     private var detectedPlanes: [UUID: ARPlaneAnchor] = [:] // Store multiple planes
     
@@ -60,52 +64,52 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var firstPlaneAnchor: ARPlaneAnchor?
     private var isGroundPlaneDetected = true
 
-//    // Queue for dispatching vision classification requests
-//    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
-//    
-//    /// The ML model to be used for detection of arbitrary objects
-//    private var _tripleTaleModel: TripleTaleV2!
-//    private var tripleTaleModel: TripleTaleV2! {
-//        get {
-//            if let model = _tripleTaleModel { return model }
-//            _tripleTaleModel = {
-//                do {
-//                    let configuration = MLModelConfiguration()
-//                    return try TripleTaleV2(configuration: configuration)
-//                } catch {
-//                    fatalError("Couldn't create TripleTale due to: \(error)")
-//                }
-//            }()
-//            return _tripleTaleModel
-//        }
-//    }
-//    
-//    private lazy var mlRequest: VNCoreMLRequest = {
-//        do {
-//            // Instantiate the model from its generated Swift class.
-//            let model = try VNCoreMLModel(for: tripleTaleModel.model)
-//            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-//                if let result = processObservations(for: request, error: error) {
-//                    DispatchQueue.main.async {
-//                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
-//                    }
-//                } else {
-//                    DispatchQueue.main.async {
-//                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
-//                    }
-//                }
-//            })
-//
-//            return request
-//        } catch {
-//            fatalError("Failed to load Vision ML model: \(error)")
-//        }
-//    }()
-//    
-//    // The view controller that displays the status and "restart experience" UI.
-//    private lazy var statusViewController: StatusViewController? = {
-//        return children.lazy.compactMap { $0 as? StatusViewController }.first
-//    }()
+    // Queue for dispatching vision classification requests
+    private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
+    
+    /// The ML model to be used for detection of arbitrary objects
+    private var _tripleTaleModel: TripleTaleV2!
+    private var tripleTaleModel: TripleTaleV2! {
+        get {
+            if let model = _tripleTaleModel { return model }
+            _tripleTaleModel = {
+                do {
+                    let configuration = MLModelConfiguration()
+                    return try TripleTaleV2(configuration: configuration)
+                } catch {
+                    fatalError("Couldn't create TripleTale due to: \(error)")
+                }
+            }()
+            return _tripleTaleModel
+        }
+    }
+    
+    private lazy var mlRequest: VNCoreMLRequest = {
+        do {
+            // Instantiate the model from its generated Swift class.
+            let model = try VNCoreMLModel(for: tripleTaleModel.model)
+            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
+                if let result = processObservations(for: request, error: error) {
+                    DispatchQueue.main.async {
+                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
+                    }
+                }
+            })
+
+            return request
+        } catch {
+            fatalError("Failed to load Vision ML model: \(error)")
+        }
+    }()
+    
+    // The view controller that displays the status and "restart experience" UI.
+    private lazy var statusViewController: StatusViewController? = {
+        return children.lazy.compactMap { $0 as? StatusViewController }.first
+    }()
     
     // The pixel buffer being held for analysis; used to serialize Vision requests.
     private var depthImage: UIImage?
@@ -204,6 +208,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         // Call the function to create and add the camera button
         setupCameraButton()
+        setupClassifierLabel()
 
         // Start AR
         startPlaneDetection()
@@ -212,7 +217,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         updateBracketSize()
         
 //        startMotionTracking() // ✅ Start monitoring tilt changes
-
+        // Hook up status view controller callback.
+        statusViewController?.restartExperienceHandler = { [unowned self] in
+            self.restartSession()
+        }
     }
     
     @objc private func handleTapGesture() {
@@ -439,6 +447,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         view.addSubview(label)
         self.feedbackLabel = label
     }
+
+    private func setupClassifierLabel() {
+        let label = UILabel(frame: CGRect(x: 20, y: 70, width: 200, height: 20))
+        label.textColor = .white
+        label.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        label.font = UIFont.systemFont(ofSize: 14)
+        label.text = "Waiting for classification..."
+        view.addSubview(label)
+        self.classifierLabel = label
+    }
     
     func createCornerView(withSize size: CGFloat, backgroundColor: UIColor = .clear) {
         let cornerView = UIView()
@@ -530,7 +548,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             let meshNode = SCNNode(geometry: planeGeometry)
             meshNode.name = planeAnchor.identifier.uuidString // Tag the node for tracking
-            meshNode.isHidden = !debugMode
+            meshNode.isHidden = true
             
             node.addChildNode(meshNode)
             // ✅ Cancel the hint popup since a plane is found
@@ -591,25 +609,25 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         // Limit to ~1 inference per second
-//        guard time - lastMLTimestamp > 1.0 else { return }
-//
-//        guard !isProcessingML,
-//              let frame = sceneView.session.currentFrame,
-//              case .normal = frame.camera.trackingState else {
-//            return
-//        }
-//
-//        let pixelBuffer = frame.capturedImage
-//        isProcessingML = true
-//        lastMLTimestamp = time
-//
-//        // Optional: Save image for inspection
-////        self.saveImage = pixelBufferToUIImage(pixelBuffer: pixelBuffer)
-//
-//        // Store buffer for detectCurrentImage
-//        self.currentBuffer = pixelBuffer
-//
-//        detectCurrentImage()
+        guard time - lastMLTimestamp > 1.0 else { return }
+
+        guard !isProcessingML,
+              let frame = sceneView.session.currentFrame,
+              case .normal = frame.camera.trackingState else {
+            return
+        }
+
+        let pixelBuffer = frame.capturedImage
+        isProcessingML = true
+        lastMLTimestamp = time
+
+        // Optional: Save image for inspection
+//        self.saveImage = pixelBufferToUIImage(pixelBuffer: pixelBuffer)
+
+        // Store buffer for detectCurrentImage
+        self.currentBuffer = pixelBuffer
+
+        detectCurrentImage()
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
@@ -777,41 +795,57 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         return sqrt(dx * dx + dy * dy + dz * dz)
     }
 
-//    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
-//        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
-//        self.identifierString = identifier
-//        self.confidence = confidence
-//        self.boundingBox = boundingBox ?? .zero
-//        
-//        self.displayClassifierResults()
-//    }
-//    
-//    
-//    // Show the classification results in the UI.
-//    private func displayClassifierResults() {
-//        let message = String(format: "Detected \(self.identifierString) with %.2f", self.confidence * 100) + "% confidence"
-//        
-//        statusViewController.showMessage(message)
-//    }
-//    
-//    private func detectCurrentImage() {
-//        let orientation = CGImagePropertyOrientation(UIDevice.current.orientation)
-//        
-//        let requestHandler = VNImageRequestHandler(cvPixelBuffer: currentBuffer!, orientation: orientation)
-//        
-//        visionQueue.async {
-//            defer {
-//                self.currentBuffer = nil
-//                self.isProcessingML = false // ✅ Release the lock
-//            }
-//
-//            do {
-//                try requestHandler.perform([self.mlRequest])
-//            } catch {
-//                print("Error: Vision request failed with error \"\(error)\"")
-//            }
-//        }
-//    }
+    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
+        // Update your UI or perform other actions with the identifier, confidence, and boundingBox
+        self.identifierString = identifier
+        self.confidence = confidence
+        self.boundingBox = boundingBox ?? .zero
+        
+        self.displayClassifierResults()
+    }
+    
+    
+    // Show the classification results in the UI.
+    private func displayClassifierResults() {
+        var message: String
+        if self.identifierString.isEmpty || self.confidence < 0.01 {
+            message = "None"
+        } else {
+            message = String(format: "%@ %.0f%%", self.identifierString, self.confidence * 100)
+        }
+
+        classifierLabel?.text = message
+        statusViewController?.showMessage(message)
+    }
+    
+    private func detectCurrentImage() {
+        let orientation = CGImagePropertyOrientation(UIDevice.current.orientation)
+        
+        let requestHandler = VNImageRequestHandler(cvPixelBuffer: currentBuffer!, orientation: orientation)
+        
+        visionQueue.async {
+            defer {
+                self.currentBuffer = nil
+                self.isProcessingML = false // ✅ Release the lock
+            }
+
+            do {
+                try requestHandler.perform([self.mlRequest])
+            } catch {
+                print("Error: Vision request failed with error \"\(error)\"")
+            }
+        }
+    }
+    
+    private func restartSession() {
+        statusViewController?.cancelAllScheduledMessages()
+        statusViewController?.showMessage("RESTARTING SESSION")
+
+        anchorLabels = [UUID: String]()
+        
+        let configuration = ARWorldTrackingConfiguration()
+        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
 }
 
 
