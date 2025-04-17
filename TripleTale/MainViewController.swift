@@ -169,28 +169,27 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             print("Unable to convert UIImage to CGImage")
             return nil
         }
-
+        
         var result: UIImage?
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-
-        // Create a temporary request with inline completion
-        let request = VNCoreMLRequest(model: try! VNCoreMLModel(for: depthModel.model)) { request, error in
-            guard let results = request.results as? [VNPixelBufferObservation],
-                  let depthMap = results.first?.pixelBuffer else {
-                print("No depth map found or error: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-
-            result = depthPixelBufferToUIImage(pixelBuffer: depthMap)
-        }
-
-        do {
-            try handler.perform([request])
-        } catch {
-            print("Failed to perform depth request: \(error)")
+        
+        guard let inputArray = cgImageToMultiArray(cgImage) else {
+            print("Failed to convert image to MLMultiArray")
             return nil
         }
-
+        
+        do {
+            let modelInput = segmentationModelInput(inputs: inputArray)
+            let prediction = try depthModel.prediction(input: modelInput)
+            let outputMultiArray = prediction.var_785
+            
+            if let testImage = softmaxClassMaskToBinaryImage(outputMultiArray) {
+                result = testImage
+            }
+        } catch {
+            print("Prediction or conversion failed: \(error)")
+            return nil
+        }
+        
         return result
     }
     
@@ -351,7 +350,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-        var testImage = UIImage(named: "IMG_3567")
+        var testImage = UIImage(named: "Training_1")
 //        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
         
 //        guard let planeAnchor = self.firstPlaneAnchor else {
