@@ -350,7 +350,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-        var testImage = UIImage(named: "Training_1")
+//        var testImage = UIImage(named: "Training_1")
 //        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
         
 //        guard let planeAnchor = self.firstPlaneAnchor else {
@@ -361,7 +361,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            return
 //        }
         
-        let resizedImage = resizeImageForModel(testImage!)
+        let resizedImage = resizeImageForModel(image)
         let depthImage = processDepthImage(from: resizedImage!)
         let resizedDepthImage = resizeDepthMap(depthImage!, to: image.size)
         saveImageToGallery(resizedDepthImage!)
