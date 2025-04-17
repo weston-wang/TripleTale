@@ -51,6 +51,30 @@ extension CGImagePropertyOrientation {
 
 /// - Tag: UIImage
 extension UIImage {
+    func forceRGB() -> UIImage? {
+        let width = Int(size.width)
+        let height = Int(size.height)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bytesPerRow = 4 * width
+
+        guard let context = CGContext(data: nil,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: 8,
+                                      bytesPerRow: bytesPerRow,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue),
+              let cgImage = self.cgImage else {
+            return nil
+        }
+
+        let rect = CGRect(x: 0, y: 0, width: width, height: height)
+        context.draw(cgImage, in: rect)
+
+        guard let newCGImage = context.makeImage() else { return nil }
+        return UIImage(cgImage: newCGImage)
+    }
+    
     func downscale(to maxDimension: CGFloat) -> UIImage? {
         let originalSize = self.size
         

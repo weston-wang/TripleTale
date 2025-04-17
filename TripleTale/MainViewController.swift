@@ -118,10 +118,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var depthQueue = DispatchQueue(label: "com.tripleTale.depthQueue")
 
     /// The ML model to be used for detection of fish
-    private var depthModel: DepthAnythingV2 = {
+    private var depthModel: segmentationModel = {
         do {
             let configuration = MLModelConfiguration()
-            return try DepthAnythingV2(configuration: configuration)
+            return try segmentationModel(configuration: configuration)
         } catch {
             fatalError("Couldn't create DepthAnythingV2 due to: \(error)")
         }
@@ -362,7 +362,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            return
 //        }
         
-        let resizedImage = resizeImageForModel(image)
+        let resizedImage = resizeImageForModel(testImage!)
         let depthImage = processDepthImage(from: resizedImage!)
         let resizedDepthImage = resizeDepthMap(depthImage!, to: image.size)
         saveImageToGallery(resizedDepthImage!)
@@ -377,11 +377,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        }
         
         
-        generatePersonMask(from: testImage!) { personMask in
-            if let personMask = personMask {
-                saveImageToGallery(personMask)
-            }
-        }
+//        generatePersonMask(from: testImage!) { personMask in
+//            if let personMask = personMask {
+//                saveImageToGallery(personMask)
+//            }
+//        }
         
         
         guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: resizedDepthImage, debug: self.debugMode) else {

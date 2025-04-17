@@ -206,7 +206,7 @@ func getDepthValue(atX centerX: CGFloat, atY centerY: CGFloat, depthMap: UIImage
 }
 
 func resizeImageForModel(_ image: UIImage) -> UIImage? {
-    let newSize = CGSize(width: 518, height: 392)
+    let newSize = CGSize(width: 320, height: 320)
 
     // Resize the image to the new dimensions
     UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
