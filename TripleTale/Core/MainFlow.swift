@@ -59,9 +59,14 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> ([CGP
 
 
 
-func findEllipseVertices(from image: UIImage, for portion: CGFloat, debug: Bool = false) -> [CGPoint]? {
+func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: UIImage? = nil, debug: Bool = false) -> [CGPoint]? {
     // get foreground mask
-    guard let maskImage = generateMaskImage(from: image, for: portion) else { return nil }
+    var processingImage: UIImage = image
+    if depthImage != nil {
+        processingImage = depthImage!
+    }
+    
+    guard let maskImage = generateMaskImage(from: processingImage, for: portion) else { return nil }
     
     // turn into gray scale pixel data
     let context = CIContext()
@@ -215,8 +220,6 @@ func generateResultImage(_ inputImage: UIImage,
 
 
     let combinedImage = weightTextImage
-
-    saveImageToGallery(combinedImage!)
 
     if debug {
         let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)

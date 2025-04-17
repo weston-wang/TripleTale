@@ -164,25 +164,34 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var depthCompletionHandler: ((UIImage) -> Void)?
 
     /// Method to run the depth request on an input UIImage and return the result via completion handler
-    func processDepthImage(from inputImage: UIImage, completion: @escaping (UIImage) -> Void) {
+    func processDepthImage(from inputImage: UIImage) -> UIImage? {
         guard let cgImage = inputImage.cgImage else {
             print("Unable to convert UIImage to CGImage")
-            return
+            return nil
         }
-        
-        // Set the completion handler
-        self.depthCompletionHandler = completion
-        
-        // Perform request asynchronously on a background queue
-        depthQueue.async { [weak self] in
-            guard let self = self else { return }
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            do {
-                try handler.perform([self.depthRequest])
-            } catch {
-                print("Failed to perform depth request: \(error)")
+
+        var result: UIImage?
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+
+        // Create a temporary request with inline completion
+        let request = VNCoreMLRequest(model: try! VNCoreMLModel(for: depthModel.model)) { request, error in
+            guard let results = request.results as? [VNPixelBufferObservation],
+                  let depthMap = results.first?.pixelBuffer else {
+                print("No depth map found or error: \(error?.localizedDescription ?? "Unknown error")")
+                return
             }
+
+            result = depthPixelBufferToUIImage(pixelBuffer: depthMap)
         }
+
+        do {
+            try handler.perform([request])
+        } catch {
+            print("Failed to perform depth request: \(error)")
+            return nil
+        }
+
+        return result
     }
     
     override func viewDidLoad() {
@@ -342,7 +351,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-//        var testImage = UIImage(named: "1_0")
+        var testImage = UIImage(named: "IMG_3567")
 //        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
         
 //        guard let planeAnchor = self.firstPlaneAnchor else {
@@ -353,7 +362,29 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            return
 //        }
         
-        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode) else {
+        let resizedImage = resizeImageForModel(image)
+        let depthImage = processDepthImage(from: resizedImage!)
+        let resizedDepthImage = resizeDepthMap(depthImage!, to: image.size)
+        saveImageToGallery(resizedDepthImage!)
+        
+        
+//        processDepthImage(from: resizedImage!) { depthImage in
+//            let resizedDepthImage = resizeDepthMap(depthImage, to: image.size)
+//
+////            let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
+////            saveImageToGallery(thresholdedImage!)
+//            saveImageToGallery(resizedDepthImage!)
+//        }
+        
+        
+        generatePersonMask(from: testImage!) { personMask in
+            if let personMask = personMask {
+                saveImageToGallery(personMask)
+            }
+        }
+        
+        
+        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: resizedDepthImage, debug: self.debugMode) else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
                 completion()
@@ -840,12 +871,55 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private func restartSession() {
         statusViewController?.cancelAllScheduledMessages()
         statusViewController?.showMessage("RESTARTING SESSION")
-
+ 
         anchorLabels = [UUID: String]()
         
         let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
+    
+    func generatePersonMask(from image: UIImage, completion: @escaping (UIImage?) -> Void) {
+        guard let cgImage = image.cgImage else {
+            print("Failed to convert UIImage to CGImage")
+            completion(nil)
+            return
+        }
+ 
+        let request = VNGeneratePersonSegmentationRequest()
+        request.qualityLevel = .accurate
+        request.outputPixelFormat = kCVPixelFormatType_OneComponent8
+ 
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+ 
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try handler.perform([request])
+                guard let pixelBuffer = request.results?.first?.pixelBuffer else {
+                    print("No person mask generated")
+                    DispatchQueue.main.async { completion(nil) }
+                    return
+                }
+ 
+                // Convert the pixel buffer to UIImage
+                let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+                let context = CIContext()
+                if let cgMask = context.createCGImage(ciImage, from: ciImage.extent) {
+                    let maskImage = UIImage(cgImage: cgMask)
+                    DispatchQueue.main.async {
+                        completion(maskImage)
+                    }
+                } else {
+                    print("Failed to create CGImage from CIImage")
+                    DispatchQueue.main.async {
+                        completion(nil)
+                    }
+                }
+            } catch {
+                print("Vision request failed: \(error)")
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+            }
+        }
+    }
 }
-
-
