@@ -27,8 +27,11 @@
 		4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */; };
 		4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EB72C730D28001ACC69 /* BracketView.swift */; };
 		4EA91EBA2C730EBF001ACC69 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EB92C730EBF001ACC69 /* Extensions.swift */; };
-		4EBD28B62DB1991B0013846E /* segmentationModel.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4EBD28B52DB1991B0013846E /* segmentationModel.mlmodel */; };
 		4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EEB66E32DAD70770093C719 /* StatusViewController.swift */; };
+		4EFE9E922DB34F9800D8E2F8 /* segmentationModel.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4EFE9E912DB34F9800D8E2F8 /* segmentationModel.mlmodel */; };
+		4EFE9EA82DB42F0D00D8E2F8 /* SAM2_1TinyImageEncoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EFE9EA52DB42F0D00D8E2F8 /* SAM2_1TinyImageEncoderFLOAT16.mlpackage */; };
+		4EFE9EA92DB42F0D00D8E2F8 /* SAM2_1TinyPromptEncoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EFE9EA72DB42F0D00D8E2F8 /* SAM2_1TinyPromptEncoderFLOAT16.mlpackage */; };
+		4EFE9EAA2DB42F0D00D8E2F8 /* SAM2_1TinyMaskDecoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EFE9EA62DB42F0D00D8E2F8 /* SAM2_1TinyMaskDecoderFLOAT16.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,8 +57,11 @@
 		4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneManipulations.swift; sourceTree = "<group>"; };
 		4EA91EB72C730D28001ACC69 /* BracketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BracketView.swift; sourceTree = "<group>"; };
 		4EA91EB92C730EBF001ACC69 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		4EBD28B52DB1991B0013846E /* segmentationModel.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = segmentationModel.mlmodel; sourceTree = "<group>"; };
 		4EEB66E32DAD70770093C719 /* StatusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusViewController.swift; sourceTree = "<group>"; };
+		4EFE9E912DB34F9800D8E2F8 /* segmentationModel.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = segmentationModel.mlmodel; sourceTree = "<group>"; };
+		4EFE9EA52DB42F0D00D8E2F8 /* SAM2_1TinyImageEncoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1TinyImageEncoderFLOAT16.mlpackage; sourceTree = "<group>"; };
+		4EFE9EA62DB42F0D00D8E2F8 /* SAM2_1TinyMaskDecoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1TinyMaskDecoderFLOAT16.mlpackage; sourceTree = "<group>"; };
+		4EFE9EA72DB42F0D00D8E2F8 /* SAM2_1TinyPromptEncoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1TinyPromptEncoderFLOAT16.mlpackage; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,13 +112,16 @@
 		4EA49E2D2C74DCF000CDA5C9 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				4EBD28B52DB1991B0013846E /* segmentationModel.mlmodel */,
+				4EFE9E912DB34F9800D8E2F8 /* segmentationModel.mlmodel */,
 				4EA91EA92C730A28001ACC69 /* Assets.xcassets */,
 				4E5BC8A92DB07D7400029715 /* TripleTaleV2.mlmodel */,
 				4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */,
 				4EA91EA62C730A27001ACC69 /* Main.storyboard */,
 				4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */,
 				4EA91EAB2C730A28001ACC69 /* LaunchScreen.storyboard */,
+				4EFE9EA52DB42F0D00D8E2F8 /* SAM2_1TinyImageEncoderFLOAT16.mlpackage */,
+				4EFE9EA72DB42F0D00D8E2F8 /* SAM2_1TinyPromptEncoderFLOAT16.mlpackage */,
+				4EFE9EA62DB42F0D00D8E2F8 /* SAM2_1TinyMaskDecoderFLOAT16.mlpackage */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -225,6 +234,9 @@
 				4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */,
 				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
 				4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */,
+				4EFE9EA82DB42F0D00D8E2F8 /* SAM2_1TinyImageEncoderFLOAT16.mlpackage in Sources */,
+				4EFE9EA92DB42F0D00D8E2F8 /* SAM2_1TinyPromptEncoderFLOAT16.mlpackage in Sources */,
+				4EFE9EAA2DB42F0D00D8E2F8 /* SAM2_1TinyMaskDecoderFLOAT16.mlpackage in Sources */,
 				4EA250AA2C88D31F00E671E7 /* DepthAnythingV2.mlpackage in Sources */,
 				4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */,
 				4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */,
@@ -233,7 +245,7 @@
 				4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */,
 				4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */,
 				4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */,
-				4EBD28B62DB1991B0013846E /* segmentationModel.mlmodel in Sources */,
+				4EFE9E922DB34F9800D8E2F8 /* segmentationModel.mlmodel in Sources */,
 				4E5BC8AA2DB07D7400029715 /* TripleTaleV2.mlmodel in Sources */,
 				4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */,
 				4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */,
@@ -405,7 +417,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletaleapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -443,7 +455,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletaleapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

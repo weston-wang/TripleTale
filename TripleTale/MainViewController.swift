@@ -162,6 +162,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     /// Completion handler that will return the depth image
     private var depthCompletionHandler: ((UIImage) -> Void)?
+    
+    private let imageEncoder: MLModel = {
+        let url = Bundle.main.url(forResource: "SAM2_1TinyImageEncoderFLOAT16", withExtension: "mlmodelc")!
+        return try! MLModel(contentsOf: url)
+    }()
+
+    private let promptEncoder: MLModel = {
+        let url = Bundle.main.url(forResource: "SAM2_1TinyPromptEncoderFLOAT16", withExtension: "mlmodelc")!
+        return try! MLModel(contentsOf: url)
+    }()
+
+    private let maskDecoder: MLModel = {
+        let url = Bundle.main.url(forResource: "SAM2_1TinyMaskDecoderFLOAT16", withExtension: "mlmodelc")!
+        return try! MLModel(contentsOf: url)
+    }()
 
     /// Method to run the depth request on an input UIImage and return the result via completion handler
     func processDepthImage(from inputImage: UIImage) -> UIImage? {
@@ -191,6 +206,78 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         return result
+    }
+    
+    func processSAMImage(from inputImage: UIImage) -> UIImage? {
+        do {
+            // Resize image to 256x256 (required by SAM2 Tiny)
+            guard let resizedImage = resizeImageForModel(inputImage, width: 1024, height: 1024) ,
+                  let pixelBuffer = pixelBuffer(from: resizedImage) else {
+                print("❌ Failed to preprocess image.")
+                return nil
+            }
+
+            // Use center click (normalized coordinates)
+            let centerX: Float = 512
+            let centerY: Float = 512
+            
+            guard let points = try? MLMultiArray(shape: [1, 1, 2], dataType: .float16),
+                  let labels = try? MLMultiArray(shape: [1, 1], dataType: .float16) else {
+                print("❌ Failed to create input arrays")
+                return nil
+            }
+            points[0] = centerX as NSNumber
+            points[1] = centerY as NSNumber
+            labels[0] = 1.0
+
+            // Run Image Encoder
+            let imageInput = try MLDictionaryFeatureProvider(dictionary: ["image": pixelBuffer])
+            let imageFeatures = try imageEncoder.prediction(from: imageInput)
+
+            // Run Prompt Encoder
+            let promptInput = try MLDictionaryFeatureProvider(dictionary: [
+                "points": points,
+                "labels": labels
+            ])
+            let promptFeatures = try promptEncoder.prediction(from: promptInput)
+
+            // Run Mask Decoder
+            let decoderInput = try MLDictionaryFeatureProvider(dictionary: [
+                "image_embedding": imageFeatures.featureValue(for: "image_embedding")!,
+                "sparse_embedding": promptFeatures.featureValue(for: "sparse_embeddings")!,
+                "dense_embedding": promptFeatures.featureValue(for: "dense_embeddings")!,
+                "feats_s0": imageFeatures.featureValue(for: "feats_s0")!,
+                "feats_s1": imageFeatures.featureValue(for: "feats_s1")!
+            ])
+            let maskOutput = try maskDecoder.prediction(from: decoderInput)
+            
+            // Log available outputs
+            for name in maskOutput.featureNames {
+                print("🧠 Decoder output available: \(name)")
+            }
+            
+            guard let maskArray = maskOutput.featureValue(for: "low_res_masks")?.multiArrayValue else {
+                print("❌ SAM decoder did not return 'low_res_masks' as MLMultiArray.")
+                return nil
+            }
+            
+            // Convert to grayscale image
+            let maskImage = multiArrayToGrayscaleImage(maskArray)
+
+            // Resize the mask to match the original input image size
+            if let maskImage = maskImage {
+                let resizedMask = UIGraphicsImageRenderer(size: inputImage.size).image { _ in
+                    maskImage.draw(in: CGRect(origin: .zero, size: inputImage.size))
+                }
+                return resizedMask
+            }
+
+            return nil
+
+        } catch {
+            print("❌ Failed to load SAM models: \(error)")
+            return nil
+        }
     }
     
     override func viewDidLoad() {
@@ -361,29 +448,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            return
 //        }
         
-        let resizedImage = resizeImageForModel(image)
-        let depthImage = processDepthImage(from: resizedImage!)
-        let resizedDepthImage = resizeDepthMap(depthImage!, to: image.size)
-        saveImageToGallery(resizedDepthImage!)
+        guard let samImage = processSAMImage(from: image) else {
+            print("❌ SAM model returned no mask output.")
+            self.view.showToast(message: "SAM failed to return a mask.")
+            return
+        }
+        saveImageToGallery(samImage)
         
-        
-//        processDepthImage(from: resizedImage!) { depthImage in
-//            let resizedDepthImage = resizeDepthMap(depthImage, to: image.size)
-//
-////            let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
-////            saveImageToGallery(thresholdedImage!)
-//            saveImageToGallery(resizedDepthImage!)
-//        }
-        
-        
-//        generatePersonMask(from: testImage!) { personMask in
-//            if let personMask = personMask {
-//                saveImageToGallery(personMask)
-//            }
-//        }
-        
-        
-        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: resizedDepthImage, debug: self.debugMode) else {
+        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: samImage, debug: self.debugMode) else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
                 completion()
@@ -921,4 +993,55 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
         }
     }
+}
+
+func multiArrayToGrayscaleImage(_ multiArray: MLMultiArray) -> UIImage? {
+    guard multiArray.dataType == .float16 || multiArray.dataType == .float32 else {
+        print("❌ Unsupported MultiArray data type")
+        return nil
+    }
+
+    let shape = multiArray.shape.map { $0.intValue }
+    guard shape.count >= 3 else {
+        print("❌ Unexpected shape for mask array")
+        return nil
+    }
+
+    let height = shape[shape.count - 2]
+    let width = shape[shape.count - 1]
+    let totalCount = width * height
+
+    let floatData: [Float]
+    if multiArray.dataType == .float16 {
+        floatData = (0..<totalCount).map {
+            Float(truncating: multiArray[$0] as NSNumber)
+        }
+    } else {
+        floatData = (0..<totalCount).map {
+            multiArray[$0].floatValue
+        }
+    }
+
+    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: totalCount)
+    for i in 0..<totalCount {
+        buffer[i] = UInt8(clamping: Int(floatData[i] * 255))
+    }
+
+    let grayColorSpace = CGColorSpaceCreateDeviceGray()
+    let context = CGContext(data: buffer,
+                            width: width,
+                            height: height,
+                            bitsPerComponent: 8,
+                            bytesPerRow: width,
+                            space: grayColorSpace,
+                            bitmapInfo: CGImageAlphaInfo.none.rawValue)
+
+    guard let cgImage = context?.makeImage() else {
+        buffer.deallocate()
+        return nil
+    }
+
+    let uiImage = UIImage(cgImage: cgImage)
+    buffer.deallocate()
+    return uiImage
 }

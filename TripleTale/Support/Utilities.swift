@@ -205,8 +205,8 @@ func getDepthValue(atX centerX: CGFloat, atY centerY: CGFloat, depthMap: UIImage
     }
 }
 
-func resizeImageForModel(_ image: UIImage) -> UIImage? {
-    let newSize = CGSize(width: 320, height: 320)
+func resizeImageForModel(_ image: UIImage, width: Int = 320, height: Int = 320) -> UIImage? {
+    let newSize = CGSize(width: width, height: height)
 
     // Resize the image to the new dimensions
     UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
@@ -300,13 +300,13 @@ func pixelBuffer(from image: UIImage) -> CVPixelBuffer? {
     let status = CVPixelBufferCreate(kCFAllocatorDefault,
                                      Int(frameSize.width),
                                      Int(frameSize.height),
-                                     kCVPixelFormatType_32ARGB, // Choose format appropriate for your depth data
+                                     kCVPixelFormatType_32BGRA, // Choose format appropriate for your depth data
                                      options as CFDictionary,
                                      &pixelBuffer)
 
     guard status == kCVReturnSuccess, let buffer = pixelBuffer else { return nil }
 
-    CVPixelBufferLockBaseAddress(buffer, .readOnly)
+    CVPixelBufferLockBaseAddress(buffer, CVPixelBufferLockFlags(rawValue: 0))
     let pixelData = CVPixelBufferGetBaseAddress(buffer)
 
     let colorSpace = CGColorSpaceCreateDeviceRGB()
@@ -319,8 +319,8 @@ func pixelBuffer(from image: UIImage) -> CVPixelBuffer? {
                             bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue)
 
     context?.draw(cgImage, in: CGRect(origin: .zero, size: frameSize))
-    CVPixelBufferUnlockBaseAddress(buffer, .readOnly)
-
+    CVPixelBufferUnlockBaseAddress(buffer, CVPixelBufferLockFlags(rawValue: 0))
+    
     return buffer
 }
 
