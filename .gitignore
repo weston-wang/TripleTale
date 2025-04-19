@@ -92,3 +92,4 @@ TripleTale/YOLOv3.mlmodel
 TripleTale/Resources/YOLOv3.mlmodel
 .DS_Store
 TripleTale/Resources/segmentationModel.mlmodel
+/TripleTale/Resources
