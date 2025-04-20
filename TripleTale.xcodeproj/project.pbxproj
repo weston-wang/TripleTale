@@ -12,6 +12,9 @@
 		4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB42C8B6493003F3F96 /* HandBoundingBoxDetector.swift */; };
 		4E5BC8AA2DB07D7400029715 /* TripleTaleV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E5BC8A92DB07D7400029715 /* TripleTaleV2.mlmodel */; };
 		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
+		4E8FB65B2DB4694B00C15E41 /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E8FB6582DB4694B00C15E41 /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage */; };
+		4E8FB65C2DB4694B00C15E41 /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E8FB65A2DB4694B00C15E41 /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage */; };
+		4E8FB65D2DB4694B00C15E41 /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E8FB6592DB4694B00C15E41 /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage */; };
 		4EA250AA2C88D31F00E671E7 /* DepthAnythingV2.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
 		4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */; };
@@ -41,6 +44,9 @@
 		4E53AF062D70393200873F4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4E5BC8A92DB07D7400029715 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
+		4E8FB6582DB4694B00C15E41 /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1BasePlusImageEncoderFLOAT16.mlpackage; sourceTree = "<group>"; };
+		4E8FB6592DB4694B00C15E41 /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage; sourceTree = "<group>"; };
+		4E8FB65A2DB4694B00C15E41 /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage; sourceTree = "<group>"; };
 		4EA250A92C88D31F00E671E7 /* DepthAnythingV2.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = DepthAnythingV2.mlpackage; sourceTree = "<group>"; };
 		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
 		4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessing.swift; sourceTree = "<group>"; };
@@ -122,6 +128,9 @@
 				4EFE9EA52DB42F0D00D8E2F8 /* SAM2_1TinyImageEncoderFLOAT16.mlpackage */,
 				4EFE9EA72DB42F0D00D8E2F8 /* SAM2_1TinyPromptEncoderFLOAT16.mlpackage */,
 				4EFE9EA62DB42F0D00D8E2F8 /* SAM2_1TinyMaskDecoderFLOAT16.mlpackage */,
+				4E8FB6582DB4694B00C15E41 /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage */,
+				4E8FB6592DB4694B00C15E41 /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage */,
+				4E8FB65A2DB4694B00C15E41 /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -228,6 +237,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4E8FB65B2DB4694B00C15E41 /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage in Sources */,
+				4E8FB65C2DB4694B00C15E41 /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage in Sources */,
+				4E8FB65D2DB4694B00C15E41 /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage in Sources */,
 				4EA91EB42C730CA1001ACC69 /* Utilities.swift in Sources */,
 				4EA91EBA2C730EBF001ACC69 /* Extensions.swift in Sources */,
 				4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */,
@@ -417,7 +429,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.6.0;
+				MARKETING_VERSION = 0.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletaleapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -455,7 +467,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.6.0;
+				MARKETING_VERSION = 0.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tripletale.tripletaleapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

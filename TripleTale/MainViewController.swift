@@ -164,17 +164,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var depthCompletionHandler: ((UIImage) -> Void)?
     
     private let imageEncoder: MLModel = {
-        let url = Bundle.main.url(forResource: "SAM2_1TinyImageEncoderFLOAT16", withExtension: "mlmodelc")!
+        let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
         return try! MLModel(contentsOf: url)
     }()
 
     private let promptEncoder: MLModel = {
-        let url = Bundle.main.url(forResource: "SAM2_1TinyPromptEncoderFLOAT16", withExtension: "mlmodelc")!
+        let url = Bundle.main.url(forResource: "SAM2_1BasePlusPromptEncoderFLOAT16", withExtension: "mlmodelc")!
         return try! MLModel(contentsOf: url)
     }()
 
     private let maskDecoder: MLModel = {
-        let url = Bundle.main.url(forResource: "SAM2_1TinyMaskDecoderFLOAT16", withExtension: "mlmodelc")!
+        let url = Bundle.main.url(forResource: "SAM2_1BasePlusMaskDecoderFLOAT16", withExtension: "mlmodelc")!
         return try! MLModel(contentsOf: url)
     }()
 
@@ -261,14 +261,34 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 return nil
             }
             
+            let scores = maskOutput.featureValue(for: "scores")!.multiArrayValue!
+            print("Mask scores: \(scores)")
+            print("Mask size: \(maskArray.shape)")
+            
+            // Create new MLMultiArray [1,1,256,256]
+            let totalPixels = 256 * 256
+            // Extract first mask at index 0
+            let startIndex = 2*256*256 // [1, 3, 256, 256] — first mask
+            let sliceValues = (0..<totalPixels).map { i in
+                maskArray[startIndex + i].floatValue
+            }
+            
+            guard let singleMask = try? MLMultiArray(shape: [1, 1, NSNumber(value: 256), NSNumber(value: 256)], dataType: .float16) else {
+                print("❌ Could not create reshaped MLMultiArray")
+                return nil
+            }
+            
+            // Fill it with the first mask's data
+            for i in 0..<totalPixels {
+                singleMask[i] = NSNumber(value: sliceValues[i])
+            }
+            
             // Convert to grayscale image
-            let maskImage = multiArrayToGrayscaleImage(maskArray)
+            let maskImage = multiArrayToGrayscaleImage(singleMask)
 
             // Resize the mask to match the original input image size
             if let maskImage = maskImage {
-                let resizedMask = UIGraphicsImageRenderer(size: inputImage.size).image { _ in
-                    maskImage.draw(in: CGRect(origin: .zero, size: inputImage.size))
-                }
+                let resizedMask = resizeImageForModel(maskImage, width: Int(inputImage.size.width), height: Int(inputImage.size.height))
                 return resizedMask
             }
 
@@ -437,7 +457,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-//        var testImage = UIImage(named: "Training_1")
+//        var testImage = UIImage(named: "16690")
 //        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
         
 //        guard let planeAnchor = self.firstPlaneAnchor else {
