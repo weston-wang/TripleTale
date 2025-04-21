@@ -210,3 +210,25 @@ func detectTopFaceBoundingBox(in image: UIImage) -> CGRect? {
     
     return topFaceRect
 }
+
+func fillHolesInMask(_ cgImage: CGImage) -> UIImage? {
+    let ciImage = CIImage(cgImage: cgImage)
+
+    // 1. Apply dilation (morphology maximum)
+    guard let dilate = CIFilter(name: "CIMorphologyMaximum") else { return nil }
+    dilate.setValue(ciImage, forKey: kCIInputImageKey)
+    dilate.setValue(1, forKey: kCIInputRadiusKey)
+    guard let dilated = dilate.outputImage else { return nil }
+
+    // 2. Apply erosion (morphology minimum)
+    guard let erode = CIFilter(name: "CIMorphologyMinimum") else { return nil }
+    erode.setValue(dilated, forKey: kCIInputImageKey)
+    erode.setValue(1, forKey: kCIInputRadiusKey)
+    guard let closed = erode.outputImage else { return nil }
+
+    // 3. Convert back to UIImage
+    let context = CIContext()
+    guard let outputCG = context.createCGImage(closed, from: closed.extent) else { return nil }
+
+    return UIImage(cgImage: outputCG)
+}
