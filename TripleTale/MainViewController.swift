@@ -163,19 +163,31 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     /// Completion handler that will return the depth image
     private var depthCompletionHandler: ((UIImage) -> Void)?
     
-    private let imageEncoder: MLModel = {
-        let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
-        return try! MLModel(contentsOf: url)
+    private lazy var imageEncoder: MLModel = {
+        do {
+            let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
+            return try MLModel(contentsOf: url)
+        } catch {
+            fatalError("❌ Failed to load image encoder: \(error)")
+        }
     }()
 
-    private let promptEncoder: MLModel = {
-        let url = Bundle.main.url(forResource: "SAM2_1BasePlusPromptEncoderFLOAT16", withExtension: "mlmodelc")!
-        return try! MLModel(contentsOf: url)
+    private lazy var promptEncoder: MLModel = {
+        do {
+            let url = Bundle.main.url(forResource: "SAM2_1BasePlusPromptEncoderFLOAT16", withExtension: "mlmodelc")!
+            return try MLModel(contentsOf: url)
+        } catch {
+            fatalError("❌ Failed to load prompt encoder: \(error)")
+        }
     }()
 
-    private let maskDecoder: MLModel = {
-        let url = Bundle.main.url(forResource: "SAM2_1BasePlusMaskDecoderFLOAT16", withExtension: "mlmodelc")!
-        return try! MLModel(contentsOf: url)
+    private lazy var maskDecoder: MLModel = {
+        do {
+            let url = Bundle.main.url(forResource: "SAM2_1BasePlusMaskDecoderFLOAT16", withExtension: "mlmodelc")!
+            return try MLModel(contentsOf: url)
+        } catch {
+            fatalError("❌ Failed to load mask decoder: \(error)")
+        }
     }()
 
     /// Method to run the depth request on an input UIImage and return the result via completion handler
@@ -302,6 +314,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Force eager loading of SAM models to avoid first-use latency or crash
+        _ = imageEncoder
+        _ = promptEncoder
+        _ = maskDecoder
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
@@ -331,7 +348,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Initial bracket update
         updateBracketSize()
         
-//        startMotionTracking() // ✅ Start monitoring tilt changes
+        startMotionTracking() // ✅ Start monitoring tilt changes
         // Hook up status view controller callback.
         statusViewController?.restartExperienceHandler = { [unowned self] in
             self.restartSession()
@@ -467,15 +484,26 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            }
 //            return
 //        }
-        
-        guard let samImage = processSAMImage(from: image) else {
-            print("❌ SAM model returned no mask output.")
-            self.view.showToast(message: "SAM failed to return a mask.")
-            return
+
+        let isFacingDown = UIDevice.current.orientation == .faceDown || UIDevice.current.orientation == .portraitUpsideDown
+        let ellipseVertices: [CGPoint]?
+        if isFacingDown {
+            print("FACING down")
+            ellipseVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode)
+        } else {
+            print("FACING forward")
+
+            guard let samImage = processSAMImage(from: image) else {
+                print("❌ SAM model returned no mask output.")
+                self.view.showToast(message: "SAM failed to return a mask.")
+                return
+            }
+            saveImageToGallery(samImage)
+
+            ellipseVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: samImage, debug: self.debugMode)
         }
-        saveImageToGallery(samImage)
-        
-        guard let normalizedVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: samImage, debug: self.debugMode) else {
+
+        guard let normalizedVertices = ellipseVertices else {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
                 completion()
