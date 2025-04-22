@@ -95,7 +95,7 @@ class BracketView: UIView {
         let imageY = rect.minY + bracketLength // Just below the top brackets
 
         imageView.frame = CGRect(x: imageX, y: imageY, width: imageSize.width, height: imageSize.height)
-        imageView.isHidden = false
+//        imageView.isHidden = false
         
         // Bottom upside-down "T" shape (shorter horizontal + vertical)
         path.move(to: CGPoint(x: tStartX, y: rect.maxY - verticalOffset)) // Horizontal part

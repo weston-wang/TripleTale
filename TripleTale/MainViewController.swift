@@ -35,8 +35,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
-    var lengthNudge: Double = 1.0
-    var widthNudge: Double = 1.0
+    var lengthNudge: Double = 2.0
+    var widthNudge: Double = 2.0
     var heightNudge: Double = 1.0
     
     var lengthAngleScale: Double = 1.0
@@ -54,6 +54,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var lastKnownRoll: Double = 0.0
     private var alignmentThreshold: Double = 75.0 // Degrees of tilt change allowed
     private var isReAligning = false
+    
+    private var isFacingForward = true
 
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
@@ -346,7 +348,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         startPlaneDetection()
 
         // Initial bracket update
-        updateBracketSize()
+//        updateBracketSize()
         
         startMotionTracking() // ✅ Start monitoring tilt changes
         // Hook up status view controller callback.
@@ -485,9 +487,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            return
 //        }
 
-        let isFacingDown = UIDevice.current.orientation == .faceDown || UIDevice.current.orientation == .portraitUpsideDown
         let ellipseVertices: [CGPoint]?
-        if isFacingDown {
+        if !isFacingForward {
             print("FACING down")
             ellipseVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode)
         } else {
@@ -589,13 +590,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         self.cameraButton = button
 
         // Add feedback label below the button
-        let label = UILabel(frame: CGRect(x: button.frame.minX, y: button.frame.maxY + 10, width: button.frame.width, height: 20))
-        label.text = "Initiating..."
-        label.textAlignment = .center
-        label.textColor = .gray
-        label.font = UIFont.systemFont(ofSize: 14)
-        view.addSubview(label)
-        self.feedbackLabel = label
+//        let label = UILabel(frame: CGRect(x: button.frame.minX, y: button.frame.maxY + 10, width: button.frame.width, height: 20))
+//        label.text = "Initiating..."
+//        label.textAlignment = .center
+//        label.textColor = .gray
+//        label.font = UIFont.systemFont(ofSize: 14)
+//        view.addSubview(label)
+//        self.feedbackLabel = label
     }
 
     private func setupClassifierLabel() {
@@ -835,14 +836,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             if isTrackingNormal && isPlaneAvailable {
                 self.cameraButton?.isEnabled = true
                 self.cameraButton?.alpha = 1.0
-                self.feedbackLabel?.text = "Ready"
-                self.feedbackLabel?.textColor = .green
+//                self.feedbackLabel?.text = "Ready"
+//                self.feedbackLabel?.textColor = .green
             } else {
                 print("tracking: \(isTrackingNormal), plane: \(isPlaneAvailable)")
                 self.cameraButton?.isEnabled = false
                 self.cameraButton?.alpha = 0.5
-                self.feedbackLabel?.text = "Reinitiating..."
-                self.feedbackLabel?.textColor = .gray
+//                self.feedbackLabel?.text = "Reinitiating..."
+//                self.feedbackLabel?.textColor = .gray
             }
         }
     }
@@ -860,45 +861,47 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let currentPitch = motion.attitude.pitch * (180.0 / .pi) // Convert to degrees
             let currentRoll = motion.attitude.roll * (180.0 / .pi)
 
-            let pitchDelta = abs(currentPitch - self.lastKnownPitch)
-            let rollDelta = abs(currentRoll - self.lastKnownRoll)
+//            let pitchDelta = abs(currentPitch - self.lastKnownPitch)
+//            let rollDelta = abs(currentRoll - self.lastKnownRoll)
+
+            self.isFacingForward = abs(currentPitch) > 60
 
             // Save new values
             self.lastKnownPitch = currentPitch
             self.lastKnownRoll = currentRoll
             
-            print("🚨 Detected device tilt: Pitch \(currentPitch), Roll \(currentRoll)")
-            
-            if let planeAnchor = firstPlaneAnchor {
-                let transform = planeAnchor.transform
-
-                // Extract rotation matrix
-                let r11 = transform.columns.0.x
-                let r21 = transform.columns.0.y
-                let r31 = transform.columns.0.z
-                let r32 = transform.columns.2.z
-                let r33 = transform.columns.2.y
-                
-                // Calculate Euler angles (roll, pitch, yaw)
-                let roll = atan2(r32, r33) * (180.0 / .pi)   // Rotation around X-axis
-                let pitch = atan2(-r31, sqrt(r11 * r11 + r21 * r21)) * (180.0 / .pi) // Rotation around Y-axis
-                
-                // Adjust plane tilt relative to current phone tilt
-//                let relativePitch = Double(pitch) - currentPitch
-//                let relativeRoll = Double(roll) - currentRoll
-                
-//                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
-//                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
-
-                print("🚨 Current relative tilt: Pitch \(pitch), Roll \(roll)")
-
-            }
-
-            // ✅ If the tilt exceeds threshold, trigger realignment
-            if (pitchDelta > self.alignmentThreshold || rollDelta > self.alignmentThreshold) {
-                print("🚨 Detected device tilt change: Pitch Δ\(pitchDelta), Roll Δ\(rollDelta)")
-                self.realignARSession()
-            }
+//            print("🚨 Detected device tilt: Pitch \(currentPitch), Roll \(currentRoll)")
+//            
+//            if let planeAnchor = firstPlaneAnchor {
+//                let transform = planeAnchor.transform
+//
+//                // Extract rotation matrix
+//                let r11 = transform.columns.0.x
+//                let r21 = transform.columns.0.y
+//                let r31 = transform.columns.0.z
+//                let r32 = transform.columns.2.z
+//                let r33 = transform.columns.2.y
+//                
+//                // Calculate Euler angles (roll, pitch, yaw)
+//                let roll = atan2(r32, r33) * (180.0 / .pi)   // Rotation around X-axis
+//                let pitch = atan2(-r31, sqrt(r11 * r11 + r21 * r21)) * (180.0 / .pi) // Rotation around Y-axis
+//                
+//                // Adjust plane tilt relative to current phone tilt
+////                let relativePitch = Double(pitch) - currentPitch
+////                let relativeRoll = Double(roll) - currentRoll
+//                
+////                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
+////                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
+//
+//                print("🚨 Current relative tilt: Pitch \(pitch), Roll \(roll)")
+//
+//            }
+//
+//            // ✅ If the tilt exceeds threshold, trigger realignment
+//            if (pitchDelta > self.alignmentThreshold || rollDelta > self.alignmentThreshold) {
+//                print("🚨 Detected device tilt change: Pitch Δ\(pitchDelta), Roll Δ\(rollDelta)")
+//                self.realignARSession()
+//            }
         }
     }
     
@@ -906,10 +909,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         guard !isReAligning else { return } // Prevent multiple triggers
         isReAligning = true
 
-        DispatchQueue.main.async {
-            self.feedbackLabel?.text = "Realigning..."
-            self.feedbackLabel?.textColor = .red
-        }
+//        DispatchQueue.main.async {
+//            self.feedbackLabel?.text = "Realigning..."
+//            self.feedbackLabel?.textColor = .red
+//        }
 
         print("🔄 Resetting AR tracking and realigning...")
         
@@ -927,11 +930,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-            self?.isReAligning = false
-            self?.feedbackLabel?.text = "Ready"
-            self?.feedbackLabel?.textColor = .green
-        }
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+//            self?.isReAligning = false
+//            self?.feedbackLabel?.text = "Ready"
+//            self?.feedbackLabel?.textColor = .green
+//        }
     }
     
     // 📌 Helper function to calculate distance from camera to plane
