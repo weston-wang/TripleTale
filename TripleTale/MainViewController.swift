@@ -603,27 +603,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let iconSize: CGFloat = 100
         let spacing: CGFloat = 8
 
-        // Icon
-        let iconImageView = UIImageView(image: UIImage(named: "bluefin"))
-        iconImageView.frame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
-        iconImageView.contentMode = .scaleAspectFit
-        view.addSubview(iconImageView)
-
         // Label: height matches icon, text vertically centered, large Georgia font
         let labelHeight = iconSize
-        let labelY = iconImageView.frame.origin.y
+        let labelY: CGFloat = 70
         let label = UILabel(frame: CGRect(x: 20 + iconSize + spacing, y: labelY, width: 260, height: labelHeight))
         label.textColor = .white
-        label.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        label.font = UIFont(name: "Georgia", size: 32)
+        label.backgroundColor = UIColor.black.withAlphaComponent(0.0)
+        label.font = UIFont(name: "Georgia-Bold", size: 32)
         label.textAlignment = .left
-        label.text = "Waiting for classification..."
+        label.text = ""
         label.adjustsFontSizeToFitWidth = true
         label.baselineAdjustment = .alignCenters
         label.numberOfLines = 1
         label.contentMode = .center
         label.clipsToBounds = true
-        // Vertically center text using attributed string baseline offset if needed (optional, but .alignCenters usually works)
         view.addSubview(label)
         self.classifierLabel = label
     }
@@ -983,11 +976,26 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         if self.identifierString.isEmpty || self.confidence < 0.01 {
             message = "None"
         } else {
-            message = String(format: "%@ %.0f%%", self.identifierString, self.confidence * 100)
+            message = String(format: "%@", self.identifierString)
+//            message = String(format: "%@ %.0f%%", self.identifierString, self.confidence * 100)
         }
 
         classifierLabel?.text = message
         statusViewController?.showMessage(message)
+
+        // Icon handling
+        let iconSize: CGFloat = 100
+        let iconFrame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
+
+        if let existingIcon = view.viewWithTag(9999) as? UIImageView {
+            existingIcon.image = UIImage(named: self.identifierString)
+        } else {
+            let iconImageView = UIImageView(image: UIImage(named: self.identifierString))
+            iconImageView.frame = iconFrame
+            iconImageView.contentMode = .scaleAspectFit
+            iconImageView.tag = 9999
+            view.addSubview(iconImageView)
+        }
     }
     
     private func detectCurrentImage() {
