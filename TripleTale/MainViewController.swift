@@ -355,6 +355,49 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         statusViewController?.restartExperienceHandler = { [unowned self] in
             self.restartSession()
         }
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDeviceOrientationChange),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func handleDeviceOrientationChange() {
+        let orientation = UIDevice.current.orientation
+        var angle: CGFloat = 0
+
+        switch orientation {
+        case .landscapeLeft:
+            angle = CGFloat.pi / 2
+        case .landscapeRight:
+            angle = -CGFloat.pi / 2
+        case .portraitUpsideDown:
+            angle = CGFloat.pi
+        case .portrait, .faceUp, .faceDown, .unknown:
+            angle = 0
+        default:
+            angle = 0
+        }
+
+        UIView.animate(withDuration: 0.3) {
+            self.cameraButton?.transform = CGAffineTransform(rotationAngle: angle)
+            self.classifierLabel?.transform = CGAffineTransform(rotationAngle: angle)
+            if let iconImageView = self.view.viewWithTag(9999) as? UIImageView {
+                iconImageView.transform = CGAffineTransform(rotationAngle: angle)
+                
+                // Reposition based on orientation
+                if orientation.isLandscape {
+                    let screenBounds = UIScreen.main.bounds
+                    iconImageView.frame.origin = CGPoint(x: screenBounds.width - iconImageView.frame.width - 20, y: 20)
+                    self.classifierLabel?.frame.origin = CGPoint(x: screenBounds.width - self.classifierLabel!.frame.width - 20, y: iconImageView.frame.maxY + 8)
+                } else {
+                    iconImageView.frame.origin = CGPoint(x: 20, y: 70)
+                    self.classifierLabel?.frame.origin = CGPoint(x: 20 + iconImageView.frame.width + 8, y: 70)
+                }
+            }
+        }
     }
     
     @objc private func handleTapGesture() {
@@ -876,7 +919,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            let pitchDelta = abs(currentPitch - self.lastKnownPitch)
 //            let rollDelta = abs(currentRoll - self.lastKnownRoll)
 
-            self.isFacingForward = abs(currentPitch) > 60
+            self.isFacingForward = abs(currentPitch) > 60 || abs(currentPitch) > 60
 
             // Save new values
             self.lastKnownPitch = currentPitch
@@ -984,7 +1027,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         statusViewController?.showMessage(message)
 
         // Icon handling
-        let iconSize: CGFloat = 100
+//        let iconSize: CGFloat = 100
+        let iconSize: CGFloat = 10
         let iconFrame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
 
         if let existingIcon = view.viewWithTag(9999) as? UIImageView {
@@ -994,6 +1038,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             iconImageView.frame = iconFrame
             iconImageView.contentMode = .scaleAspectFit
             iconImageView.tag = 9999
+            iconImageView.isHidden = true
             view.addSubview(iconImageView)
         }
     }
