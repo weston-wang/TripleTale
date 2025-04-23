@@ -211,7 +211,7 @@ extension UIImage {
         return UIGraphicsGetImageFromCurrentImageContext()
     }
     
-    func imageWithCenteredText(_ text: String, fontSize: CGFloat, textColor: UIColor) -> UIImage? {
+    func imageWithCenteredText(_ text: String, fontSize: CGFloat, textColor: UIColor, font: UIFont? = nil, verticalOffset: CGFloat? = nil) -> UIImage? {
         // Create a paragraph style with center alignment
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
@@ -223,9 +223,9 @@ extension UIImage {
         shadow.shadowOffset = CGSize(width: 2, height: 2)
         shadow.shadowBlurRadius = 1
         
-        
+        let textFont = font ?? UIFont.boldSystemFont(ofSize: fontSize)
         let textAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.boldSystemFont(ofSize: fontSize),
+            .font: textFont,
             .foregroundColor: textColor,
             .paragraphStyle: paragraphStyle,
             .strokeColor: UIColor.black, // Border color
@@ -252,7 +252,7 @@ extension UIImage {
         // Calculate the position to center the text
         let textPoint = CGPoint(
             x: (self.size.width - textSize.width) / 2,
-            y: (self.size.height - textSize.height) / 2
+            y: ((self.size.height - textSize.height) / 2) + (verticalOffset ?? 0)
         )
         
         // Define text rectangle

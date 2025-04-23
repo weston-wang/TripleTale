@@ -193,7 +193,7 @@ func generateResultImage(_ inputImage: UIImage,
     
     let rawLength = lengthInInches.value
     let roundedLength = floor(rawLength * 4) / 4.0
-    let formattedLength = String(format: "%.2f", rawLength)
+    let formattedLength = String(format: "%.2f", roundedLength)
 
     let formattedWeight = String(format: "%.2f", weightInLb.value)
     
@@ -210,15 +210,14 @@ func generateResultImage(_ inputImage: UIImage,
 //    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
 
 //    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb \n \(formattedLength) in", fontSize: 180, textColor: UIColor.white)
-//    let weightTextImage = inputImage.imageWithCenteredText("\(formattedLength) in", fontSize: 180, textColor: UIColor.white)
+    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white, font: UIFont(name: "Georgia-Bold", size: 200)!)
+    let lengthTextImage = weightTextImage!.imageWithCenteredText("\(formattedLength) in", fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Georgia-Bold", size: 150)!, verticalOffset: 200)
 
-    let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
-
-
-    let combinedImage = weightTextImage
+    let combinedImage = lengthTextImage
+    saveImageToGallery(combinedImage!)
 
     if debug {
+        let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
         let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
         
         //    let overlayImage = UIImage(named: "shimano_logo")!

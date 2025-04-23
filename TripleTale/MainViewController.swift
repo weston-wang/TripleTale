@@ -27,7 +27,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
-    private var debugMode: Bool = true
+    private var debugMode: Bool = false
 
     private var currentBuffer: CVPixelBuffer?
     private var isProcessingML = false
@@ -402,7 +402,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
               // Toggle debug options
               if debugMode {
                   // Enable debug mode
-                  sceneView.debugOptions = [.showFeaturePoints]
+                  sceneView.debugOptions = []
                   self.view.showToast(message: "Debug Mode ENABLED")
 
                   // Show debug nodes (mesh and spheres)
