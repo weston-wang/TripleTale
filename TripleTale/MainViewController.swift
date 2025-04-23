@@ -600,11 +600,30 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     private func setupClassifierLabel() {
-        let label = UILabel(frame: CGRect(x: 20, y: 70, width: 200, height: 20))
+        let iconSize: CGFloat = 100
+        let spacing: CGFloat = 8
+
+        // Icon
+        let iconImageView = UIImageView(image: UIImage(named: "bluefin"))
+        iconImageView.frame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
+        iconImageView.contentMode = .scaleAspectFit
+        view.addSubview(iconImageView)
+
+        // Label: height matches icon, text vertically centered, large Georgia font
+        let labelHeight = iconSize
+        let labelY = iconImageView.frame.origin.y
+        let label = UILabel(frame: CGRect(x: 20 + iconSize + spacing, y: labelY, width: 260, height: labelHeight))
         label.textColor = .white
         label.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        label.font = UIFont.systemFont(ofSize: 14)
+        label.font = UIFont(name: "Georgia", size: 32)
+        label.textAlignment = .left
         label.text = "Waiting for classification..."
+        label.adjustsFontSizeToFitWidth = true
+        label.baselineAdjustment = .alignCenters
+        label.numberOfLines = 1
+        label.contentMode = .center
+        label.clipsToBounds = true
+        // Vertically center text using attributed string baseline offset if needed (optional, but .alignCenters usually works)
         view.addSubview(label)
         self.classifierLabel = label
     }
@@ -871,7 +890,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self.lastKnownRoll = currentRoll
             
 //            print("🚨 Detected device tilt: Pitch \(currentPitch), Roll \(currentRoll)")
-//            
+//
 //            if let planeAnchor = firstPlaneAnchor {
 //                let transform = planeAnchor.transform
 //
@@ -881,15 +900,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //                let r31 = transform.columns.0.z
 //                let r32 = transform.columns.2.z
 //                let r33 = transform.columns.2.y
-//                
+//
 //                // Calculate Euler angles (roll, pitch, yaw)
 //                let roll = atan2(r32, r33) * (180.0 / .pi)   // Rotation around X-axis
 //                let pitch = atan2(-r31, sqrt(r11 * r11 + r21 * r21)) * (180.0 / .pi) // Rotation around Y-axis
-//                
+//
 //                // Adjust plane tilt relative to current phone tilt
 ////                let relativePitch = Double(pitch) - currentPitch
 ////                let relativeRoll = Double(roll) - currentRoll
-//                
+//
 ////                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
 ////                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
 //
