@@ -308,3 +308,36 @@ func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20
 
     return renderedImage
 }
+
+func createGridTexture(size: Int, gridColor: UIColor, backgroundColor: UIColor = .clear) -> UIImage {
+    let scale = UIScreen.main.scale
+    let gridSize = CGFloat(size)
+
+    UIGraphicsBeginImageContextWithOptions(CGSize(width: gridSize, height: gridSize), false, scale)
+    let context = UIGraphicsGetCurrentContext()!
+
+    // Fill the background with transparent color
+    context.setFillColor(backgroundColor.cgColor)
+    context.fill(CGRect(x: 0, y: 0, width: gridSize, height: gridSize))
+
+    // Draw vertical lines with semi-transparent grid color
+    context.setStrokeColor(gridColor.withAlphaComponent(0.5).cgColor) // Adjust alpha here
+    context.setLineWidth(2.0)
+    for x in stride(from: 0, to: Int(gridSize), by: size / 10) {
+        context.move(to: CGPoint(x: x, y: 0))
+        context.addLine(to: CGPoint(x: x, y: Int(gridSize)))
+    }
+
+    // Draw horizontal lines with semi-transparent grid color
+    for y in stride(from: 0, to: Int(gridSize), by: size / 10) {
+        context.move(to: CGPoint(x: 0, y: y))
+        context.addLine(to: CGPoint(x: Int(gridSize), y: y))
+    }
+
+    context.strokePath()
+
+    let image = UIGraphicsGetImageFromCurrentImageContext()!
+    UIGraphicsEndImageContext()
+
+    return image
+}

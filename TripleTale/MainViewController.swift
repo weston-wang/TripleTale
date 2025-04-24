@@ -14,17 +14,13 @@ import CoreMotion
 class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     var sceneView: ARSCNView!
-    var frameCounter = 0
     
     private var isProcessingCameraPress = false
     private var classifierLabel: UILabel?
     
     // Labels for classified objects by ARAnchor UUID
     private var anchorLabels = [UUID: String]()
-    
-    private var planeDetectionTimer: Timer?
-    private var detectedPlanes: [UUID: ARPlaneAnchor] = [:] // Store multiple planes
-    
+        
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
     private var debugMode: Bool = false
@@ -50,22 +46,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var boundingBox: CGRect?
     
     private var motionManager = CMMotionManager()
-    private var lastKnownPitch: Double = 0.0
-    private var lastKnownRoll: Double = 0.0
-    private var alignmentThreshold: Double = 75.0 // Degrees of tilt change allowed
-    private var isReAligning = false
-    
     private var isFacingForward = true
 
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
     
-    private var bracketView: BracketView?
     private var imagePortion: CGFloat = 1.0
     
-    private var firstPlaneAnchor: ARPlaneAnchor?
-    private var isGroundPlaneDetected = true
-
     // Queue for dispatching vision classification requests
     private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
     
@@ -93,11 +80,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
                 if let result = processObservations(for: request, error: error) {
                     DispatchQueue.main.async {
-                        self?.handleResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
+                        self?.handleClassificationResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self?.handleResult(identifier: "", confidence: 0, boundingBox: nil)
+                        self?.handleClassificationResult(identifier: "", confidence: 0, boundingBox: nil)
                     }
                 }
             })
@@ -112,59 +99,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private lazy var statusViewController: StatusViewController? = {
         return children.lazy.compactMap { $0 as? StatusViewController }.first
     }()
-    
-    // The pixel buffer being held for analysis; used to serialize Vision requests.
-    private var depthImage: UIImage?
-//    private var visionQueue = DispatchQueue(label: "com.tripleTale.visionQueue")
 
-    private var depthQueue = DispatchQueue(label: "com.tripleTale.depthQueue")
-
-    /// The ML model to be used for detection of fish
-    private var depthModel: segmentationModel = {
-        do {
-            let configuration = MLModelConfiguration()
-            return try segmentationModel(configuration: configuration)
-        } catch {
-            fatalError("Couldn't create DepthAnythingV2 due to: \(error)")
-        }
-    }()
-    
-    /// Vision CoreML request for processing depth data
-    private lazy var depthRequest: VNCoreMLRequest = {
-        do {
-            // Instantiate the model from its generated Swift class.
-            let model = try VNCoreMLModel(for: depthModel.model)
-            let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-                guard let self = self else { return }
-                if let error = error {
-                    print("Error in depth request: \(error)")
-                    return
-                }
-                
-                guard let results = request.results as? [VNPixelBufferObservation],
-                      let depthMap = results.first?.pixelBuffer else {
-                    print("No depth map found")
-                    return
-                }
-
-                // Convert depth map (CVPixelBuffer) to UIImage
-                let depthImage = depthPixelBufferToUIImage(pixelBuffer: depthMap)
-                
-                // Instead of processing directly, return the depth image through the completion handler
-                if let depthImage = depthImage {
-                    self.depthCompletionHandler?(depthImage)
-                }
-            })
-            
-            return request
-        } catch {
-            fatalError("Failed to load Vision ML model: \(error)")
-        }
-    }()
-
-    /// Completion handler that will return the depth image
-    private var depthCompletionHandler: ((UIImage) -> Void)?
-    
     private lazy var imageEncoder: MLModel = {
         do {
             let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
@@ -191,36 +126,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             fatalError("❌ Failed to load mask decoder: \(error)")
         }
     }()
-
-    /// Method to run the depth request on an input UIImage and return the result via completion handler
-    func processDepthImage(from inputImage: UIImage) -> UIImage? {
-        guard let cgImage = inputImage.cgImage else {
-            print("Unable to convert UIImage to CGImage")
-            return nil
-        }
-        
-        var result: UIImage?
-        
-        guard let inputArray = cgImageToMultiArray(cgImage) else {
-            print("Failed to convert image to MLMultiArray")
-            return nil
-        }
-        
-        do {
-            let modelInput = segmentationModelInput(inputs: inputArray)
-            let prediction = try depthModel.prediction(input: modelInput)
-            let outputMultiArray = prediction.var_785
-            
-            if let testImage = softmaxClassMaskToBinaryImage(outputMultiArray) {
-                result = testImage
-            }
-        } catch {
-            print("Prediction or conversion failed: \(error)")
-            return nil
-        }
-        
-        return result
-    }
     
     func processSAMImage(from inputImage: UIImage) -> UIImage? {
         do {
@@ -324,15 +229,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
-//        if debugMode {
-//            sceneView.debugOptions = [.showFeaturePoints]
-//        }
         view.addSubview(sceneView)
-
-        // Add the bracket view to the main view
-        bracketView = BracketView(frame: view.bounds)
-        bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
-        view.addSubview(bracketView!)
         
         // Create a transparent view for the bottom left corner
         createCornerView(withSize: 100)
@@ -345,12 +242,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         setupClassifierLabel()
 
         // Start AR
-        startPlaneDetection()
+        startSession()
 
-        // Initial bracket update
-//        updateBracketSize()
+        // Start monitoring tilt changes
+        startMotionTracking()
         
-        startMotionTracking() // ✅ Start monitoring tilt changes
         // Hook up status view controller callback.
         statusViewController?.restartExperienceHandler = { [unowned self] in
             self.restartSession()
@@ -491,45 +387,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
 
-    
-//            if let inputImage = image.downscale(to: 1280) {
-//                let resizedImage = resizeImageForModel(inputImage)
-//                processDepthImage(from: resizedImage!) { depthImage in
-//                    let resizedDepthImage = resizeDepthMap(depthImage, to: inputImage.size)
-//
-//                    let thresholdedImage = thresholdImage(resizedDepthImage!, threshold: 255 * 0.85)
-//                    saveImageToGallery(thresholdedImage!)
-//                    saveImageToGallery(resizedDepthImage!)
-//                }
-//            }
-    
-    @objc private func showPlaneDetectionHint() {
-        DispatchQueue.main.async {
-            let isLidarAvailable = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
-
-            if !self.isGroundPlaneDetected {
-                let message = isLidarAvailable ?
-                    "Try slowly moving your phone to help detect the ground." :
-                    "Your device doesn't have LiDAR. Try moving the phone more and pointing at a textured surface."
-
-                self.showPopupMessage(title: "Move Your Phone", message: message)
-            }
-        }
-    }
-    
-
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-//        var testImage = UIImage(named: "16690")
-//        var testVertices = findEllipseVertices(from: testImage!, for: self.imagePortion, debug: true)
-        
-//        guard let planeAnchor = self.firstPlaneAnchor else {
-//            DispatchQueue.main.async {
-//                self.showPopupMessage(title: "Error", message: "No detected ground plane. Please scan the area again.")
-//                completion()
-//            }
-//            return
-//        }
-
         let ellipseVertices: [CGPoint]?
         if !isFacingForward {
             print("FACING down")
@@ -555,17 +413,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
 
-//        let (verticesAnchors,
-//             centroidAboveAnchor,
-//             centroidBelowAnchor,
-//             cornerAnchors) = buildRealWorldVerticesAnchors(self.sceneView,
-//                                                            normalizedVertices,
-//                                                            image.size,
-//                                                            planeAnchor)
-        
         let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
 
-//        if verticesAnchors.isEmpty || cornerAnchors.isEmpty || centroidAboveAnchor == nil || centroidBelowAnchor == nil {
         if verticesAnchors.count < 4 {
             DispatchQueue.main.async {
                 self.showPopupMessage(title: "Error", message: "Failed to place anchors properly.")
@@ -575,18 +424,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
 
         var (width, length) = measureVertices(verticesAnchors)
-//        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, centroidBelowAnchor!)
-//        var height = measureHeight(cornerAnchors, centroidAboveAnchor!, planeAnchor)
         let height: Float = 0.0
         
         length *= Float(self.lengthNudge)
         width *= Float(self.widthNudge)
-//        height *= Float(self.heightNudge)
 
         length *= Float(self.lengthAngleScale)
         width *= Float(self.widthAngleScale)
         
-//        let girth = calculateCircumference(majorAxis: width, minorAxis: height)
         let girth = width * Float(self.bodyRatio)
 
         let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
@@ -631,19 +476,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         view.addSubview(button)
         self.cameraButton = button
-
-        // Add feedback label below the button
-//        let label = UILabel(frame: CGRect(x: button.frame.minX, y: button.frame.maxY + 10, width: button.frame.width, height: 20))
-//        label.text = "Initiating..."
-//        label.textAlignment = .center
-//        label.textColor = .gray
-//        label.font = UIFont.systemFont(ofSize: 14)
-//        view.addSubview(label)
-//        self.feedbackLabel = label
     }
 
     private func setupClassifierLabel() {
-        let iconSize: CGFloat = 100
+        let iconSize: CGFloat = 50
         let spacing: CGFloat = 8
 
         // Label: height matches icon, text vertically centered, large Georgia font
@@ -694,25 +530,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         view.addSubview(cornerView)
     }
     
-    func updateBracketSize() {
-        guard let bracketView = bracketView else { return }
-             
-        imagePortion = 0.85
-        
-        let width = view.bounds.width * imagePortion // Example size for not forward-facing, adjust as needed
-        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
-    
-        let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
-        bracketView.updateBracket(rect: rect)
-    }
-    
-    func startPlaneDetection() {
-
-//        if let featurePoints = sceneView.session.currentFrame?.rawFeaturePoints?.points, featurePoints.count < 30 {
-//            print("🚨 Not enough feature points! Ask user to scan more.")
-//            showPlaneDetectionHint()
-//        }
-        
+    func startSession() {
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .camera // Ensures detected plane aligns with camera
         configuration.planeDetection = .horizontal
@@ -720,10 +538,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-
-        // Cancel any existing timer and start a new one
-        planeDetectionTimer?.invalidate()
-        planeDetectionTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(showPlaneDetectionHint), userInfo: nil, repeats: false)
     }
     
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
@@ -734,83 +548,22 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        // If it's a plane anchor, process only the first plane
-        if let planeAnchor = anchor as? ARPlaneAnchor, planeAnchor.alignment == .horizontal {
-            detectedPlanes[planeAnchor.identifier] = planeAnchor
+        // Add a red sphere for all other anchors
+        let sphere = SCNSphere(radius: 0.002) // Small red sphere
+        sphere.firstMaterial?.diffuse.contents = UIColor.red
 
-            // Select the closest plane dynamically
-            firstPlaneAnchor = detectedPlanes.values.min(by: { distanceToCamera($0) < distanceToCamera($1) })
-            isGroundPlaneDetected = true
-            DispatchQueue.main.async { [weak self] in self?.updateCameraButtonState() }
-
-            // ✅ Draw plane for every detected plane (instead of only the first one)
-            let planeGeometry = ARSCNPlaneGeometry(device: sceneView.device!)
-            planeGeometry?.update(from: planeAnchor.geometry)
-
-            let gridMaterial = SCNMaterial()
-            gridMaterial.diffuse.contents = createGridTexture(size: 1024, gridColor: UIColor.green.withAlphaComponent(0.3), backgroundColor: .clear)
-            gridMaterial.isDoubleSided = true
-            planeGeometry?.materials = [gridMaterial]
-
-            let meshNode = SCNNode(geometry: planeGeometry)
-            meshNode.name = planeAnchor.identifier.uuidString // Tag the node for tracking
-            meshNode.isHidden = true
-            
-            node.addChildNode(meshNode)
-            // ✅ Cancel the hint popup since a plane is found
-            planeDetectionTimer?.invalidate()
-        } else {
-            // Add a red sphere for all other anchors
-            let sphere = SCNSphere(radius: 0.002) // Small red sphere
-            sphere.firstMaterial?.diffuse.contents = UIColor.red
-
-            let sphereNode = SCNNode(geometry: sphere)
-            sphereNode.isHidden = !debugMode
-            
-            node.addChildNode(sphereNode)
-            
-            debugNodes.append(sphereNode)
-        }
+        let sphereNode = SCNNode(geometry: sphere)
+        sphereNode.isHidden = !debugMode
+        
+        node.addChildNode(sphereNode)
+        
+        debugNodes.append(sphereNode)
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
-        if let planeAnchor = anchor as? ARPlaneAnchor {
-            detectedPlanes[planeAnchor.identifier] = planeAnchor
-
-            // ✅ Update firstPlaneAnchor dynamically
-            firstPlaneAnchor = detectedPlanes.values.min(by: { distanceToCamera($0) < distanceToCamera($1) })
-
-            // ✅ Update the correct plane geometry (look for the node with matching identifier)
-            for child in node.childNodes {
-                if let planeGeometry = child.geometry as? ARSCNPlaneGeometry, child.name == planeAnchor.identifier.uuidString {
-                    planeGeometry.update(from: planeAnchor.geometry)
-                }
-            }
-        }
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
-        if let planeAnchor = anchor as? ARPlaneAnchor {
-            detectedPlanes.removeValue(forKey: planeAnchor.identifier)
-
-            // ✅ If the removed plane was firstPlaneAnchor, pick a new closest one
-            if planeAnchor.identifier == firstPlaneAnchor?.identifier {
-                firstPlaneAnchor = detectedPlanes.values.min(by: { distanceToCamera($0) < distanceToCamera($1) })
-                isGroundPlaneDetected = (firstPlaneAnchor != nil)
-            }
-
-            // ✅ Remove only the corresponding plane visualization
-            node.childNodes.forEach { child in
-                if child.name == planeAnchor.identifier.uuidString {
-                    child.removeFromParentNode()
-                }
-            }
-            
-            DispatchQueue.main.async { [weak self] in
-                self?.updateCameraButtonState()
-                self?.realignARSession()
-            }
-        }
     }
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
@@ -828,9 +581,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         lastMLTimestamp = time
 
         // Optional: Save image for inspection
-//        self.saveImage = pixelBufferToUIImage(pixelBuffer: pixelBuffer)
-
-        // Store buffer for detectCurrentImage
         self.currentBuffer = pixelBuffer
 
         detectCurrentImage()
@@ -847,58 +597,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         print("Frame updated at: \(frame.timestamp)")
     }
-    
-    func createGridTexture(size: Int, gridColor: UIColor, backgroundColor: UIColor = .clear) -> UIImage {
-        let scale = UIScreen.main.scale
-        let gridSize = CGFloat(size)
 
-        UIGraphicsBeginImageContextWithOptions(CGSize(width: gridSize, height: gridSize), false, scale)
-        let context = UIGraphicsGetCurrentContext()!
-
-        // Fill the background with transparent color
-        context.setFillColor(backgroundColor.cgColor)
-        context.fill(CGRect(x: 0, y: 0, width: gridSize, height: gridSize))
-
-        // Draw vertical lines with semi-transparent grid color
-        context.setStrokeColor(gridColor.withAlphaComponent(0.5).cgColor) // Adjust alpha here
-        context.setLineWidth(2.0)
-        for x in stride(from: 0, to: Int(gridSize), by: size / 10) {
-            context.move(to: CGPoint(x: x, y: 0))
-            context.addLine(to: CGPoint(x: x, y: Int(gridSize)))
-        }
-
-        // Draw horizontal lines with semi-transparent grid color
-        for y in stride(from: 0, to: Int(gridSize), by: size / 10) {
-            context.move(to: CGPoint(x: 0, y: y))
-            context.addLine(to: CGPoint(x: Int(gridSize), y: y))
-        }
-
-        context.strokePath()
-
-        let image = UIGraphicsGetImageFromCurrentImageContext()!
-        UIGraphicsEndImageContext()
-
-        return image
-    }
     
     private func updateCameraButtonState() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
             let isTrackingNormal = self.sceneView.session.currentFrame?.camera.trackingState == .normal
-            let isPlaneAvailable = self.isGroundPlaneDetected
 
-            if isTrackingNormal && isPlaneAvailable {
+            if isTrackingNormal {
                 self.cameraButton?.isEnabled = true
                 self.cameraButton?.alpha = 1.0
-//                self.feedbackLabel?.text = "Ready"
-//                self.feedbackLabel?.textColor = .green
             } else {
-                print("tracking: \(isTrackingNormal), plane: \(isPlaneAvailable)")
+                print("tracking: \(isTrackingNormal)")
                 self.cameraButton?.isEnabled = false
                 self.cameraButton?.alpha = 0.5
-//                self.feedbackLabel?.text = "Reinitiating..."
-//                self.feedbackLabel?.textColor = .gray
             }
         }
     }
@@ -916,94 +629,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let currentPitch = motion.attitude.pitch * (180.0 / .pi) // Convert to degrees
             let currentRoll = motion.attitude.roll * (180.0 / .pi)
 
-//            let pitchDelta = abs(currentPitch - self.lastKnownPitch)
-//            let rollDelta = abs(currentRoll - self.lastKnownRoll)
-
             self.isFacingForward = abs(currentPitch) > 60 || abs(currentPitch) > 60
-
-            // Save new values
-            self.lastKnownPitch = currentPitch
-            self.lastKnownRoll = currentRoll
-            
-//            print("🚨 Detected device tilt: Pitch \(currentPitch), Roll \(currentRoll)")
-//
-//            if let planeAnchor = firstPlaneAnchor {
-//                let transform = planeAnchor.transform
-//
-//                // Extract rotation matrix
-//                let r11 = transform.columns.0.x
-//                let r21 = transform.columns.0.y
-//                let r31 = transform.columns.0.z
-//                let r32 = transform.columns.2.z
-//                let r33 = transform.columns.2.y
-//
-//                // Calculate Euler angles (roll, pitch, yaw)
-//                let roll = atan2(r32, r33) * (180.0 / .pi)   // Rotation around X-axis
-//                let pitch = atan2(-r31, sqrt(r11 * r11 + r21 * r21)) * (180.0 / .pi) // Rotation around Y-axis
-//
-//                // Adjust plane tilt relative to current phone tilt
-////                let relativePitch = Double(pitch) - currentPitch
-////                let relativeRoll = Double(roll) - currentRoll
-//
-////                lengthAngleScale = abs(cos(relativePitch * .pi / 180))
-////                widthAngleScale = abs(cos(relativeRoll * .pi / 180))
-//
-//                print("🚨 Current relative tilt: Pitch \(pitch), Roll \(roll)")
-//
-//            }
-//
-//            // ✅ If the tilt exceeds threshold, trigger realignment
-//            if (pitchDelta > self.alignmentThreshold || rollDelta > self.alignmentThreshold) {
-//                print("🚨 Detected device tilt change: Pitch Δ\(pitchDelta), Roll Δ\(rollDelta)")
-//                self.realignARSession()
-//            }
         }
-    }
-    
-    private func realignARSession() {
-        guard !isReAligning else { return } // Prevent multiple triggers
-        isReAligning = true
-
-//        DispatchQueue.main.async {
-//            self.feedbackLabel?.text = "Realigning..."
-//            self.feedbackLabel?.textColor = .red
-//        }
-
-        print("🔄 Resetting AR tracking and realigning...")
-        
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.worldAlignment = .camera // Keep boat-relative alignment
-        configuration.planeDetection = .horizontal
-        configuration.isLightEstimationEnabled = true
-        configuration.isAutoFocusEnabled = true
-        
-        // ✅ Clear debug nodes before resetting tracking
-        for node in debugNodes {
-            node.removeFromParentNode()
-        }
-        debugNodes.removeAll()
-
-        sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-//            self?.isReAligning = false
-//            self?.feedbackLabel?.text = "Ready"
-//            self?.feedbackLabel?.textColor = .green
-//        }
     }
     
     // 📌 Helper function to calculate distance from camera to plane
-    private func distanceToCamera(_ planeAnchor: ARPlaneAnchor) -> Float {
-        guard let frame = sceneView.session.currentFrame else { return Float.greatestFiniteMagnitude }
-        let cameraPosition = frame.camera.transform.columns.3 // Camera position in world space
-        let planePosition = planeAnchor.transform.columns.3
-        let dx = cameraPosition.x - planePosition.x
-        let dy = cameraPosition.y - planePosition.y
-        let dz = cameraPosition.z - planePosition.z
-        return sqrt(dx * dx + dy * dy + dz * dz)
-    }
-
-    func handleResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
+    func handleClassificationResult(identifier: String, confidence: VNConfidence, boundingBox: CGRect?) {
         // Update your UI or perform other actions with the identifier, confidence, and boundingBox
         self.identifierString = identifier
         self.confidence = confidence
@@ -1020,15 +651,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             message = "None"
         } else {
             message = String(format: "%@", self.identifierString)
-//            message = String(format: "%@ %.0f%%", self.identifierString, self.confidence * 100)
         }
 
         classifierLabel?.text = message
         statusViewController?.showMessage(message)
 
         // Icon handling
-//        let iconSize: CGFloat = 100
-        let iconSize: CGFloat = 10
+        let iconSize: CGFloat = 50
         let iconFrame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
 
         if let existingIcon = view.viewWithTag(9999) as? UIImageView {
@@ -1070,50 +699,5 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         let configuration = ARWorldTrackingConfiguration()
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-    }
-    
-    func generatePersonMask(from image: UIImage, completion: @escaping (UIImage?) -> Void) {
-        guard let cgImage = image.cgImage else {
-            print("Failed to convert UIImage to CGImage")
-            completion(nil)
-            return
-        }
- 
-        let request = VNGeneratePersonSegmentationRequest()
-        request.qualityLevel = .accurate
-        request.outputPixelFormat = kCVPixelFormatType_OneComponent8
- 
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
- 
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try handler.perform([request])
-                guard let pixelBuffer = request.results?.first?.pixelBuffer else {
-                    print("No person mask generated")
-                    DispatchQueue.main.async { completion(nil) }
-                    return
-                }
- 
-                // Convert the pixel buffer to UIImage
-                let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-                let context = CIContext()
-                if let cgMask = context.createCGImage(ciImage, from: ciImage.extent) {
-                    let maskImage = UIImage(cgImage: cgMask)
-                    DispatchQueue.main.async {
-                        completion(maskImage)
-                    }
-                } else {
-                    print("Failed to create CGImage from CIImage")
-                    DispatchQueue.main.async {
-                        completion(nil)
-                    }
-                }
-            } catch {
-                print("Vision request failed: \(error)")
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
-            }
-        }
     }
 }
