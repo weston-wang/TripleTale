@@ -629,7 +629,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let currentPitch = motion.attitude.pitch * (180.0 / .pi) // Convert to degrees
             let currentRoll = motion.attitude.roll * (180.0 / .pi)
 
-            self.isFacingForward = abs(currentPitch) > 60 || abs(currentPitch) > 60
+            self.isFacingForward = abs(currentPitch) > 60 || abs(currentRoll) > 60
         }
     }
     
