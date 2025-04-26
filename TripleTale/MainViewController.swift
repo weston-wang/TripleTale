@@ -23,7 +23,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
-    private var debugMode: Bool = false
+    private var debugMode: Bool = true
 
     private var currentBuffer: CVPixelBuffer?
     private var isProcessingML = false
@@ -548,16 +548,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        // Add a red sphere for all other anchors
-        let sphere = SCNSphere(radius: 0.002) // Small red sphere
-        sphere.firstMaterial?.diffuse.contents = UIColor.red
-
-        let sphereNode = SCNNode(geometry: sphere)
-        sphereNode.isHidden = !debugMode
-        
-        node.addChildNode(sphereNode)
-        
-        debugNodes.append(sphereNode)
+        if let planeAnchor = anchor as? ARPlaneAnchor {
+        } else{
+            // Add a red sphere for all other anchors
+            let sphere = SCNSphere(radius: 0.002) // Small red sphere
+            sphere.firstMaterial?.diffuse.contents = UIColor.red
+            
+            let sphereNode = SCNNode(geometry: sphere)
+            sphereNode.isHidden = !debugMode
+            
+            node.addChildNode(sphereNode)
+            
+            debugNodes.append(sphereNode)
+        }
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {

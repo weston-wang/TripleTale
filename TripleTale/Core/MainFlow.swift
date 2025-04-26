@@ -75,8 +75,15 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: 
     let height = cgImage.height
     let (contours, _) = extractContours(from: pixelData, width: width, height: height)
     
+    print("number of contours: \(contours.count)")
+    
+    // Merge vertical contours if needed
+//    let mergedContour = mergeVerticalContours(contours: contours)
+    
     // find center contour
     guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
+    
+//    print("closest contour size: \(closestContour.count), merged contour size: \(mergedContour.count)")
     
     // fit ellipse
     guard let ellipse = fitEllipseMinimax(to: closestContour) else { return nil }
@@ -459,4 +466,39 @@ func performPCA(on points: [CGPoint]) -> (direction: CGPoint, eigenvalues: (CGFl
     }
 
     return (majorDirection, (lambda1, lambda2))
+}
+
+/// Merge multiple contours that are roughly aligned on the same vertical line into a single contour
+func mergeVerticalContours(contours: [[CGPoint]], xTolerance: CGFloat = 200.0) -> [CGPoint] {
+    guard !contours.isEmpty else { return [] }
+    
+    // Calculate the average x for each contour
+    let averageXs = contours.map { contour in
+        contour.map { $0.x }.reduce(0, +) / CGFloat(contour.count)
+    }
+    
+    // Group contours by proximity in x (within xTolerance)
+    var groupedContours: [[CGPoint]] = []
+    var used = Array(repeating: false, count: contours.count)
+    
+    for (i, avgX) in averageXs.enumerated() {
+        guard !used[i] else { continue }
+        
+        var group: [CGPoint] = contours[i]
+        used[i] = true
+        
+        for j in (i+1)..<averageXs.count {
+            if !used[j], abs(averageXs[j] - avgX) <= xTolerance {
+                group.append(contentsOf: contours[j])
+                used[j] = true
+            }
+        }
+        
+        groupedContours.append(group)
+    }
+    
+    // Choose the largest group (or merge all if preferred)
+    let largestGroup = groupedContours.max(by: { $0.count < $1.count }) ?? []
+    
+    return largestGroup
 }
