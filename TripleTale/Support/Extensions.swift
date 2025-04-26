@@ -317,6 +317,30 @@ extension UIImage {
         return imageWithBoundingBox
     }
     
+    func rotate(radians: CGFloat) -> UIImage? {
+        var newSize = CGRect(origin: .zero, size: self.size)
+            .applying(CGAffineTransform(rotationAngle: radians))
+            .integral.size
+
+        // Fix for images that are rotated 90 or 270 degrees
+        if radians == .pi/2 || radians == -.pi/2 {
+            newSize = CGSize(width: newSize.height, height: newSize.width)
+        }
+
+        UIGraphicsBeginImageContextWithOptions(newSize, false, self.scale)
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+
+        context.translateBy(x: newSize.width/2, y: newSize.height/2)
+        context.rotate(by: radians)
+        self.draw(in: CGRect(x: -self.size.width/2, y: -self.size.height/2,
+                             width: self.size.width, height: self.size.height))
+
+        let rotatedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return rotatedImage
+    }
+    
     func rotated(byDegrees degrees: CGFloat) -> UIImage? {
         let radians = degrees * (.pi / 180)
         

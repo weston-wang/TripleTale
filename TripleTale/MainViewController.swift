@@ -379,6 +379,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     self?.isProcessingCameraPress = false
                 }
             }
+            
+//            if let cameraImage = captureRawCameraImage(from: sceneView) {
+//                saveImageToGallery(cameraImage)
+//            }
         } else {
             self.view.showToast(message: "Could not capture image from scene!")
             isProcessingCameraPress = false
@@ -541,6 +545,26 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Capture the current view as a UIImage
         let image = arSCNView.snapshot()
         return image
+    }
+    
+    func captureRawCameraImage(from arSCNView: ARSCNView) -> UIImage? {
+        guard let pixelBuffer = arSCNView.session.currentFrame?.capturedImage else {
+            print("❌ Failed to get captured image from current AR frame.")
+            return nil
+        }
+
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let context = CIContext()
+
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            print("❌ Failed to create CGImage from CIImage.")
+            return nil
+        }
+
+        let rawImage = UIImage(cgImage: cgImage)
+        
+        // Always rotate 90 degrees clockwise to match screen
+        return rawImage.rotate(radians: .pi / 2)
     }
     
     // This method is called whenever an ARAnchor is added to the session
