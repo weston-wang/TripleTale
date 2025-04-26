@@ -50,7 +50,6 @@ func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> ([CGP
         let maskUiImage = maskImage.toUIImage()!
         let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
         
-        saveImageToGallery(image)
         saveImageToGallery(resultImage!)
     }
     
@@ -78,17 +77,17 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: 
     print("number of contours: \(contours.count)")
     
     // Merge vertical contours if needed
-//    let mergedContour = mergeVerticalContours(contours: contours)
+    let mergedContour = mergeVerticalContours(contours: contours)
     
     // find center contour
-    guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
+//    guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
     
 //    print("closest contour size: \(closestContour.count), merged contour size: \(mergedContour.count)")
     
     // fit ellipse
-    guard let ellipse = fitEllipseMinimax(to: closestContour) else { return nil }
+    guard let ellipse = fitEllipseMinimax(to: mergedContour) else { return nil }
 
-    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: closestContour, extendPercentage: 25) else {
+    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: mergedContour, extendPercentage: 25) else {
         print("Error: Failed to find ellipse axis intersections.")
         return nil
     }
@@ -103,10 +102,10 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: 
         
         let ellipseImage = drawEllipse(on: image, ellipse: (center: ellipse.center, size: size, rotationInDegrees: ellipse.rotationInDegrees), tips: tips)
 
-        let perimeter = marchingSquares(from: closestContour)
+        let perimeter = marchingSquares(from: mergedContour)
         let perimImage = drawPerimeterDots(on: ellipseImage!, perimeter: perimeter)
 
-        let pcaPoints = findFishTips(from: closestContour)
+        let pcaPoints = findFishTips(from: mergedContour)
         let lineImage = drawDotsAndLine(on: perimImage!, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
         
         let vertImage = drawDotsAndLine(on: lineImage!, points: [intersections[1], intersections[3]], dotColor:UIColor.yellow, lineColor: UIColor.black)

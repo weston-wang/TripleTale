@@ -50,9 +50,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     private var cameraButton: UIButton?
     private var feedbackLabel: UILabel?
-    
-    private var imagePortion: CGFloat = 1.0
-    
+        
     // Queue for dispatching vision classification requests
     private let visionQueue = DispatchQueue(label: "com.tripletale.tripletaleapp")
     
@@ -391,7 +389,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let ellipseVertices: [CGPoint]?
         if !isFacingForward {
             print("FACING down")
-            ellipseVertices = findEllipseVertices(from: image, for: self.imagePortion, debug: self.debugMode)
+            ellipseVertices = findEllipseVertices(from: image, for: 1.0, debug: self.debugMode)
         } else {
             print("FACING forward")
 
@@ -402,7 +400,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
             saveImageToGallery(samImage)
 
-            ellipseVertices = findEllipseVertices(from: image, for: self.imagePortion, depthImage: samImage, debug: self.debugMode)
+            ellipseVertices = findEllipseVertices(from: image, for: 1.0, depthImage: samImage, debug: self.debugMode)
         }
 
         guard let normalizedVertices = ellipseVertices else {
@@ -437,15 +435,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
             calculateWeight(width, length, height, girth, self.scaleFactor)
 
-        imagePortion = 0.85
+        let resultImageWidth = image.size.width
+        let resultImageHeight = image.size.height
 
-        let resultImageWidth = image.size.width * imagePortion
-        let resultImageHeight = resultImageWidth * 16 / 9
-
+        print("image height and width: \(resultImageHeight) x \(resultImageWidth)")
+        
         let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
 
-        if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches,
-                                                   girthInInches, weightInLb, "", debug: self.debugMode) {
+        if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, "", debug: self.debugMode) {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -548,19 +545,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     // This method is called whenever an ARAnchor is added to the session
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        if let planeAnchor = anchor as? ARPlaneAnchor {
-        } else{
-            // Add a red sphere for all other anchors
-            let sphere = SCNSphere(radius: 0.002) // Small red sphere
-            sphere.firstMaterial?.diffuse.contents = UIColor.red
-            
-            let sphereNode = SCNNode(geometry: sphere)
-            sphereNode.isHidden = !debugMode
-            
-            node.addChildNode(sphereNode)
-            
-            debugNodes.append(sphereNode)
-        }
+        guard !(anchor is ARPlaneAnchor) else { return }
+
+        // Add a red sphere for all other anchors
+        let sphere = SCNSphere(radius: 0.002)
+        sphere.firstMaterial?.diffuse.contents = UIColor.red
+
+        let sphereNode = SCNNode(geometry: sphere)
+        sphereNode.isHidden = !debugMode
+
+        node.addChildNode(sphereNode)
+        debugNodes.append(sphereNode)
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
