@@ -16,48 +16,6 @@ import CoreGraphics
 import CoreImage
 import Accelerate
 
-func findDepthEllipseVertices(from image: UIImage, debug: Bool = false) -> ([CGPoint]?, (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat)?, [CGPoint]?) {
-    // get foreground mask
-    guard let maskImage = CIImage(image: image) else { return (nil, nil, nil) }
-    
-    // turn into gray scale pixel data
-    let context = CIContext()
-    guard let cgImage = context.createCGImage(maskImage, from: maskImage.extent) else { return (nil, nil, nil) }
-    guard let originalPixelData = convertCGImageToGrayscalePixelData(cgImage) else { return (nil, nil, nil) }
-    
-    // find all contours
-    let width = cgImage.width
-    let height = cgImage.height
-    
-    // Convert grayscale to binary using a threshold
-    let threshold: UInt8 = UInt8(255 * 0.85) // 85% brightness
-    let pixelData = thresholdGrayscaleImage(pixelData: originalPixelData, width: width, height: height, threshold: threshold)
-    
-    let (contours, perimeters) = extractContours(from: pixelData, width: width, height: height)
-    
-    // find center contour
-    guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return (nil, nil, nil) }
-    
-    // fit ellipse
-    guard let ellipse = fitEllipseMinimax(to: closestContour) else { return (nil, nil, nil) }
-    
-    // find ellipse tips to use for measurements
-    let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
-    let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
-    
-    // for debug display only
-    if debug {
-        let maskUiImage = maskImage.toUIImage()!
-        let resultImage = drawContoursEllipseAndTips(on: maskUiImage, contours: contours, closestContour: closestContour, ellipse: (center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees), tips: tips)
-        
-        saveImageToGallery(resultImage!)
-    }
-    
-    return (tips, ellipse, perimeters[0])
-}
-
-
-
 func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: UIImage? = nil, debug: Bool = false) -> [CGPoint]? {
     // get foreground mask
     guard let maskImage = depthImage != nil ? CIImage(image: depthImage!) : generateMaskImage(from: image, for: portion) else {
@@ -108,8 +66,10 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: 
         let pcaPoints = findFishTips(from: mergedContour)
         let lineImage = drawDotsAndLine(on: perimImage!, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
         
-        let vertImage = drawDotsAndLine(on: lineImage!, points: [intersections[1], intersections[3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
-        let finalImage = drawDotsAndLine(on: vertImage!, points: [intersections[0], intersections[2]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        let trueIntersections = findEllipseAxisIntersections(ellipse: ellipse, contour: mergedContour)
+        
+        let vertImage = drawDotsAndLine(on: lineImage!, points: [trueIntersections![1], trueIntersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        let finalImage = drawDotsAndLine(on: vertImage!, points: [trueIntersections![0], trueIntersections![2]], dotColor:UIColor.yellow, lineColor: UIColor.black)
 
 //        saveImageToGallery(image)
 //        saveImageToGallery(resultImage!)
