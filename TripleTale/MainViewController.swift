@@ -23,7 +23,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
-    private var debugMode: Bool = true
+    private var debugMode: Bool = false
 
     private var currentBuffer: CVPixelBuffer?
     private var isProcessingML = false
