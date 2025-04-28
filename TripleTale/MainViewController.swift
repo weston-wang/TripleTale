@@ -356,7 +356,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             showInputPopup(title: "Developer Mode", message: "Update Values Below", placeholders: [
                 "Weight Scale: \(self.scaleFactor)",
                 "Inward Nudge: \(self.inwardPercent) %",
-                "Height Scale: \(self.heightNudge)",
                 "Body Ratio: \(self.bodyRatio)"
             ]) { inputs in
                 // Handle the user inputs here
@@ -366,11 +365,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 if let value2 = inputs[1] {
                     self.inwardPercent = value2
                 }
-                if let value3 = inputs[3] {
-                    self.heightNudge = value3
-                }
-                if let value4 = inputs[4] {
-                    self.bodyRatio = value4
+                if let value3 = inputs[2] {
+                    self.bodyRatio = value3
                 }
             }
         }
