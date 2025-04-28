@@ -16,7 +16,7 @@ import CoreGraphics
 import CoreImage
 import Accelerate
 
-func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: UIImage? = nil, debug: Bool = false) -> [CGPoint]? {
+func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwardPercent: Double, depthImage: UIImage? = nil, debug: Bool = false) -> [CGPoint]? {
     // get foreground mask
     guard let maskImage = depthImage != nil ? CIImage(image: depthImage!) : generateMaskImage(from: image, for: portion) else {
         return nil
@@ -45,7 +45,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, depthImage: 
     // fit ellipse
     guard let ellipse = fitEllipseMinimax(to: mergedContour) else { return nil }
 
-    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: mergedContour, extendPercentage: 25) else {
+    guard let intersections = findEllipseAxisIntersections(ellipse: ellipse, contour: mergedContour, extendPercentage: inwardPercent / 2.0) else {
         print("Error: Failed to find ellipse axis intersections.")
         return nil
     }
@@ -179,18 +179,18 @@ func generateResultImage(_ inputImage: UIImage,
     let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 200)!)
     let lengthTextImage = weightTextImage!.imageWithCenteredText("\(formattedLength) in", fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 150)!, verticalOffset: 200)
 
-    let combinedImage = lengthTextImage
-    saveImageToGallery(combinedImage!)
+    var combinedImage = lengthTextImage
 
     if debug {
-        let point = CGPoint(x: 10, y: weightTextImage!.size.height - 80)
-        let measurementTextImage = weightTextImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
+        let point = CGPoint(x: 10, y: combinedImage!.size.height - 80)
+        combinedImage = combinedImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
         
         //    let overlayImage = UIImage(named: "shimano_logo")!
         //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
-        
-        saveImageToGallery(measurementTextImage!)
     }
+    
+    saveImageToGallery(combinedImage!)
+
     return combinedImage!
 }
 

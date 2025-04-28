@@ -33,14 +33,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
-    var lengthNudge: Double = 2.0
-    var widthNudge: Double = 2.0
+    
+    var inwardPercent:Double = 20.0 // 5%
     var heightNudge: Double = 1.0
     
     var lengthAngleScale: Double = 1.0
     var widthAngleScale: Double = 1.0
     
-    var bodyRatio: Double = 2.2
+    var bodyRatio: Double = 3.0
     
     // Classification results
     private var identifierString = ""
@@ -355,8 +355,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             // Show the input popup
             showInputPopup(title: "Developer Mode", message: "Update Values Below", placeholders: [
                 "Weight Scale: \(self.scaleFactor)",
-                "Length Scale: \(self.lengthNudge)",
-                "Width Scale: \(self.widthNudge)",
+                "Inward Nudge: \(self.inwardPercent) %",
                 "Height Scale: \(self.heightNudge)",
                 "Body Ratio: \(self.bodyRatio)"
             ]) { inputs in
@@ -365,16 +364,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     self.scaleFactor = value1
                 }
                 if let value2 = inputs[1] {
-                    self.lengthNudge = value2
+                    self.inwardPercent = value2
                 }
-                if let value3 = inputs[2] {
-                    self.widthNudge = value3
+                if let value3 = inputs[3] {
+                    self.heightNudge = value3
                 }
-                if let value4 = inputs[3] {
-                    self.heightNudge = value4
-                }
-                if let value5 = inputs[4] {
-                    self.bodyRatio = value5
+                if let value4 = inputs[4] {
+                    self.bodyRatio = value4
                 }
             }
         }
@@ -412,10 +408,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
       }
     
     @objc func handleCameraButtonPress() {
-        guard subscriptionManager.isSubscribed else {
-            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
-            return
-        }
+//        guard subscriptionManager.isSubscribed else {
+//            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
+//            return
+//        }
         
         guard !isProcessingCameraPress else {
             print("⏳ Button press ignored: Please wait for processing to complete...")
@@ -450,7 +446,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let ellipseVertices: [CGPoint]?
         if !isFacingForward {
             print("FACING down")
-            ellipseVertices = findEllipseVertices(from: image, for: 1.0, debug: self.debugMode)
+            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, debug: self.debugMode)
         } else {
             print("FACING forward")
 
@@ -459,9 +455,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
-            saveImageToGallery(samImage)
-
-            ellipseVertices = findEllipseVertices(from: image, for: 1.0, depthImage: samImage, debug: self.debugMode)
+            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, depthImage: samImage, debug: self.debugMode)
         }
 
         guard let normalizedVertices = ellipseVertices else {
@@ -485,8 +479,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         var (width, length) = measureVertices(verticesAnchors)
         let height: Float = 0.0
         
-        length *= Float(self.lengthNudge)
-        width *= Float(self.widthNudge)
+        length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
+        width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
 
         length *= Float(self.lengthAngleScale)
         width *= Float(self.widthAngleScale)
@@ -496,14 +490,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
             calculateWeight(width, length, height, girth, self.scaleFactor)
 
-        let resultImageWidth = image.size.width
-        let resultImageHeight = image.size.height
+//        let resultImageWidth = image.size.width
+//        let resultImageHeight = image.size.height
+//
+//        print("image height and width: \(resultImageHeight) x \(resultImageWidth)")
+//        
+//        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
 
-        print("image height and width: \(resultImageHeight) x \(resultImageWidth)")
-        
-        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
-
-        if let combinedImage = generateResultImage(croppedImage!, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, "", debug: self.debugMode) {
+        if let combinedImage = generateResultImage(image, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, "", debug: self.debugMode) {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
