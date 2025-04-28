@@ -15,6 +15,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     var sceneView: ARSCNView!
     
+    private var subscriptionManager = InAppPurchaseManager()
+    
     private var isProcessingCameraPress = false
     private var classifierLabel: UILabel?
     
@@ -220,6 +222,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        Task {
+            await subscriptionManager.loadProducts()
+            await subscriptionManager.updateSubscriptionStatus()
+        }
+        
         // Force eager loading of SAM models to avoid first-use latency or crash
         _ = imageEncoder
         _ = promptEncoder
@@ -238,12 +245,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Call the function to create and add the camera button
         setupCameraButton()
         setupClassifierLabel()
-
+        
+        // Subscribe button
+        setupSubscribeButton()
+        setupRestoreButton()
+        
         // Start AR
         startSession()
 
         // Start monitoring tilt changes
         startMotionTracking()
+        
         
         // Hook up status view controller callback.
         statusViewController?.restartExperienceHandler = { [unowned self] in
@@ -256,6 +268,42 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             name: UIDevice.orientationDidChangeNotification,
             object: nil
         )
+    }
+    
+    private func setupSubscribeButton() {
+        let button = UIButton(frame: CGRect(x: 0, y: 30, width: 60, height: 60))
+        let image = UIImage(systemName: "plus.circle")
+        button.setImage(image, for: .normal)
+        button.tintColor = .systemBlue
+        button.backgroundColor = .clear
+        button.addTarget(self, action: #selector(handleSubscribeButton), for: .touchUpInside)
+        view.addSubview(button)
+    }
+
+    @objc private func handleSubscribeButton() {
+        Task {
+            if let product = subscriptionManager.products.first {
+                await subscriptionManager.purchase(product)
+            } else {
+                self.view.showToast(message: "No subscription product available. Try again later.")
+            }
+        }
+    }
+    
+    private func setupRestoreButton() {
+        let button = UIButton(frame: CGRect(x: view.bounds.width - 60, y: 30, width: 60, height: 60))
+        let image = UIImage(systemName: "arrow.counterclockwise.circle")
+        button.setImage(image, for: .normal)
+        button.tintColor = .systemGray
+        button.backgroundColor = .clear
+        button.addTarget(self, action: #selector(handleRestoreButton), for: .touchUpInside)
+        view.addSubview(button)
+    }
+
+    @objc private func handleRestoreButton() {
+        Task {
+            await subscriptionManager.restorePurchases()
+        }
     }
     
     @objc private func handleDeviceOrientationChange() {
@@ -360,6 +408,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
       }
     
     @objc func handleCameraButtonPress() {
+        guard subscriptionManager.isSubscribed else {
+            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
+            return
+        }
+        
         guard !isProcessingCameraPress else {
             print("⏳ Button press ignored: Please wait for processing to complete...")
             return
@@ -489,7 +542,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let label = UILabel(frame: CGRect(x: 20 + iconSize + spacing, y: labelY, width: 260, height: labelHeight))
         label.textColor = .white
         label.backgroundColor = UIColor.black.withAlphaComponent(0.0)
-        label.font = UIFont(name: "Georgia-Bold", size: 32)
+        label.font = UIFont(name: "Futura-Bold", size: 20)
         label.textAlignment = .left
         label.text = ""
         label.adjustsFontSizeToFitWidth = true

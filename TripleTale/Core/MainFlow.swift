@@ -176,8 +176,8 @@ func generateResultImage(_ inputImage: UIImage,
 //    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
 
 //    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
-    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white, font: UIFont(name: "Georgia-Bold", size: 200)!)
-    let lengthTextImage = weightTextImage!.imageWithCenteredText("\(formattedLength) in", fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Georgia-Bold", size: 150)!, verticalOffset: 200)
+    let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 200)!)
+    let lengthTextImage = weightTextImage!.imageWithCenteredText("\(formattedLength) in", fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 150)!, verticalOffset: 200)
 
     let combinedImage = lengthTextImage
     saveImageToGallery(combinedImage!)

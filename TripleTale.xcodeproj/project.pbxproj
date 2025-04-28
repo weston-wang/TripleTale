@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4E289BEA2DBDAC9D003FD4F5 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E289BE92DBDAC9D003FD4F5 /* SubscriptionManager.swift */; };
 		4E289BEC2DBE895C003FD4F5 /* TripleTaleV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E289BEB2DBE895C003FD4F5 /* TripleTaleV2.mlmodel */; };
 		4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E28C98E2C8B75E4007BE96D /* ArmPose3DDetector.swift */; };
 		4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */; };
@@ -31,11 +30,11 @@
 		4EA9A5232DB7F2B400AB982F /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EA9A51C2DB7F2B400AB982F /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage */; };
 		4EA9A5252DB7F2B400AB982F /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EA9A51B2DB7F2B400AB982F /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage */; };
 		4EA9A5262DB7F2B400AB982F /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4EA9A51D2DB7F2B400AB982F /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage */; };
+		4EAF3BAF2DBF020800462A77 /* InAppPurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */; };
 		4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EEB66E32DAD70770093C719 /* StatusViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		4E289BE92DBDAC9D003FD4F5 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		4E289BEB2DBE895C003FD4F5 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
 		4E28C98E2C8B75E4007BE96D /* ArmPose3DDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArmPose3DDetector.swift; sourceTree = "<group>"; };
 		4E4C7FB22C8B6311003F3F96 /* FingerWidthDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FingerWidthDetector.swift; sourceTree = "<group>"; };
@@ -61,6 +60,7 @@
 		4EA9A51B2DB7F2B400AB982F /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1BasePlusImageEncoderFLOAT16.mlpackage; sourceTree = "<group>"; };
 		4EA9A51C2DB7F2B400AB982F /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage; sourceTree = "<group>"; };
 		4EA9A51D2DB7F2B400AB982F /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage; sourceTree = "<group>"; };
+		4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppPurchaseManager.swift; sourceTree = "<group>"; };
 		4EEB66E32DAD70770093C719 /* StatusViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -146,7 +146,7 @@
 				4E53AF062D70393200873F4D /* Info.plist */,
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
 				4EEB66E32DAD70770093C719 /* StatusViewController.swift */,
-				4E289BE92DBDAC9D003FD4F5 /* SubscriptionManager.swift */,
+				4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */,
 				4E576E9C2DBAB25500542397 /* LegacyMain.swift */,
 				4EA49E292C74160900CDA5C9 /* Core */,
 				4EA49E2A2C74160F00CDA5C9 /* Support */,
@@ -239,13 +239,13 @@
 				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
 				4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */,
 				4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */,
+				4EAF3BAF2DBF020800462A77 /* InAppPurchaseManager.swift in Sources */,
 				4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */,
 				4EA49E2F2C750BED00CDA5C9 /* Measurements.swift in Sources */,
 				4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */,
 				4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */,
 				4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */,
 				4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */,
-				4E289BEA2DBDAC9D003FD4F5 /* SubscriptionManager.swift in Sources */,
 				4E289BEC2DBE895C003FD4F5 /* TripleTaleV2.mlmodel in Sources */,
 				4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */,
 				4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */,
