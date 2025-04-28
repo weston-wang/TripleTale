@@ -271,8 +271,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     private func setupSubscribeButton() {
-        let button = UIButton(frame: CGRect(x: 0, y: 30, width: 60, height: 60))
-        let image = UIImage(systemName: "plus.circle")
+        let button = UIButton(frame: CGRect(x: 0, y: 30, width: 50, height: 50))
+        
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        let image = UIImage(systemName: "plus.circle", withConfiguration: config)
         button.setImage(image, for: .normal)
         button.tintColor = .systemBlue
         button.backgroundColor = .clear
@@ -291,8 +293,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     private func setupRestoreButton() {
-        let button = UIButton(frame: CGRect(x: view.bounds.width - 60, y: 30, width: 60, height: 60))
-        let image = UIImage(systemName: "arrow.counterclockwise.circle")
+        let button = UIButton(frame: CGRect(x: view.bounds.width - 50, y: 30, width: 50, height: 50))
+        
+        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        let image = UIImage(systemName: "arrow.counterclockwise.circle", withConfiguration: config)
         button.setImage(image, for: .normal)
         button.tintColor = .systemGray
         button.backgroundColor = .clear
