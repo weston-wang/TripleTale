@@ -25,7 +25,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
-    private var debugMode: Bool = false
+    private var debugMode: Bool = true
 
     private var currentBuffer: CVPixelBuffer?
     private var isProcessingML = false
@@ -34,7 +34,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     
-    var inwardPercent:Double = 20.0 // 5%
+    var inwardPercent: Double = 5.0 // 5%
     var heightNudge: Double = 1.0
     
     var lengthAngleScale: Double = 1.0
@@ -462,7 +462,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
 
-        let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
+        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
 
         if verticesAnchors.count < 4 {
             DispatchQueue.main.async {
@@ -471,6 +471,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
             return
         }
+        
+        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
 
         var (width, length) = measureVertices(verticesAnchors)
         let height: Float = 0.0

@@ -287,7 +287,7 @@ func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20
         image.draw(at: .zero)
 
         // Set the drawing properties
-        let dotUIColor = dotColor ?? UIColor.red
+        let dotUIColor = dotColor ?? UIColor.green
         let lineUIColor = lineColor ?? UIColor.blue
 
         context.cgContext.setFillColor(dotUIColor.cgColor)  // Dot color

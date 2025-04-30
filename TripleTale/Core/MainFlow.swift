@@ -86,65 +86,65 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
 
 }
 
-func buildRealWorldVerticesAnchors(
-    _ currentView: ARSCNView,
-    _ normalizedVertices: [CGPoint],
-    _ capturedImageSize: CGSize,
-    _ planeAnchor: ARPlaneAnchor
-) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
-    
-    let verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
-    
-    // 🔄 Retry with small dithers until we get at least 4 anchors
-//    var attempt = 0
-//    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
-//        attempt += 1
-//        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
-//        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
+//func buildRealWorldVerticesAnchors(
+//    _ currentView: ARSCNView,
+//    _ normalizedVertices: [CGPoint],
+//    _ capturedImageSize: CGSize,
+//    _ planeAnchor: ARPlaneAnchor
+//) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
+//    
+//    let verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
+//    
+//    // 🔄 Retry with small dithers until we get at least 4 anchors
+////    var attempt = 0
+////    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
+////        attempt += 1
+////        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
+////        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
+////    }
+//
+//    if verticesAnchors.count < 4 {
+//        print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
+//        return ([], nil, nil, []) // Return safe fallback values
 //    }
-
-    if verticesAnchors.count < 4 {
-        print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
-        return ([], nil, nil, []) // Return safe fallback values
-    }
-    
-    // Attempt to get centroid anchor
-    guard let centroidAboveAnchor = getVerticesCenter(currentView,
-                                                      normalizedVertices,
-                                                      capturedImageSize,
-                                                      planeAnchor) else {
-        print("Error: Failed to retrieve centroid above anchor.")
-        return ([], nil, nil, []) // Return safe fallback values
-    }
-    
-    let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // First one is tall, second is wide
-    let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
-    
-    if cornerAnchors.isEmpty {
-        print("Error: Failed to retrieve corner anchors.")
-        return ([], centroidAboveAnchor, nil, []) // At least return the above centroid
-    }
-    
-    guard let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors) else {
-        print("Error: Failed to create centroid below anchor.")
-        return ([], centroidAboveAnchor, nil, cornerAnchors) // Return corner anchors at least
-    }
-
-    // Attempt distance calculations safely
-//    guard let distanceToFish = calculateDistanceToObject(centroidAboveAnchor),
-//          let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
-//          distanceToGround != 0 else {
-//        print("Error: Invalid distances for scaling factor computation.")
-//        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+//    
+//    // Attempt to get centroid anchor
+//    guard let centroidAboveAnchor = getVerticesCenter(currentView,
+//                                                      normalizedVertices,
+//                                                      capturedImageSize,
+//                                                      planeAnchor) else {
+//        print("Error: Failed to retrieve centroid above anchor.")
+//        return ([], nil, nil, []) // Return safe fallback values
 //    }
-    
-//    let scalingFactor = distanceToFish / distanceToGround
-//    let outwardedScalingFactor = scalingFactor * 1.1
-    
-//    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
-    
-    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
-}
+//    
+//    let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // First one is tall, second is wide
+//    let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
+//    
+//    if cornerAnchors.isEmpty {
+//        print("Error: Failed to retrieve corner anchors.")
+//        return ([], centroidAboveAnchor, nil, []) // At least return the above centroid
+//    }
+//    
+//    guard let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors) else {
+//        print("Error: Failed to create centroid below anchor.")
+//        return ([], centroidAboveAnchor, nil, cornerAnchors) // Return corner anchors at least
+//    }
+//
+//    // Attempt distance calculations safely
+////    guard let distanceToFish = calculateDistanceToObject(centroidAboveAnchor),
+////          let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
+////          distanceToGround != 0 else {
+////        print("Error: Invalid distances for scaling factor computation.")
+////        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+////    }
+//    
+////    let scalingFactor = distanceToFish / distanceToGround
+////    let outwardedScalingFactor = scalingFactor * 1.1
+//    
+////    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
+//    
+//    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
+//}
 
 func generateResultImage(_ inputImage: UIImage,
                          _ inputBoundingBox: CGRect? = nil,

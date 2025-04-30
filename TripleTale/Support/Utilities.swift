@@ -669,3 +669,64 @@ func multiArrayToGrayscaleImage(_ multiArray: MLMultiArray) -> UIImage? {
     buffer.deallocate()
     return uiImage
 }
+
+/// Projects a point along a ray direction from origin to a target Z-depth
+func backProjectToZPlane(
+    origin: simd_float3,
+    direction: simd_float3,
+    targetZ: Float
+) -> simd_float3 {
+    let t = (targetZ - origin.z) / direction.z
+    return origin + direction * t
+}
+
+/// Back-projects all but the closest anchor to the Z-plane of the closest one
+/// - Parameters:
+///   - anchors: array of 4 anchors placed from raycasts
+///   - raycastOrigins: same order as anchors; origin of each ray
+///   - raycastDirections: same order; original ray direction used to place each anchor
+/// - Returns: a dictionary mapping each original anchor to its back-projected position
+func backProjectAnchorsToSameDepth(
+    anchors: [ARAnchor],
+    queries: [ARRaycastQuery]
+) -> [ARAnchor] {
+    guard anchors.count == queries.count else {
+        print("❌ Mismatch: anchors and queries count must match.")
+        return []
+    }
+
+    // Step 1: Calculate distance (t) along each ray (for anchors at indices 0 and 2 only)
+    var tValues: [Float] = []
+    for i in [0, 2] {
+        let anchorPos = anchors[i].transform.columns.3.xyz
+        let rayOrigin = queries[i].origin
+        let rayDir = simd_normalize(queries[i].direction)
+        let displacement = anchorPos - rayOrigin
+        let t = simd_dot(displacement, rayDir)
+        tValues.append(t)
+    }
+
+    // Step 2: Get the minimum t (closest to camera)
+    guard let tMin = tValues.min() else {
+        print("❌ Failed to compute minimum t")
+        return []
+    }
+
+    // Step 3: Backproject all rays to that t and create new anchors
+    var newAnchors: [ARAnchor] = []
+
+    for i in 0..<anchors.count {
+        let rayOrigin = queries[i].origin
+        let rayDir = simd_normalize(queries[i].direction)
+        let newPos = rayOrigin + tMin * rayDir
+
+        // Construct transform with newPos
+        var newTransform = matrix_identity_float4x4
+        newTransform.columns.3 = simd_float4(newPos.x, newPos.y, newPos.z, 1.0)
+
+        let newAnchor = ARAnchor(transform: newTransform)
+        newAnchors.append(newAnchor)
+    }
+
+    return newAnchors
+}

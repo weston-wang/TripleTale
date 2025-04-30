@@ -54,6 +54,31 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool
     return nil
 }
 
+func addAnchorWithQuery(
+    _ currentView: ARSCNView,
+    _ point: CGPoint,
+    projectToGround: Bool = false
+) -> (anchor: ARAnchor, query: ARRaycastQuery)? {
+    let raycastMethod: ARRaycastQuery.Target = .estimatedPlane
+
+    if let raycastQuery = currentView.raycastQuery(from: point, allowing: raycastMethod, alignment: .any) {
+        let raycastResults = currentView.session.raycast(raycastQuery)
+        if let result = raycastResults.first {
+            let anchor = ARAnchor(transform: result.worldTransform)
+            currentView.session.add(anchor: anchor)
+            return (anchor, raycastQuery)
+        }
+        // Fallback: Use feature point hit-test if raycasting fails
+        let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
+        if let result = hitTestResults.first {
+            let fallbackAnchor = ARAnchor(transform: result.worldTransform)
+            currentView.session.add(anchor: fallbackAnchor)
+            return (fallbackAnchor, raycastQuery)
+        }
+    }
+    return nil
+}
+
 //func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
 //    
@@ -83,20 +108,23 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool
 //    return anchor
 //}
 
-func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> [ARAnchor] {
+func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], [ARRaycastQuery]) {
     var verticesAnchors: [ARAnchor] = []
-    
+    var verticesQueries: [ARRaycastQuery] = []
+
     for vertex in normalizedVertices {
         // Convert the normalized vertex to a screen position
         let vertexOnScreen = getScreenPosition(currentView, vertex.x, vertex.y, capturedImageSize)
                 
         // Use raycasting to add an anchor at the screen position
-        if let vertexAnchor = addAnchor(currentView, vertexOnScreen) {
+//        if let vertexAnchor = addAnchor(currentView, vertexOnScreen) {
+        if let (vertexAnchor, vertexQuery) = addAnchorWithQuery(currentView, vertexOnScreen) {
             verticesAnchors.append(vertexAnchor)
+            verticesQueries.append(vertexQuery)
         }
     }
     
-    return verticesAnchors
+    return (verticesAnchors, verticesQueries)
 }
 
 func getScreenPosition(_ currentView: ARSCNView, _ normalizedX: CGFloat, _ normalizedY: CGFloat, _ capturedImageSize: CGSize) -> CGPoint {

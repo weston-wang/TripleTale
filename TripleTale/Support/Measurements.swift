@@ -104,10 +104,10 @@ func calculateDistanceBetweenAnchors2D(anchor1: ARAnchor, anchor2: ARAnchor) -> 
     
     // Calculate the differences in x and z directions
     let deltaX = position2.x - position1.x
-    let deltaZ = position2.z - position1.z
+    let deltaY = position2.z - position1.z
     
     // Compute the distance in the x and z directions
-    let distance = sqrt(deltaX * deltaX + deltaZ * deltaZ)
+    let distance = sqrt(deltaX * deltaX + deltaY * deltaY)
     
     return distance
 }
