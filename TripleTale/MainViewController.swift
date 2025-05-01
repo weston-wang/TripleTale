@@ -34,7 +34,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     
-    var inwardPercent: Double = 5.0 // 5%
+    var inwardPercent: Double = 0.0 // 5%
     var heightNudge: Double = 1.0
     
     var lengthAngleScale: Double = 1.0
@@ -462,7 +462,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
 
-        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
+//        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
+        var verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
 
         if verticesAnchors.count < 4 {
             DispatchQueue.main.async {
@@ -472,7 +473,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
         
-        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
+//        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
 
         var (width, length) = measureVertices(verticesAnchors)
         let height: Float = 0.0
@@ -621,8 +622,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         guard !(anchor is ARPlaneAnchor) else { return }
 
         // Add a red sphere for all other anchors
-        let sphere = SCNSphere(radius: 0.002)
+        let sphere = SCNSphere(radius: 0.005)
         sphere.firstMaterial?.diffuse.contents = UIColor.red
+        sphere.firstMaterial?.specular.contents = UIColor.white // Adds highlight
+        sphere.firstMaterial?.lightingModel = .blinn // or .phong for more realism
 
         let sphereNode = SCNNode(geometry: sphere)
         sphereNode.isHidden = !debugMode
@@ -769,6 +772,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         anchorLabels = [UUID: String]()
         
         let configuration = ARWorldTrackingConfiguration()
+        configuration.worldAlignment = .camera
+        configuration.planeDetection = .horizontal
+        configuration.isLightEstimationEnabled = true
+        configuration.isAutoFocusEnabled = true
+        configuration.environmentTexturing = .automatic
+
+        // ✅ Enable scene depth if supported (LiDAR-only)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        }
+
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
 }

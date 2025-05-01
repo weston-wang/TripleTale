@@ -43,6 +43,7 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool
     }
     
     // Fallback: Use feature point hit-test if raycasting fails
+    // Confirmed: fallback uses .featurePoint as desired
     let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
     
     if let result = hitTestResults.first {
@@ -51,6 +52,51 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool
         return anchor
     }
     
+    return nil
+}
+
+func addAnchorClustered(_ currentView: ARSCNView, _ point: CGPoint, rayCount: Int = 100) -> ARAnchor? {
+    // Perform 100 jittered ray/hit tests, keep only the closest result
+    let raycastMethod: ARRaycastQuery.Target = .estimatedPlane
+    let maxJitter: CGFloat = 2.0  // jitter in pixels
+
+    var closestTransform: simd_float4x4?
+    var closestDistance = Float.infinity
+
+    for _ in 0..<rayCount {
+        let jitteredPoint = CGPoint(
+            x: point.x + CGFloat.random(in: -maxJitter...maxJitter),
+            y: point.y + CGFloat.random(in: -maxJitter...maxJitter)
+        )
+
+        var transform: simd_float4x4?
+
+        if let query = currentView.raycastQuery(from: jitteredPoint, allowing: raycastMethod, alignment: .any),
+           let rayResult = currentView.session.raycast(query).first {
+            transform = rayResult.worldTransform
+        } else {
+            // Fallback: Use feature point hit-test with the jittered point
+            let hitTestResults = currentView.hitTest(jitteredPoint, types: [.featurePoint])
+            if let featureResult = hitTestResults.first {
+                transform = featureResult.worldTransform
+            }
+        }
+
+        if let transform = transform {
+            let distance = simd_length(transform.columns.3)
+            if distance < closestDistance {
+                closestDistance = distance
+                closestTransform = transform
+            }
+        }
+    }
+
+    if let transform = closestTransform {
+        let anchor = ARAnchor(transform: transform)
+        currentView.session.add(anchor: anchor)
+        return anchor
+    }
+
     return nil
 }
 
@@ -81,50 +127,54 @@ func addAnchorWithQuery(
 
 //func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
-//    
+//
 //    guard let result = hitTestResults.first else { return nil }
-//   
+//
 //    // Create and add an anchor at the raycast result's position
 //    let anchor = ARAnchor(transform: result.worldTransform)
 //    currentView.session.add(anchor: anchor)
-//    
+//
 //    return anchor
 //}
 //
 //func addAnchorWithRaycast(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
 //    // Create a raycast query from the screen point
 //    guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else { return nil }
-//    
+//
 //    // Perform the raycast
 //    let raycastResults = currentView.session.raycast(raycastQuery)
-//    
+//
 //    // Check if we have a valid result
 //    guard let result = raycastResults.first else { return nil }
-//    
+//
 //    // Create and add an anchor at the raycast result's position
 //    let anchor = ARAnchor(transform: result.worldTransform)
 //    currentView.session.add(anchor: anchor)
-//    
+//
 //    return anchor
 //}
 
-func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], [ARRaycastQuery]) {
+//func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], [ARRaycastQuery]) {
+func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> [ARAnchor] {
     var verticesAnchors: [ARAnchor] = []
-    var verticesQueries: [ARRaycastQuery] = []
+//    var verticesQueries: [ARRaycastQuery] = []
 
     for vertex in normalizedVertices {
         // Convert the normalized vertex to a screen position
         let vertexOnScreen = getScreenPosition(currentView, vertex.x, vertex.y, capturedImageSize)
                 
         // Use raycasting to add an anchor at the screen position
-//        if let vertexAnchor = addAnchor(currentView, vertexOnScreen) {
-        if let (vertexAnchor, vertexQuery) = addAnchorWithQuery(currentView, vertexOnScreen) {
+        if let vertexAnchor = addAnchor(currentView, vertexOnScreen) {
+//        if let vertexAnchor = addAnchorClustered(currentView, vertexOnScreen) {
+//        if let vertexAnchor = addAnchorUsingSceneDepth(currentView, at: vertexOnScreen) {
+//        if let (vertexAnchor, vertexQuery) = addAnchorWithQuery(currentView, vertexOnScreen) {
             verticesAnchors.append(vertexAnchor)
-            verticesQueries.append(vertexQuery)
+//            verticesQueries.append(vertexQuery)
         }
     }
     
-    return (verticesAnchors, verticesQueries)
+//    return (verticesAnchors, verticesQueries)
+    return verticesAnchors
 }
 
 func getScreenPosition(_ currentView: ARSCNView, _ normalizedX: CGFloat, _ normalizedY: CGFloat, _ capturedImageSize: CGSize) -> CGPoint {
@@ -273,4 +323,55 @@ func stretchVertices(_ anchors: [ARAnchor], verticalScaleFactor: Float, horizont
     }
     
     return updatedVerticesAnchors
+}
+
+
+// Adds an anchor using scene depth information at the given screen point.
+func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint) -> ARAnchor? {
+    guard let frame = sceneView.session.currentFrame,
+          let depthMap = frame.sceneDepth?.depthMap else {
+        return nil
+    }
+
+    let viewSize = sceneView.bounds.size
+    let depthWidth = CVPixelBufferGetWidth(depthMap)
+    let depthHeight = CVPixelBufferGetHeight(depthMap)
+
+    let xRatio = screenPoint.x / viewSize.width
+    let yRatio = screenPoint.y / viewSize.height
+
+    let depthX = Int(round(xRatio * CGFloat(depthWidth)))
+    let depthY = Int(round(yRatio * CGFloat(depthHeight)))
+
+    guard depthX >= 0, depthX < depthWidth,
+          depthY >= 0, depthY < depthHeight else {
+        return nil
+    }
+
+    CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+    defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+
+    guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
+    let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
+    let depth = floatBuffer[depthY * depthWidth + depthX]
+
+    // Normalize screen coordinates and combine with depth to form a 3D point in view space
+    let normalizedX = Float(screenPoint.x / viewSize.width)
+    let normalizedY = Float(screenPoint.y / viewSize.height)
+    let viewSpacePoint = vector_float3(normalizedX, normalizedY, depth)
+
+    let worldPosition = sceneView.unprojectPoint(
+        SCNVector3(
+            x: Float(viewSpacePoint.x),
+            y: Float(viewSpacePoint.y),
+            z: Float(viewSpacePoint.z)
+        )
+    )
+    
+    var transform = matrix_identity_float4x4
+    transform.columns.3 = SIMD4<Float>(Float(worldPosition.x), Float(worldPosition.y), Float(worldPosition.z), 1.0)
+
+    let anchor = ARAnchor(transform: transform)
+    sceneView.session.add(anchor: anchor)
+    return anchor
 }
