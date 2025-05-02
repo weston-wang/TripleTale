@@ -34,13 +34,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     
-    var inwardPercent: Double = 0.0 // 5%
+    var inwardPercent: Double = 20.0 // 5%
     var heightNudge: Double = 1.0
     
-    var lengthAngleScale: Double = 1.0
-    var widthAngleScale: Double = 1.0
+    var lengthScale: Double = 1.05
+    var widthScale: Double = 1.05
     
-    var bodyRatio: Double = 3.0
+    var bodyRatio: Double = 2.5
     
     // Classification results
     private var identifierString = ""
@@ -442,10 +442,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         let ellipseVertices: [CGPoint]?
         if !isFacingForward {
             print("FACING down")
+            self.lengthScale = 1.0
+            self.widthScale = 1.0
+            
             ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, debug: self.debugMode)
         } else {
             print("FACING forward")
-
+            self.lengthScale = 1.05
+            self.widthScale = 1.05
+            
             guard let samImage = processSAMImage(from: image) else {
                 print("❌ SAM model returned no mask output.")
                 self.view.showToast(message: "SAM failed to return a mask.")
@@ -463,7 +468,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
 
 //        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
-        var verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
+        let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
 
         if verticesAnchors.count < 4 {
             DispatchQueue.main.async {
@@ -481,8 +486,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
         width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
 
-        length *= Float(self.lengthAngleScale)
-        width *= Float(self.widthAngleScale)
+        length *= Float(self.lengthScale)
+        width *= Float(self.widthScale)
         
         let girth = width * Float(self.bodyRatio)
 
