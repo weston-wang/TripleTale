@@ -52,6 +52,31 @@ class BracketView: UIView {
         textLayer.foregroundColor = UIColor.white.cgColor
         textLayer.contentsScale = UIScreen.main.scale
     }
+    
+    func addCircleMarker() {
+        let circleRadius: CGFloat = 8.0
+        let centerPoint = CGPoint(x: bounds.midX, y: bounds.midY)
+
+        // Black border circle
+        let borderPath = UIBezierPath(arcCenter: centerPoint, radius: circleRadius + 1, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
+        let borderLayer = CAShapeLayer()
+        borderLayer.path = borderPath.cgPath
+        borderLayer.strokeColor = UIColor.black.withAlphaComponent(0.2).cgColor
+        borderLayer.fillColor = UIColor.clear.cgColor
+        borderLayer.lineWidth = 2.5
+        borderLayer.lineDashPattern = [4, 2]
+        layer.addSublayer(borderLayer)
+
+        // Dashed white circle
+        let circlePath = UIBezierPath(arcCenter: centerPoint, radius: circleRadius, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
+        let circleLayer = CAShapeLayer()
+        circleLayer.path = circlePath.cgPath
+        circleLayer.strokeColor = UIColor.white.withAlphaComponent(1.0).cgColor
+        circleLayer.fillColor = UIColor.clear.cgColor
+        circleLayer.lineWidth = 2.0
+        circleLayer.lineDashPattern = [4, 2]
+        layer.addSublayer(circleLayer)
+    }
 
     func updateBracket(rect: CGRect) {
         let path = UIBezierPath()

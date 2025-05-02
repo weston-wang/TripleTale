@@ -17,6 +17,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     private var subscriptionManager = InAppPurchaseManager()
     
+    private var bracketView: BracketView?
+
     private var isProcessingCameraPress = false
     private var classifierLabel: UILabel?
     
@@ -237,6 +239,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
         view.addSubview(sceneView)
+        
+        // Add the bracket view to the main view
+        bracketView = BracketView(frame: view.bounds)
+        bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
+        view.addSubview(bracketView!)
+        
+        // Initial bracket update
+        updateBracketSize()
         
         // Create a transparent view for the bottom left corner
         createCornerView(withSize: 100)
@@ -795,5 +805,17 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+    }
+    
+    func updateBracketSize() {
+        guard let bracketView = bracketView else { return }
+
+        bracketView.addCircleMarker()
+        
+//        let width = view.bounds.width * 0.85 // Example size for not forward-facing, adjust as needed
+//        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
+//
+//        let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
+//        bracketView.updateBracket(rect: rect)
     }
 }
