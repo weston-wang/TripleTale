@@ -31,6 +31,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var isProcessingML = false
     private var lastMLTimestamp: TimeInterval = 0
     
+    private var deviceOrientation: CGFloat = 0.0
+    
     private var tapCounter = 0
     var scaleFactor: Double = 500.0
     
@@ -313,23 +315,22 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     @objc private func handleDeviceOrientationChange() {
         let orientation = UIDevice.current.orientation
-        var angle: CGFloat = 0
 
         switch orientation {
         case .landscapeLeft:
-            angle = CGFloat.pi / 2
+            deviceOrientation = CGFloat.pi / 2
         case .landscapeRight:
-            angle = -CGFloat.pi / 2
+            deviceOrientation = -CGFloat.pi / 2
         case .portraitUpsideDown:
-            angle = CGFloat.pi
+            deviceOrientation = CGFloat.pi
         case .portrait, .faceUp, .faceDown, .unknown:
-            angle = 0
+            deviceOrientation = 0
         default:
-            angle = 0
+            deviceOrientation = 0
         }
 
         UIView.animate(withDuration: 0.3) {
-            self.cameraButton?.transform = CGAffineTransform(rotationAngle: angle)
+            self.cameraButton?.transform = CGAffineTransform(rotationAngle: self.deviceOrientation)
 //            self.classifierLabel?.transform = CGAffineTransform(rotationAngle: angle)
 //            if let iconImageView = self.view.viewWithTag(9999) as? UIImageView {
 //                iconImageView.transform = CGAffineTransform(rotationAngle: angle)
@@ -501,8 +502,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        print("image height and width: \(resultImageHeight) x \(resultImageWidth)")
 //        
 //        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
-
-        if let combinedImage = generateResultImage(image, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
+        
+        let orientation = uiImageOrientation(from: self.deviceOrientation)
+        let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: orientation)
+        
+        if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")

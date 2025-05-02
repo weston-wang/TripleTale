@@ -730,3 +730,16 @@ func backProjectAnchorsToSameDepth(
 
     return newAnchors
 }
+
+func uiImageOrientation(from radians: CGFloat) -> UIImage.Orientation {
+    switch radians {
+    case CGFloat.pi / 2:
+        return .left
+    case -CGFloat.pi / 2:
+        return .right
+    case CGFloat.pi, -CGFloat.pi:
+        return .down
+    default:
+        return .up
+    }
+}
