@@ -743,3 +743,16 @@ func uiImageOrientation(from radians: CGFloat) -> UIImage.Orientation {
         return .up
     }
 }
+
+func popUpImageOrientation(from radians: CGFloat) -> UIImage.Orientation {
+    switch radians {
+    case CGFloat.pi / 2:
+        return .right
+    case -CGFloat.pi / 2:
+        return .left
+    case CGFloat.pi, -CGFloat.pi:
+        return .down
+    default:
+        return .up
+    }
+}

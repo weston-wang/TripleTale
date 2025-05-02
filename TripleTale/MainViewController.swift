@@ -503,11 +503,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        
 //        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
         
-        let orientation = uiImageOrientation(from: self.deviceOrientation)
-        let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: orientation)
+        let imageOrientation = uiImageOrientation(from: self.deviceOrientation)
+        let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
         
+        let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
         if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
-            self.showImagePopup(combinedImage: combinedImage)
+            self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
         }
