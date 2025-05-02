@@ -211,6 +211,43 @@ extension UIImage {
         return UIGraphicsGetImageFromCurrentImageContext()
     }
     
+    func imageWithHorizontalCenteredText(_ text: String, fontSize: CGFloat, textColor: UIColor, font: UIFont? = nil, yPosition: CGFloat) -> UIImage? {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineBreakMode = .byWordWrapping
+
+        let textFont = font ?? UIFont.boldSystemFont(ofSize: fontSize)
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: textFont,
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle,
+            .strokeColor: UIColor.black,
+            .strokeWidth: -3
+        ]
+
+        UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
+        defer { UIGraphicsEndImageContext() }
+
+        self.draw(in: CGRect(origin: CGPoint.zero, size: self.size))
+
+        let textSize = (text as NSString).boundingRect(
+            with: CGSize(width: self.size.width, height: self.size.height),
+            options: .usesLineFragmentOrigin,
+            attributes: textAttributes,
+            context: nil
+        ).size
+
+        let textPoint = CGPoint(
+            x: (self.size.width - textSize.width) / 2,
+            y: yPosition
+        )
+
+        let rect = CGRect(origin: textPoint, size: textSize)
+        (text as NSString).draw(in: rect, withAttributes: textAttributes)
+
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+    
     func imageWithCenteredText(_ text: String, fontSize: CGFloat, textColor: UIColor, font: UIFont? = nil, verticalOffset: CGFloat? = nil) -> UIImage? {
         // Create a paragraph style with center alignment
         let paragraphStyle = NSMutableParagraphStyle()

@@ -25,7 +25,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
     private var debugCounter = 0
     private var debugNodes: [SCNNode] = []
-    private var debugMode: Bool = true
+    private var debugMode: Bool = false
 
     private var currentBuffer: CVPixelBuffer?
     private var isProcessingML = false
@@ -244,7 +244,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         // Call the function to create and add the camera button
         setupCameraButton()
-        setupClassifierLabel()
+        
+//        setupClassifierLabel()
         
         // Subscribe button
         setupSubscribeButton()
@@ -329,20 +330,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         UIView.animate(withDuration: 0.3) {
             self.cameraButton?.transform = CGAffineTransform(rotationAngle: angle)
-            self.classifierLabel?.transform = CGAffineTransform(rotationAngle: angle)
-            if let iconImageView = self.view.viewWithTag(9999) as? UIImageView {
-                iconImageView.transform = CGAffineTransform(rotationAngle: angle)
-                
-                // Reposition based on orientation
-                if orientation.isLandscape {
-                    let screenBounds = UIScreen.main.bounds
-                    iconImageView.frame.origin = CGPoint(x: screenBounds.width - iconImageView.frame.width - 20, y: 20)
-                    self.classifierLabel?.frame.origin = CGPoint(x: screenBounds.width - self.classifierLabel!.frame.width - 20, y: iconImageView.frame.maxY + 8)
-                } else {
-                    iconImageView.frame.origin = CGPoint(x: 20, y: 70)
-                    self.classifierLabel?.frame.origin = CGPoint(x: 20 + iconImageView.frame.width + 8, y: 70)
-                }
-            }
+//            self.classifierLabel?.transform = CGAffineTransform(rotationAngle: angle)
+//            if let iconImageView = self.view.viewWithTag(9999) as? UIImageView {
+//                iconImageView.transform = CGAffineTransform(rotationAngle: angle)
+//                
+//                // Reposition based on orientation
+//                if orientation.isLandscape {
+//                    let screenBounds = UIScreen.main.bounds
+//                    iconImageView.frame.origin = CGPoint(x: screenBounds.width - iconImageView.frame.width - 20, y: 20)
+//                    self.classifierLabel?.frame.origin = CGPoint(x: screenBounds.width - self.classifierLabel!.frame.width - 20, y: iconImageView.frame.maxY + 8)
+//                } else {
+//                    iconImageView.frame.origin = CGPoint(x: 20, y: 70)
+//                    self.classifierLabel?.frame.origin = CGPoint(x: 20 + iconImageView.frame.width + 8, y: 70)
+//                }
+//            }
         }
     }
     
@@ -501,7 +502,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //        
 //        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
 
-        if let combinedImage = generateResultImage(image, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, "", debug: self.debugMode) {
+        if let combinedImage = generateResultImage(image, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
             self.showImagePopup(combinedImage: combinedImage)
         } else {
             self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
@@ -736,19 +737,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         statusViewController?.showMessage(message)
 
         // Icon handling
-        let iconSize: CGFloat = 50
-        let iconFrame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
+//        let iconSize: CGFloat = 50
+//        let iconFrame = CGRect(x: 20, y: 70, width: iconSize, height: iconSize)
 
-        if let existingIcon = view.viewWithTag(9999) as? UIImageView {
-            existingIcon.image = UIImage(named: self.identifierString)
-        } else {
-            let iconImageView = UIImageView(image: UIImage(named: self.identifierString))
-            iconImageView.frame = iconFrame
-            iconImageView.contentMode = .scaleAspectFit
-            iconImageView.tag = 9999
-            iconImageView.isHidden = true
-            view.addSubview(iconImageView)
-        }
+//        if let existingIcon = view.viewWithTag(9999) as? UIImageView {
+//            existingIcon.image = UIImage(named: self.identifierString)
+//        } else {
+//            let iconImageView = UIImageView(image: UIImage(named: self.identifierString))
+//            iconImageView.frame = iconFrame
+//            iconImageView.contentMode = .scaleAspectFit
+//            iconImageView.tag = 9999
+//            iconImageView.isHidden = true
+//            view.addSubview(iconImageView)
+//        }
     }
     
     private func detectCurrentImage() {

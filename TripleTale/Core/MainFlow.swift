@@ -171,15 +171,16 @@ func generateResultImage(_ inputImage: UIImage,
 //    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: boundingBox)
 //        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
 //    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
-//    let pt = CGPoint(x: 10, y: inputImage.size.height - 300)
 //
 //    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
 
 //    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
     let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 200)!)
     let lengthTextImage = weightTextImage!.imageWithCenteredText("\(formattedLength) in", fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 150)!, verticalOffset: 200)
+    
+    let fishNameImage = lengthTextImage!.imageWithHorizontalCenteredText(fishName, fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 75)!, yPosition: inputImage.size.height - 200)
 
-    var combinedImage = lengthTextImage
+    var combinedImage = fishNameImage
 
     if debug {
         let point = CGPoint(x: 10, y: combinedImage!.size.height - 80)
