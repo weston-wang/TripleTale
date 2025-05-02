@@ -232,10 +232,32 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         // Force eager loading of SAM models to avoid first-use latency or crash
-        _ = imageEncoder
-        _ = promptEncoder
-        _ = maskDecoder
+        let loadingLabel = UILabel(frame: CGRect(x: (self.view.bounds.width - 130) / 2, y: 60, width: 130, height: 20))
+        loadingLabel.text = "Loading AI Models…"
+        loadingLabel.textColor = .white
+        loadingLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        loadingLabel.textAlignment = .right
+        loadingLabel.tag = 2025
+        self.view.addSubview(loadingLabel)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now()) {
+            Task.detached(priority: .utility) {
+                _ = await self.imageEncoder
+            }
+        }
 
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            Task.detached(priority: .utility) {
+                _ = await self.promptEncoder
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task.detached(priority: .utility) {
+                _ = await self.maskDecoder
+            }
+        }
+        
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
         view.addSubview(sceneView)
