@@ -776,6 +776,66 @@ extension UIViewController {
         present(alert, animated: true, completion: nil)
     }
     
+    /// Shows a scrollable popup with multiple images horizontally.
+    func showScrollableImagePopup(images: [UIImage]) {
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
+
+        // Create a scroll view
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Create a horizontal stack view to hold the images
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = 10
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(stackView)
+
+        for image in images {
+            let imageView = UIImageView(image: image)
+            imageView.contentMode = .scaleAspectFit
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.widthAnchor.constraint(equalToConstant: 200).isActive = true
+            imageView.heightAnchor.constraint(equalToConstant: 200).isActive = true
+            stackView.addArrangedSubview(imageView)
+        }
+
+        // Container view for layout inside the alert
+        let containerView = UIView()
+        containerView.addSubview(scrollView)
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Add constraints to scrollView and stackView
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+
+            stackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            stackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+        ])
+
+        // Add the container to the alert
+        alert.view.addSubview(containerView)
+
+        NSLayoutConstraint.activate([
+            containerView.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 20),
+            containerView.bottomAnchor.constraint(equalTo: alert.view.bottomAnchor, constant: -45),
+            containerView.leadingAnchor.constraint(equalTo: alert.view.leadingAnchor, constant: 10),
+            containerView.trailingAnchor.constraint(equalTo: alert.view.trailingAnchor, constant: -10),
+            containerView.heightAnchor.constraint(equalToConstant: 220)
+        ])
+
+        alert.addAction(UIAlertAction(title: "Close", style: .cancel, handler: nil))
+
+        self.present(alert, animated: true, completion: nil)
+    }
+    
     func showInputPopup(title: String?, message: String?, placeholders: [String], completion: @escaping ([Double?]) -> Void) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         

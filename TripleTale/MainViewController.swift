@@ -232,13 +232,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         // Force eager loading of SAM models to avoid first-use latency or crash
-        let loadingLabel = UILabel(frame: CGRect(x: (self.view.bounds.width - 130) / 2, y: 60, width: 130, height: 20))
-        loadingLabel.text = "Loading AI Models…"
-        loadingLabel.textColor = .white
-        loadingLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        loadingLabel.textAlignment = .right
-        loadingLabel.tag = 2025
-        self.view.addSubview(loadingLabel)
+        let activityIndicator = UIActivityIndicatorView(style: .medium)
+        activityIndicator.center = CGPoint(x: self.view.bounds.midX, y: self.view.bounds.midY)
+        activityIndicator.color = .white
+        activityIndicator.tag = 2025
+        activityIndicator.startAnimating()
+        self.view.addSubview(activityIndicator)
         
         Task.detached(priority: .utility) {
             _ = await self.imageEncoder  // Load 1st model
@@ -253,30 +252,31 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     label.removeFromSuperview()
                 }
                 self.view.showToast(message: "AI Ready")
+                
+                // Add the bracket view to the main view
+                self.bracketView = BracketView(frame: self.view.bounds)
+                self.bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
+                self.view.addSubview(self.bracketView!)
+                
+                // Initial bracket update
+                self.updateBracketSize()
+                
+                // Call the function to create and add the camera button
+                self.setupCameraButton()
             }
         }
         
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
         view.addSubview(sceneView)
-        
-        // Add the bracket view to the main view
-        bracketView = BracketView(frame: view.bounds)
-        bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
-        view.addSubview(bracketView!)
-        
-        // Initial bracket update
-        updateBracketSize()
+       
         
         // Create a transparent view for the bottom left corner
         createCornerView(withSize: 100)
         
         // Create a transparent view for the bottom right corner
         createDebugCornerView(withSize: 100)
-        
-        // Call the function to create and add the camera button
-        setupCameraButton()
-        
+
 //        setupClassifierLabel()
         
         // Subscribe button
