@@ -240,21 +240,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         loadingLabel.tag = 2025
         self.view.addSubview(loadingLabel)
         
-        DispatchQueue.main.asyncAfter(deadline: .now()) {
-            Task.detached(priority: .utility) {
-                _ = await self.imageEncoder
-            }
-        }
+        Task.detached(priority: .utility) {
+            _ = await self.imageEncoder  // Load 1st model
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            Task.detached(priority: .utility) {
-                _ = await self.promptEncoder
-            }
-        }
+            _ = await self.promptEncoder // Load 2nd model (after 1st completes)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            Task.detached(priority: .utility) {
-                _ = await self.maskDecoder
+            _ = await self.maskDecoder   // Load 3rd model (after 2nd completes)
+
+            // Update UI once all done
+            DispatchQueue.main.async {
+                if let label = self.view.viewWithTag(2025) {
+                    label.removeFromSuperview()
+                }
+                self.view.showToast(message: "AI Ready")
             }
         }
         
