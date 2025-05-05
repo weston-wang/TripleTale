@@ -471,7 +471,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self.lengthScale = 1.0
             self.widthScale = 1.0
             
-            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, debug: self.debugMode)
+            let maskImage = generateMaskImage(from: image, for: 1.0)
+
+            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
         } else {
             print("FACING forward")
             self.lengthScale = 1.05
@@ -482,7 +484,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
-            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, depthImage: samImage, debug: self.debugMode)
+            let maskImage = CIImage(image: samImage)
+            
+            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
         }
 
         guard let normalizedVertices = ellipseVertices else {

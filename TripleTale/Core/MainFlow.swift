@@ -16,11 +16,12 @@ import CoreGraphics
 import CoreImage
 import Accelerate
 
-func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwardPercent: Double, depthImage: UIImage? = nil, debug: Bool = false) -> [CGPoint]? {
+//func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwardPercent: Double, mask: UIImage? = nil, debug: Bool = false) -> [CGPoint]? {
+func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwardPercent: Double, maskImage: CIImage, debug: Bool = false) -> [CGPoint]? {
     // get foreground mask
-    guard let maskImage = depthImage != nil ? CIImage(image: depthImage!) : generateMaskImage(from: image, for: portion) else {
-        return nil
-    }
+//    guard let maskImage = mask != nil ? CIImage(image: mask!) : generateMaskImage(from: image, for: portion) else {
+//        return nil
+//    }
     
     // turn into gray scale pixel data
     let context = CIContext()
