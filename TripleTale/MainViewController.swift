@@ -226,18 +226,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Create splash/loading image view
+        showLoadingOverlay()
+        
+        sceneView = ARSCNView(frame: self.view.frame)
+        sceneView.delegate = self
+        view.addSubview(sceneView)
+
+
         Task {
             await subscriptionManager.loadProducts()
             await subscriptionManager.updateSubscriptionStatus()
         }
-        
-        // Force eager loading of SAM models to avoid first-use latency or crash
-        let activityIndicator = UIActivityIndicatorView(style: .medium)
-        activityIndicator.center = CGPoint(x: self.view.bounds.midX, y: self.view.bounds.midY)
-        activityIndicator.color = .white
-        activityIndicator.tag = 2025
-        activityIndicator.startAnimating()
-        self.view.addSubview(activityIndicator)
         
         Task.detached(priority: .utility) {
             _ = await self.imageEncoder  // Load 1st model
@@ -248,9 +248,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             // Update UI once all done
             DispatchQueue.main.async {
-                if let label = self.view.viewWithTag(2025) {
-                    label.removeFromSuperview()
-                }
+                self.hideLoadingOverlay()
+                
                 self.view.showToast(message: "AI Ready")
                 
                 // Add the bracket view to the main view
@@ -263,14 +262,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 // Call the function to create and add the camera button
                 self.setupCameraButton()
+
+                // Start AR
+                self.startSession()
             }
         }
-        
-        sceneView = ARSCNView(frame: self.view.frame)
-        sceneView.delegate = self
-        view.addSubview(sceneView)
-       
-        
+
         // Create a transparent view for the bottom left corner
         createCornerView(withSize: 100)
         
@@ -283,9 +280,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         setupSubscribeButton()
         setupRestoreButton()
         
-        // Start AR
-        startSession()
-
         // Start monitoring tilt changes
         startMotionTracking()
         
@@ -827,7 +821,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
     
-    func updateBracketSize() {
+    private func updateBracketSize() {
         guard let bracketView = bracketView else { return }
 
         bracketView.addCircleMarker()
@@ -837,5 +831,47 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //
 //        let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
 //        bracketView.updateBracket(rect: rect)
+    }
+    
+    private func showLoadingOverlay() {
+        // Create splash/loading image view
+        let loadingImageView = UIImageView(frame: view.bounds)
+        loadingImageView.contentMode = .scaleAspectFill
+        loadingImageView.image = UIImage(named: "background") // Replace with your asset name
+        loadingImageView.tag = 3030
+        view.addSubview(loadingImageView)
+        
+        // Add activity indicator
+        let activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.center = CGPoint(x: self.view.bounds.midX, y: self.view.bounds.midY)
+        activityIndicator.color = .white
+        activityIndicator.tag = 2025
+        activityIndicator.startAnimating()
+        self.view.addSubview(activityIndicator)
+        
+        // Add loading label
+        let loadingLabel = UILabel(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 40))
+        loadingLabel.center = CGPoint(x: view.bounds.midX, y: view.bounds.midY + 60)
+        loadingLabel.textAlignment = .center
+        loadingLabel.textColor = .white
+        loadingLabel.font = UIFont(name: "Futura-Bold", size: 20)
+        loadingLabel.text = "Loading AI Models…"
+        loadingLabel.tag = 4040
+        view.addSubview(loadingLabel)
+        
+        UIView.animate(withDuration: 1.0,
+                       delay: 0,
+                       options: [.repeat, .autoreverse, .allowUserInteraction],
+                       animations: {
+            loadingLabel.alpha = 0.3
+        }, completion: nil)
+    }
+    
+    private func hideLoadingOverlay() {
+        [2025, 3030, 4040].forEach { tag in
+            if let view = self.view.viewWithTag(tag) {
+                view.removeFromSuperview()
+            }
+        }
     }
 }
