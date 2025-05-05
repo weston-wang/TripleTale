@@ -249,9 +249,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             // Update UI once all done
             DispatchQueue.main.async {
                 self.hideLoadingOverlay()
-                
-                self.view.showToast(message: "AI Ready")
-                
+                                
                 // Add the bracket view to the main view
                 self.bracketView = BracketView(frame: self.view.bounds)
                 self.bracketView?.isUserInteractionEnabled = false // Make sure it doesn't intercept touch events
@@ -262,33 +260,33 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 
                 // Call the function to create and add the camera button
                 self.setupCameraButton()
+                
+                // Create a transparent view for the bottom left corner
+                self.createCornerView(withSize: 100)
+                
+                // Create a transparent view for the bottom right corner
+                self.createDebugCornerView(withSize: 100)
 
+        //        setupClassifierLabel()
+                
+                // Subscribe button
+                self.setupSubscribeButton()
+                self.setupRestoreButton()
+                
+                // Start monitoring tilt changes
+                self.startMotionTracking()
+                
                 // Start AR
                 self.startSession()
+                
+                // Hook up status view controller callback.
+                self.statusViewController?.restartExperienceHandler = { [unowned self] in
+                    self.restartSession()
+                }
+                
             }
         }
 
-        // Create a transparent view for the bottom left corner
-        createCornerView(withSize: 100)
-        
-        // Create a transparent view for the bottom right corner
-        createDebugCornerView(withSize: 100)
-
-//        setupClassifierLabel()
-        
-        // Subscribe button
-        setupSubscribeButton()
-        setupRestoreButton()
-        
-        // Start monitoring tilt changes
-        startMotionTracking()
-        
-        
-        // Hook up status view controller callback.
-        statusViewController?.restartExperienceHandler = { [unowned self] in
-            self.restartSession()
-        }
-        
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleDeviceOrientationChange),
