@@ -239,7 +239,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             await subscriptionManager.updateSubscriptionStatus()
         }
         
-        Task.detached(priority: .utility) {
+        Task.detached(priority: .high) {
             _ = await self.imageEncoder  // Load 1st model
 
             _ = await self.promptEncoder // Load 2nd model (after 1st completes)
