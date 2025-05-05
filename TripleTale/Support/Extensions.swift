@@ -51,6 +51,68 @@ extension CGImagePropertyOrientation {
 
 /// - Tag: UIImage
 extension UIImage {
+    func masked(with mask: CIImage) -> UIImage? {
+        guard let cgImage = self.cgImage else { return nil }
+
+        let inputCIImage = CIImage(cgImage: cgImage)
+
+        // Resize mask if needed
+        let resizedMask = mask.transformed(by: CGAffineTransform(scaleX: inputCIImage.extent.width / mask.extent.width,
+                                                                 y: inputCIImage.extent.height / mask.extent.height))
+
+        guard let filter = CIFilter(name: "CIBlendWithMask") else { return nil }
+        filter.setValue(inputCIImage, forKey: kCIInputImageKey)
+        filter.setValue(resizedMask, forKey: kCIInputMaskImageKey)
+        filter.setValue(CIImage(color: .clear).cropped(to: inputCIImage.extent), forKey: kCIInputBackgroundImageKey)
+
+        guard let outputImage = filter.outputImage else { return nil }
+
+        // Compute bounding box of mask content
+        let maskExtent = resizedMask.extent
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        guard let maskCG = context.createCGImage(resizedMask, from: maskExtent) else { return nil }
+
+        let width = Int(maskExtent.width)
+        let height = Int(maskExtent.height)
+        let bytesPerRow = width
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+
+        guard let bitmapContext = CGContext(data: nil,
+                                            width: width,
+                                            height: height,
+                                            bitsPerComponent: 8,
+                                            bytesPerRow: bytesPerRow,
+                                            space: colorSpace,
+                                            bitmapInfo: CGImageAlphaInfo.none.rawValue),
+              let buffer = bitmapContext.data else { return nil }
+
+        bitmapContext.draw(maskCG, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        // Find non-zero alpha bounding box
+        var minX = width, minY = height, maxX = 0, maxY = 0
+        for y in 0..<height {
+            for x in 0..<width {
+                let pixelValue = buffer.load(fromByteOffset: y * bytesPerRow + x, as: UInt8.self)
+                if pixelValue > 10 {
+                    minX = min(minX, x)
+                    maxX = max(maxX, x)
+                    minY = min(minY, y)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+
+        guard minX < maxX, minY < maxY else { return nil }
+
+        let cropRect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+            .applying(CGAffineTransform(scaleX: inputCIImage.extent.width / CGFloat(width),
+                                        y: inputCIImage.extent.height / CGFloat(height)))
+
+        guard let croppedCG = context.createCGImage(outputImage.cropped(to: cropRect), from: cropRect) else { return nil }
+
+        return UIImage(cgImage: croppedCG, scale: self.scale, orientation: self.imageOrientation)
+    }
+    
     func forceRGB() -> UIImage? {
         let width = Int(size.width)
         let height = Int(size.height)

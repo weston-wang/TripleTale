@@ -466,14 +466,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
         let ellipseVertices: [CGPoint]?
+        let maskImage: CIImage?
+        
         if !isFacingForward {
             print("FACING down")
             self.lengthScale = 1.0
             self.widthScale = 1.0
             
-            let maskImage = generateMaskImage(from: image, for: 1.0)
-
-            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
+            maskImage = generateMaskImage(from: image, for: 1.0)
         } else {
             print("FACING forward")
             self.lengthScale = 1.05
@@ -484,9 +484,24 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
-            let maskImage = CIImage(image: samImage)
+            maskImage = CIImage(image: samImage)
+        }
+        
+        ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
+
+        if let finalImage = image.masked(with: maskImage!) {
+            // Do something with the masked image (e.g., display or save)
             
-            ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
+            if self.debugMode {
+                saveImageToGallery(finalImage)
+            }
+            
+            let mlImage = resizeImageForModel(finalImage, width: 512, height: 512)
+            
+            runTripleTaleModel(on: mlImage!) { identifier, confidence, boundingBox in
+                self.identifierString = identifier
+                self.confidence = confidence
+            }
         }
 
         guard let normalizedVertices = ellipseVertices else {
@@ -696,7 +711,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Optional: Save image for inspection
         self.currentBuffer = pixelBuffer
 
-        detectCurrentImage()
+//        detectCurrentImage()
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
@@ -875,6 +890,43 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         [2025, 3030, 4040].forEach { tag in
             if let view = self.view.viewWithTag(tag) {
                 view.removeFromSuperview()
+            }
+        }
+    }
+    
+    /// Run the TripleTale CoreML model on a UIImage and return the identifier, confidence, and bounding box.
+    /// This is useful for external or test calls.
+    func runTripleTaleModel(on image: UIImage, completion: @escaping (String, VNConfidence, CGRect?) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion("", 0, nil)
+            return
+        }
+
+        let ciImage = CIImage(cgImage: cgImage)
+        let orientation = CGImagePropertyOrientation(UIDevice.current.orientation)
+
+        let requestHandler = VNImageRequestHandler(ciImage: ciImage, orientation: orientation)
+
+        visionQueue.async {
+            do {
+                let request = VNCoreMLRequest(model: try VNCoreMLModel(for: self.tripleTaleModel.model)) { request, error in
+                    if let result = processObservations(for: request, error: error) {
+                        DispatchQueue.main.async {
+                            completion(result.identifierString, result.confidence, result.boundingBox)
+                        }
+                    } else {
+                        DispatchQueue.main.async {
+                            completion("", 0, nil)
+                        }
+                    }
+                }
+
+                try requestHandler.perform([request])
+            } catch {
+                print("❌ Error running TripleTale model: \(error)")
+                DispatchQueue.main.async {
+                    completion("", 0, nil)
+                }
             }
         }
     }
