@@ -499,63 +499,56 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             runTripleTaleModel(on: mlImage!) { identifier, confidence, boundingBox in
                 self.identifierString = identifier
                 self.confidence = confidence
+                
+                guard let normalizedVertices = ellipseVertices else {
+                    DispatchQueue.main.async {
+                        self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
+                        completion()
+                    }
+                    return
+                }
+
+        //        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
+                let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
+
+                if verticesAnchors.count < 4 {
+                    DispatchQueue.main.async {
+                        self.showPopupMessage(title: "Error", message: "Failed to place anchors properly.")
+                        completion()
+                    }
+                    return
+                }
+                
+        //        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
+
+                var (width, length) = measureVertices(verticesAnchors)
+                let height: Float = 0.0
+                
+                length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
+                width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
+
+                length *= Float(self.lengthScale)
+                width *= Float(self.widthScale)
+                
+                let girth = width * Float(self.bodyRatio)
+
+                let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
+                    calculateWeight(width, length, height, girth, self.scaleFactor)
+
+                let imageOrientation = uiImageOrientation(from: self.deviceOrientation)
+                let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
+                
+                let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
+                if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
+                    self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
+                } else {
+                    self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+                }
+
+                DispatchQueue.main.async {
+                    completion()
+                }
             }
-        }
-
-        guard let normalizedVertices = ellipseVertices else {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
-                completion()
-            }
-            return
-        }
-
-//        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
-        let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
-
-        if verticesAnchors.count < 4 {
-            DispatchQueue.main.async {
-                self.showPopupMessage(title: "Error", message: "Failed to place anchors properly.")
-                completion()
-            }
-            return
-        }
-        
-//        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
-
-        var (width, length) = measureVertices(verticesAnchors)
-        let height: Float = 0.0
-        
-        length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
-        width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
-
-        length *= Float(self.lengthScale)
-        width *= Float(self.widthScale)
-        
-        let girth = width * Float(self.bodyRatio)
-
-        let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
-            calculateWeight(width, length, height, girth, self.scaleFactor)
-
-//        let resultImageWidth = image.size.width
-//        let resultImageHeight = image.size.height
-//
-//        print("image height and width: \(resultImageHeight) x \(resultImageWidth)")
-//        
-//        let croppedImage = image.croppedToAspectRatio(size: CGSize(width: resultImageWidth, height: resultImageHeight))
-        
-        let imageOrientation = uiImageOrientation(from: self.deviceOrientation)
-        let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
-        
-        let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
-        if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
-            self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
-        } else {
-            self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-        }
-
-        DispatchQueue.main.async {
-            completion()
         }
     }
     
