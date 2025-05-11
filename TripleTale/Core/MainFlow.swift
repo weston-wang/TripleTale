@@ -191,7 +191,7 @@ func generateResultImage(_ inputImage: UIImage,
         //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
     }
     
-    saveImageToGallery(combinedImage!)
+//    saveImageToGallery(combinedImage!)
 
     return combinedImage!
 }

@@ -237,6 +237,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         Task {
             await subscriptionManager.loadProducts()
             await subscriptionManager.updateSubscriptionStatus()
+            
+            DispatchQueue.main.async {
+                printActiveEntitlements()
+            }
         }
         
         Task.detached(priority: .high) {
@@ -272,6 +276,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 // Subscribe button
                 self.setupSubscribeButton()
                 self.setupRestoreButton()
+                
+                if !self.subscriptionManager.isSubscribed {
+                    let alert = UIAlertController(title: "Subscribe Required", message: "Please subscribe to access all features.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
+                        Task {
+                            if let product = self.subscriptionManager.products.first {
+                                await self.subscriptionManager.purchase(product)
+                            } else {
+                                self.view.showToast(message: "No subscription product available.")
+                            }
+                        }
+                    }))
+                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
                 
                 // Start monitoring tilt changes
                 self.startMotionTracking()
@@ -428,10 +447,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
       }
     
     @objc func handleCameraButtonPress() {
-//        guard subscriptionManager.isSubscribed else {
-//            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
-//            return
-//        }
+        guard subscriptionManager.isSubscribed else {
+            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
+            return
+        }
         
         guard !isProcessingCameraPress else {
             print("⏳ Button press ignored: Please wait for processing to complete...")
@@ -541,6 +560,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
                 if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
                     self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
+                    
+                    saveImageToGallery(combinedImage)
                 } else {
                     self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                 }
@@ -921,4 +942,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
         }
     }
+    
+    
 }
