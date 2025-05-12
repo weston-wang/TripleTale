@@ -274,8 +274,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         //        setupClassifierLabel()
                 
                 // Subscribe button
-                self.setupSubscribeButton()
-                self.setupRestoreButton()
+//                self.setupSubscribeButton()
+//                self.setupRestoreButton()
                 
                 if !self.subscriptionManager.isSubscribed {
                     let alert = UIAlertController(title: "Subscribe Required", message: "Please subscribe to access all features.", preferredStyle: .alert)
@@ -288,7 +288,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                             }
                         }
                     }))
-                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
+//                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
                     self.present(alert, animated: true, completion: nil)
                 }
                 
