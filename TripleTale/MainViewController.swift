@@ -13,6 +13,8 @@ import CoreMotion
 
 class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
+    let hasLiDAR = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
+
     var sceneView: ARSCNView!
     
     private var subscriptionManager = InAppPurchaseManager()
@@ -226,14 +228,26 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Create splash/loading image view
-        showLoadingOverlay()
+        print("has lidar: \(self.hasLiDAR)")
         
         sceneView = ARSCNView(frame: self.view.frame)
         sceneView.delegate = self
         view.addSubview(sceneView)
 
+        if !hasLiDAR {
+            DispatchQueue.main.async {
+                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires a LiDAR-enabled device. Access is restricted.", preferredStyle: .alert)
 
+                // Normal OK action (will exit if tapped once)
+                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                    exit(0)
+                }))
+            }
+        }
+
+        // Create splash/loading image view
+        showLoadingOverlay()
+        
         Task {
             await subscriptionManager.loadProducts()
             await subscriptionManager.updateSubscriptionStatus()
@@ -278,7 +292,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //                self.setupRestoreButton()
                 
                 if !self.subscriptionManager.isSubscribed {
-                    let alert = UIAlertController(title: "Subscribe Required", message: "Please subscribe to access all features.", preferredStyle: .alert)
+                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
                         Task {
                             if let product = self.subscriptionManager.products.first {
@@ -375,7 +389,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //            self.classifierLabel?.transform = CGAffineTransform(rotationAngle: angle)
 //            if let iconImageView = self.view.viewWithTag(9999) as? UIImageView {
 //                iconImageView.transform = CGAffineTransform(rotationAngle: angle)
-//                
+//
 //                // Reposition based on orientation
 //                if orientation.isLandscape {
 //                    let screenBounds = UIScreen.main.bounds
