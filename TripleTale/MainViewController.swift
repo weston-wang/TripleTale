@@ -242,6 +242,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
                     exit(0)
                 }))
+                
+                self.present(alert, animated: true)
             }
         }
 
