@@ -388,20 +388,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         UIView.animate(withDuration: 0.3) {
             self.cameraButton?.transform = CGAffineTransform(rotationAngle: self.deviceOrientation)
-//            self.classifierLabel?.transform = CGAffineTransform(rotationAngle: angle)
-//            if let iconImageView = self.view.viewWithTag(9999) as? UIImageView {
-//                iconImageView.transform = CGAffineTransform(rotationAngle: angle)
-//
-//                // Reposition based on orientation
-//                if orientation.isLandscape {
-//                    let screenBounds = UIScreen.main.bounds
-//                    iconImageView.frame.origin = CGPoint(x: screenBounds.width - iconImageView.frame.width - 20, y: 20)
-//                    self.classifierLabel?.frame.origin = CGPoint(x: screenBounds.width - self.classifierLabel!.frame.width - 20, y: iconImageView.frame.maxY + 8)
-//                } else {
-//                    iconImageView.frame.origin = CGPoint(x: 20, y: 70)
-//                    self.classifierLabel?.frame.origin = CGPoint(x: 20 + iconImageView.frame.width + 8, y: 70)
-//                }
-//            }
         }
     }
     
@@ -498,7 +484,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-        let ellipseVertices: [CGPoint]?
         let maskImage: CIImage?
         
         if !isFacingForward {
@@ -520,8 +505,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             maskImage = CIImage(image: samImage)
         }
         
-        ellipseVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
-
         if let finalImage = image.masked(with: maskImage!) {
             // Do something with the masked image (e.g., display or save)
             
@@ -535,7 +518,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.identifierString = identifier
                 self.confidence = confidence
                 
-                guard let normalizedVertices = ellipseVertices else {
+                guard let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode) else {
                     DispatchQueue.main.async {
                         self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
                         completion()
@@ -871,13 +854,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private func updateBracketSize() {
         guard let bracketView = bracketView else { return }
 
-        bracketView.addCircleMarker()
+//        bracketView.addCircleMarker()
         
-//        let width = view.bounds.width * 0.85 // Example size for not forward-facing, adjust as needed
-//        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
-//
-//        let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
-//        bracketView.updateBracket(rect: rect)
+        let width = view.bounds.width * 0.8 // Example size for not forward-facing, adjust as needed
+        let height = width * 16 / 9 // Maintain 9:16 aspect ratio
+
+        let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
+        bracketView.updateBracket(rect: rect)
     }
     
     private func showLoadingOverlay() {
