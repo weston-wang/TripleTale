@@ -777,3 +777,17 @@ func printActiveEntitlements() {
         }
     }
 }
+
+func areAnchorHeightsWithinTolerance(_ anchors: [ARAnchor], tolerance: Float = 0.1) -> Bool {
+    guard anchors.count > 1 else { return true }
+    
+    // Extract all Y positions
+    let yValues = anchors.map { $0.transform.columns.3.y }
+    
+    // Get min and max
+    guard let minY = yValues.min(), let maxY = yValues.max() else {
+        return true
+    }
+    
+    return (maxY - minY) <= tolerance
+}

@@ -518,20 +518,25 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.identifierString = identifier
                 self.confidence = confidence
                 
-                guard let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode) else {
-                    DispatchQueue.main.async {
-                        self.showPopupMessage(title: "Error", message: "Could not detect valid fish contours. Please try again.")
-                        completion()
+                var normalizedVertices: [CGPoint]? = nil
+                var verticesAnchors: [ARAnchor] = []
+
+                while self.inwardPercent <= 40.0 {
+                    normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
+
+                    if let vertices = normalizedVertices {
+                        verticesAnchors = getVertices(self.sceneView, vertices, image.size)
+                        if areAnchorHeightsWithinTolerance(verticesAnchors) {
+                            break
+                        }
                     }
-                    return
+
+                    self.inwardPercent += 5.0
                 }
 
-        //        var (verticesAnchors, verticesQueries) = getVertices(self.sceneView, normalizedVertices, image.size)
-                let verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
-
-                if verticesAnchors.count < 4 {
+                guard let finalVertices = normalizedVertices, verticesAnchors.count >= 4 else {
                     DispatchQueue.main.async {
-                        self.showPopupMessage(title: "Error", message: "Failed to place anchors properly.")
+                        self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
                         completion()
                     }
                     return
@@ -541,6 +546,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
                 var (width, length) = measureVertices(verticesAnchors)
                 let height: Float = 0.0
+                
+                print("measurements: width: \(width), height: \(height)")
+                if width > length {
+                    DispatchQueue.main.async {
+                        self.showPopupMessage(title: "Error", message: "Measurement error. Please try again.")
+                        completion()
+                    }
+                    return
+                }
                 
                 length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
                 width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
