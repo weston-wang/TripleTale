@@ -526,7 +526,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
                     if let vertices = normalizedVertices {
                         verticesAnchors = getVertices(self.sceneView, vertices, image.size)
-                        if areAnchorHeightsWithinTolerance(verticesAnchors) {
+                        if !self.isFacingForward || areAnchorHeightsWithinTolerance(verticesAnchors) {
                             break
                         }
                     }
@@ -534,7 +534,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     self.inwardPercent += 5.0
                 }
 
-                guard let finalVertices = normalizedVertices, verticesAnchors.count >= 4 else {
+                if verticesAnchors.count < 4 {
                     DispatchQueue.main.async {
                         self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
                         completion()
