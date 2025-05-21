@@ -162,7 +162,9 @@ func generateResultImage(_ inputImage: UIImage,
     let roundedLength = floor(rawLength * 4) / 4.0
     let formattedLength = String(format: "%.2f", roundedLength)
 
-    let formattedWeight = String(format: "%.2f", weightInLb.value)
+    let rawWeight = weightInLb.value
+    let roundedWeight = floor(rawWeight * 4) / 4.0
+    let formattedWeight = String(format: "%.2f", roundedWeight)
     
     let formattedWidth = String(format: "%.2f", widthInInches.value)
     let formattedHeight = String(format: "%.2f", heightInInches.value)

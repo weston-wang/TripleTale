@@ -520,8 +520,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 var normalizedVertices: [CGPoint]? = nil
                 var verticesAnchors: [ARAnchor] = []
 
-                while self.inwardPercent <= 40.0 {
-                    normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
+                var inward = self.inwardPercent
+                while inward <= 40.0 {
+                    normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: inward, maskImage: maskImage!, debug: self.debugMode)
 
                     if let vertices = normalizedVertices {
                         verticesAnchors = getVertices(self.sceneView, vertices, image.size)
@@ -530,7 +531,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                         }
                     }
 
-                    self.inwardPercent += 5.0
+                    inward += 5.0
                 }
 
                 if verticesAnchors.count < 4 {
