@@ -520,9 +520,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 var normalizedVertices: [CGPoint]? = nil
                 var verticesAnchors: [ARAnchor] = []
 
-                var inward = self.inwardPercent
-                while inward <= 40.0 {
-                    normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: inward, maskImage: maskImage!, debug: self.debugMode)
+                let userInwardPercent = self.inwardPercent
+                while self.inwardPercent <= 40.0 {
+                    normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
 
                     if let vertices = normalizedVertices {
                         verticesAnchors = getVertices(self.sceneView, vertices, image.size)
@@ -531,7 +531,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                         }
                     }
 
-                    inward += 5.0
+                    self.inwardPercent += 5.0
                 }
 
                 if verticesAnchors.count < 4 {
@@ -578,6 +578,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 } else {
                     self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
                 }
+                
+                // reset scaling
+                self.inwardPercent = userInwardPercent
 
                 DispatchQueue.main.async {
                     completion()
