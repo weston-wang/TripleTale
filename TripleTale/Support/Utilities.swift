@@ -218,6 +218,39 @@ func resizeImageForModel(_ image: UIImage, width: Int = 320, height: Int = 320) 
     return resizedImage
 }
 
+/// Resize and pad a mask image so that the longest side becomes `targetLongestSide`, and then pad to a square of `outputSize`×`outputSize`.
+/// This is useful for mask images that should not be interpolated (preserve edges).
+func resizeAndPadMaskImage(_ image: UIImage, targetLongestSide: CGFloat = 224, outputSize: CGFloat = 256) -> UIImage? {
+    let originalSize = image.size
+    let scale = targetLongestSide / max(originalSize.width, originalSize.height)
+    let newSize = CGSize(width: originalSize.width * scale, height: originalSize.height * scale)
+
+    // Resize the image while preserving the mask nature (no interpolation)
+    UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+    if let context = UIGraphicsGetCurrentContext() {
+        context.interpolationQuality = .none
+        image.draw(in: CGRect(origin: .zero, size: newSize))
+    }
+    guard let resizedImage = UIGraphicsGetImageFromCurrentImageContext() else {
+        UIGraphicsEndImageContext()
+        return nil
+    }
+    UIGraphicsEndImageContext()
+
+    // Create square canvas with transparent background
+    let canvasSize = CGSize(width: outputSize, height: outputSize)
+    UIGraphicsBeginImageContextWithOptions(canvasSize, false, 1.0)
+    let origin = CGPoint(
+        x: (outputSize - newSize.width) / 2.0,
+        y: (outputSize - newSize.height) / 2.0
+    )
+    resizedImage.draw(in: CGRect(origin: origin, size: newSize))
+    let finalImage = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    return finalImage
+}
+
 /// Resize depth map back to the original input image size
 func resizeDepthMap(_ depthImage: UIImage, to originalSize: CGSize) -> UIImage? {
     UIGraphicsBeginImageContextWithOptions(originalSize, false, 1.0)

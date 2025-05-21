@@ -506,13 +506,12 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         if let finalImage = image.masked(with: maskImage!) {
-            // Do something with the masked image (e.g., display or save)
+//            let mlImage = resizeImageForModel(finalImage, width: 512, height: 512)
+            let mlImage = resizeAndPadMaskImage(finalImage)
             
             if self.debugMode {
-                saveImageToGallery(finalImage)
+                saveImageToGallery(mlImage!)
             }
-            
-            let mlImage = resizeImageForModel(finalImage, width: 512, height: 512)
             
             runTripleTaleModel(on: mlImage!) { identifier, confidence, boundingBox in
                 self.identifierString = identifier
