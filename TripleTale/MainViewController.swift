@@ -484,14 +484,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-        let maskImage: CIImage?
+        let mask: CIImage?
         
         if !isFacingForward {
             print("FACING down")
             self.lengthScale = 1.0
             self.widthScale = 1.0
             
-            maskImage = generateMaskImage(from: image, for: 1.0)
+            mask = generateMaskImage(from: image, for: 1.0)
         } else {
             print("FACING forward")
             self.lengthScale = 1.05
@@ -502,89 +502,105 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
-            maskImage = CIImage(image: samImage)
+            mask = CIImage(image: samImage)
         }
         
-        if let finalImage = image.masked(with: maskImage!) {
-//            let mlImage = resizeImageForModel(finalImage, width: 512, height: 512)
-            let mlImage = resizeAndPadMaskImage(finalImage)
+        guard let maskImage = mask else {
+            print("❌ maskImage is nil")
+            self.view.showToast(message: "Could not extract mask.")
+
+            return
+        }
+        
+        guard let finalImage = image.masked(with: maskImage) else {
+            print("❌ image.masked(with:) failed")
+            self.view.showToast(message: "Could not isolate fish with mask.")
+
+            return
+        }
+        
+        guard let mlImage = resizeAndPadMaskImage(finalImage) else {
+            print("❌ resizeAndPadMaskImage failed")
+            self.view.showToast(message: "Could not classify fish.")
+
+            return
+        }
+        
+        if self.debugMode {
+            saveImageToGallery(mlImage)
+        }
+        
+        runTripleTaleModel(on: mlImage) { identifier, confidence, boundingBox in
+            self.identifierString = identifier
+            self.confidence = confidence
             
-            if self.debugMode {
-                saveImageToGallery(mlImage!)
+            var normalizedVertices: [CGPoint]? = nil
+            var verticesAnchors: [ARAnchor] = []
+
+            let userInwardPercent = self.inwardPercent
+            while self.inwardPercent <= 40.0 {
+                normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage, debug: self.debugMode)
+
+                if let vertices = normalizedVertices {
+                    verticesAnchors = getVertices(self.sceneView, vertices, image.size)
+                    if !self.isFacingForward || areAnchorHeightsWithinTolerance(verticesAnchors) {
+                        break
+                    }
+                }
+
+                self.inwardPercent += 5.0
             }
-            
-            runTripleTaleModel(on: mlImage!) { identifier, confidence, boundingBox in
-                self.identifierString = identifier
-                self.confidence = confidence
-                
-                var normalizedVertices: [CGPoint]? = nil
-                var verticesAnchors: [ARAnchor] = []
 
-                let userInwardPercent = self.inwardPercent
-                while self.inwardPercent <= 40.0 {
-                    normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage!, debug: self.debugMode)
-
-                    if let vertices = normalizedVertices {
-                        verticesAnchors = getVertices(self.sceneView, vertices, image.size)
-                        if !self.isFacingForward || areAnchorHeightsWithinTolerance(verticesAnchors) {
-                            break
-                        }
-                    }
-
-                    self.inwardPercent += 5.0
-                }
-
-                if verticesAnchors.count < 4 {
-                    DispatchQueue.main.async {
-                        self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
-                        completion()
-                    }
-                    return
-                }
-                
-        //        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
-
-                var (width, length) = measureVertices(verticesAnchors)
-                let height: Float = 0.0
-                
-                print("measurements: width: \(width), height: \(height)")
-                if width > length {
-                    DispatchQueue.main.async {
-                        self.showPopupMessage(title: "Error", message: "Measurement error. Please try again.")
-                        completion()
-                    }
-                    return
-                }
-                
-                length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
-                width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
-
-                length *= Float(self.lengthScale)
-                width *= Float(self.widthScale)
-                
-                let girth = width * Float(self.bodyRatio)
-
-                let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
-                    calculateWeight(width, length, height, girth, self.scaleFactor)
-
-                let imageOrientation = uiImageOrientation(from: self.deviceOrientation)
-                let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
-                
-                let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
-                if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
-                    self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
-                    
-                    saveImageToGallery(combinedImage)
-                } else {
-                    self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
-                }
-                
-                // reset scaling
-                self.inwardPercent = userInwardPercent
-
+            if verticesAnchors.count < 4 {
                 DispatchQueue.main.async {
+                    self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
                     completion()
                 }
+                return
+            }
+            
+    //        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
+
+            var (width, length) = measureVertices(verticesAnchors)
+            let height: Float = 0.0
+            
+            print("measurements: width: \(width), height: \(height)")
+            if width > length {
+                DispatchQueue.main.async {
+                    self.showPopupMessage(title: "Error", message: "Measurement error. Please try again.")
+                    completion()
+                }
+                return
+            }
+            
+            length *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
+            width *= Float(1.0 / (1.0 - self.inwardPercent/100.0))
+
+            length *= Float(self.lengthScale)
+            width *= Float(self.widthScale)
+            
+            let girth = width * Float(self.bodyRatio)
+
+            let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
+                calculateWeight(width, length, height, girth, self.scaleFactor)
+
+            let imageOrientation = uiImageOrientation(from: self.deviceOrientation)
+            let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
+            
+            let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
+            if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
+                self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
+                
+                saveImageToGallery(combinedImage)
+            } else {
+                self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
+            }
+            
+            // reset scaling
+            self.inwardPercent = userInwardPercent
+
+            DispatchQueue.main.async {
+                completion()
             }
         }
     }

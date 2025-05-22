@@ -159,11 +159,11 @@ func generateResultImage(_ inputImage: UIImage,
 //    let boundingBox = inputBoundingBox ?? CGRect(origin: .zero, size: inputImage.size)
     
     let rawLength = lengthInInches.value
-    let roundedLength = floor(rawLength * 4) / 4.0
+    let roundedLength = round(rawLength * 4) / 4.0
     let formattedLength = String(format: "%.2f", roundedLength)
 
     let rawWeight = weightInLb.value
-    let roundedWeight = floor(rawWeight * 4) / 4.0
+    let roundedWeight = round(rawWeight * 4) / 4.0
     let formattedWeight = String(format: "%.2f", roundedWeight)
     
     let formattedWidth = String(format: "%.2f", widthInInches.value)
