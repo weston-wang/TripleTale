@@ -38,7 +38,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var deviceOrientation: CGFloat = 0.0
     
     private var tapCounter = 0
-    var scaleFactor: Double = 500.0
+    var scaleFactor: Double = 800.0
     
     var inwardPercent: Double = 20.0 // 5%
     var heightNudge: Double = 1.0
@@ -46,7 +46,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var lengthScale: Double = 1.05
     var widthScale: Double = 1.05
     
-    var bodyRatio: Double = 2.5
+    var bodyRatio: Double = 2.75
     
     // Classification results
     private var identifierString = ""
@@ -236,7 +236,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         if !hasLiDAR {
             DispatchQueue.main.async {
-                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires a LiDAR-enabled device. Access is restricted.", preferredStyle: .alert)
+                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires a LiDAR-enabled device. Non-LiDAR devices support will be enabled in future updates.", preferredStyle: .alert)
 
                 // Normal OK action (will exit if tapped once)
                 alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
