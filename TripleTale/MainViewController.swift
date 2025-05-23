@@ -556,6 +556,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 // reset scaling
                 self.inwardPercent = userInwardPercent
 
+                // Reset AR session to recover from potential raycast/tracking issues
+                self.sceneView.session.run(self.sceneView.session.configuration!, options: [.resetTracking, .removeExistingAnchors])
+
                 DispatchQueue.main.async {
                     self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
                     completion()
