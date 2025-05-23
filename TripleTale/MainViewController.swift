@@ -552,6 +552,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
 
             if verticesAnchors.count < 4 {
+                
+                // reset scaling
+                self.inwardPercent = userInwardPercent
+
                 DispatchQueue.main.async {
                     self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
                     completion()
@@ -564,7 +568,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             var (width, length) = measureVertices(verticesAnchors)
             let height: Float = 0.0
             
-            print("measurements: width: \(width), height: \(height)")
+            print("measurements: width: \(width), height: \(length)")
             if width > length {
                 DispatchQueue.main.async {
                     self.showPopupMessage(title: "Error", message: "Measurement error. Please try again.")
