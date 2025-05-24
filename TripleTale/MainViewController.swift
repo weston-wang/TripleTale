@@ -40,6 +40,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     var scaleFactor: Double = 800.0
     
+    var screenRatio: Double = 0.95
+    
     var inwardPercent: Double = 20.0 // 5%
     var heightNudge: Double = 1.0
     
@@ -896,7 +898,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
 //        bracketView.addCircleMarker()
         
-        let width = view.bounds.width * 0.8 // Example size for not forward-facing, adjust as needed
+        let width = view.bounds.width * self.screenRatio // Example size for not forward-facing, adjust as needed
         let height = width * 16 / 9 // Maintain 9:16 aspect ratio
 
         let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
