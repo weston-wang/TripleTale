@@ -40,7 +40,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     var scaleFactor: Double = 800.0
     
-    var screenRatio: Double = 0.95
+    var screenRatio: CGFloat = 0.95
     
     var inwardPercent: Double = 20.0 // 5%
     var heightNudge: Double = 1.0
@@ -261,7 +261,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             }
         }
         
-        Task.detached(priority: .high) {
+        Task.detached(priority: .utility) {
             _ = await self.imageEncoder  // Load 1st model
 
             _ = await self.promptEncoder // Load 2nd model (after 1st completes)
