@@ -167,14 +167,26 @@ extension UIImage {
         return downscaledImage
     }
     
+    /// Returns a new image centered and padded with transparent space to the specified target size.
+    func paddedToSize(_ targetSize: CGSize) -> UIImage? {
+        let originX = (targetSize.width - self.size.width) / 2
+        let originY = (targetSize.height - self.size.height) / 2
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let paddedImage = renderer.image { _ in
+            UIColor.clear.setFill()
+            UIBezierPath(rect: CGRect(origin: .zero, size: targetSize)).fill()
+            self.draw(at: CGPoint(x: originX, y: originY))
+        }
+
+        return paddedImage
+    }
+    
     func cropCenter(to percent: CGFloat) -> UIImage? {
-        // Ensure the percentage is between 0 and 100
-        let percentage = max(0, min(100, percent))
-        
         let width = self.size.width
         let height = self.size.height
-        let newWidth = width * (percentage / 100.0)
-        let newHeight = height * (percentage / 100.0)
+        let newWidth = width * percent
+        let newHeight = height * percent
         let cropRect = CGRect(x: (width - newWidth) / 2, y: (height - newHeight) / 2, width: newWidth, height: newHeight)
         
         guard let cgImage = self.cgImage?.cropping(to: cropRect) else {
