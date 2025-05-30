@@ -13,6 +13,7 @@
 		4E576E9D2DBAB25900542397 /* LegacyMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E576E9C2DBAB25500542397 /* LegacyMain.swift */; };
 		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
 		4E66788A2DDD530600300579 /* TripleTaleV2.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4E6678892DDD530600300579 /* TripleTaleV2.mlmodel */; };
+		4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
 		4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */; };
 		4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */; };
@@ -42,6 +43,7 @@
 		4E576E9C2DBAB25500542397 /* LegacyMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyMain.swift; sourceTree = "<group>"; };
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4E6678892DDD530600300579 /* TripleTaleV2.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = TripleTaleV2.mlmodel; sourceTree = "<group>"; };
+		4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = FishSegmentation.mlpackage; sourceTree = "<group>"; };
 		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
 		4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessing.swift; sourceTree = "<group>"; };
 		4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlow.swift; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 				4EA91EA62C730A27001ACC69 /* Main.storyboard */,
 				4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */,
 				4EA91EAB2C730A28001ACC69 /* LaunchScreen.storyboard */,
+				4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */,
 				4EA9A51B2DB7F2B400AB982F /* SAM2_1BasePlusImageEncoderFLOAT16.mlpackage */,
 				4EA9A51C2DB7F2B400AB982F /* SAM2_1BasePlusMaskDecoderFLOAT16.mlpackage */,
 				4EA9A51D2DB7F2B400AB982F /* SAM2_1BasePlusPromptEncoderFLOAT16.mlpackage */,
@@ -239,6 +242,7 @@
 				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
 				4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */,
 				4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */,
+				4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */,
 				4EAF3BAF2DBF020800462A77 /* InAppPurchaseManager.swift in Sources */,
 				4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */,
 				4EA49E2F2C750BED00CDA5C9 /* Measurements.swift in Sources */,

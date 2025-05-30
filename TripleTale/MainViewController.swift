@@ -278,7 +278,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.addSubview(self.bracketView!)
                 
                 // Initial bracket update
-                self.updateBracketSize()
+//                self.updateBracketSize()
                 
                 // Call the function to create and add the camera button
                 self.setupCameraButton()
@@ -499,31 +499,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self.lengthScale = 1.05
             self.widthScale = 1.05
             
-            guard let targetImage = image.cropCenter(to: self.screenRatio) else {
-                print("❌ Could not Isolate Fish image")
-                self.view.showToast(message: "Error processing target image")
-                return
-            }
-            
-            guard let samImage = processSAMImage(from: targetImage) else {
+            guard let samImage = processSAMImage(from: image) else {
                 print("❌ SAM model returned no mask output.")
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
             
-            guard let paddedImage = samImage.paddedToSize(image.size) else {
-                print("❌ Could not pad image to size.")
-                self.view.showToast(message: "Error extending SAM output to full size")
-                return
-            }
-            
-            saveImageToGallery(image)
-            saveImageToGallery(targetImage)
-            saveImageToGallery(samImage)
-            saveImageToGallery(paddedImage)
-            
-            
-            mask = CIImage(image: paddedImage)
+            mask = CIImage(image: samImage)
         }
         
         guard let maskImage = mask else {
