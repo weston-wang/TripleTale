@@ -162,10 +162,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let count = maskArray.count
             let flatValues = (0..<count).map { maskArray[$0].floatValue }
 
-            let minVal = flatValues.min() ?? 0
-            let maxVal = flatValues.max() ?? 0
-            let meanVal = flatValues.reduce(0, +) / Float(count)
-
             if let maskImage = postprocessFishMask(from: maskArray, originalSize: inputImage.size) {
                 let originalSize = inputImage.size
                 if let resizedMask = resizeMaskToOriginal(maskImage: maskImage, targetSize: originalSize) {
@@ -556,7 +552,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
-            saveImageToGallery(fishImage)
             mask = CIImage(image: fishImage)
         }
         
@@ -573,7 +568,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             return
         }
-        saveImageToGallery(finalImage)
         
         guard let mlImage = resizeAndPadMaskImage(finalImage) else {
             print("❌ resizeAndPadMaskImage failed")
