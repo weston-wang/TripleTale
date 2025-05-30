@@ -218,6 +218,14 @@ func resizeImageForModel(_ image: UIImage, width: Int = 320, height: Int = 320) 
     return resizedImage
 }
 
+func resizeMaskToOriginal(maskImage: UIImage, targetSize: CGSize) -> UIImage? {
+    UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
+    maskImage.draw(in: CGRect(origin: .zero, size: targetSize))
+    let resized = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return resized
+}
+
 /// Resize and pad a mask image so that the longest side becomes `targetLongestSide`, and then pad to a square of `outputSize`×`outputSize`.
 /// This is useful for mask images that should not be interpolated (preserve edges).
 func resizeAndPadMaskImage(_ image: UIImage, targetLongestSide: CGFloat = 224, outputSize: CGFloat = 256) -> UIImage? {
@@ -823,4 +831,41 @@ func areAnchorHeightsWithinTolerance(_ anchors: [ARAnchor], tolerance: Float = 0
     }
     
     return (maxY - minY) <= tolerance
+}
+
+func postprocessFishMask(from maskArray: MLMultiArray, originalSize: CGSize) -> UIImage? {
+    let width = maskArray.shape[3].intValue
+    let height = maskArray.shape[2].intValue
+
+    let count = maskArray.count
+    let floatArray = (0..<count).map { i -> Float in
+        let x = maskArray[i].floatValue
+        return 1 / (1 + exp(-x))  // Apply sigmoid
+    }
+
+    // Convert to grayscale image
+    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
+    defer { buffer.deallocate() }
+
+    for i in 0..<count {
+        buffer[i] = floatArray[i] > 0.5 ? 255 : 0
+    }
+
+    let colorSpace = CGColorSpaceCreateDeviceGray()
+    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue)
+    guard let provider = CGDataProvider(dataInfo: nil, data: buffer, size: count, releaseData: { _,_,_ in }) else { return nil }
+    guard let cgImage = CGImage(
+        width: width, height: height,
+        bitsPerComponent: 8,
+        bitsPerPixel: 8,
+        bytesPerRow: width,
+        space: colorSpace,
+        bitmapInfo: bitmapInfo,
+        provider: provider,
+        decode: nil,
+        shouldInterpolate: false,
+        intent: .defaultIntent
+    ) else { return nil }
+
+    return UIImage(cgImage: cgImage)
 }

@@ -108,117 +108,71 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         return children.lazy.compactMap { $0 as? StatusViewController }.first
     }()
 
-    private lazy var imageEncoder: MLModel = {
+    private lazy var fishExtractor: FishSegmentation = {
         do {
-            let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
-            return try MLModel(contentsOf: url)
+            return try FishSegmentation(configuration: MLModelConfiguration())
         } catch {
-            fatalError("❌ Failed to load image encoder: \(error)")
-        }
-    }()
-
-    private lazy var promptEncoder: MLModel = {
-        do {
-            let url = Bundle.main.url(forResource: "SAM2_1BasePlusPromptEncoderFLOAT16", withExtension: "mlmodelc")!
-            return try MLModel(contentsOf: url)
-        } catch {
-            fatalError("❌ Failed to load prompt encoder: \(error)")
-        }
-    }()
-
-    private lazy var maskDecoder: MLModel = {
-        do {
-            let url = Bundle.main.url(forResource: "SAM2_1BasePlusMaskDecoderFLOAT16", withExtension: "mlmodelc")!
-            return try MLModel(contentsOf: url)
-        } catch {
-            fatalError("❌ Failed to load mask decoder: \(error)")
+            fatalError("❌ Failed to load FishSegmentation model: \(error)")
         }
     }()
     
-    func processSAMImage(from inputImage: UIImage) -> UIImage? {
+//    private lazy var imageEncoder: MLModel = {
+//        do {
+//            let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
+//            return try MLModel(contentsOf: url)
+//        } catch {
+//            fatalError("❌ Failed to load image encoder: \(error)")
+//        }
+//    }()
+//
+//    private lazy var promptEncoder: MLModel = {
+//        do {
+//            let url = Bundle.main.url(forResource: "SAM2_1BasePlusPromptEncoderFLOAT16", withExtension: "mlmodelc")!
+//            return try MLModel(contentsOf: url)
+//        } catch {
+//            fatalError("❌ Failed to load prompt encoder: \(error)")
+//        }
+//    }()
+//
+//    private lazy var maskDecoder: MLModel = {
+//        do {
+//            let url = Bundle.main.url(forResource: "SAM2_1BasePlusMaskDecoderFLOAT16", withExtension: "mlmodelc")!
+//            return try MLModel(contentsOf: url)
+//        } catch {
+//            fatalError("❌ Failed to load mask decoder: \(error)")
+//        }
+//    }()
+//
+    func extractFish(from inputImage: UIImage) -> UIImage? {
         do {
             // Resize image to 256x256 (required by SAM2 Tiny)
-            guard let resizedImage = resizeImageForModel(inputImage, width: 1024, height: 1024) ,
+            guard let resizedImage = resizeImageForModel(inputImage, width: 416, height: 416) ,
                   let pixelBuffer = pixelBuffer(from: resizedImage) else {
                 print("❌ Failed to preprocess image.")
                 return nil
             }
 
-            // Use center click (normalized coordinates)
-            let centerX: Float = 512
-            let centerY: Float = 512
-            
-            guard let points = try? MLMultiArray(shape: [1, 1, 2], dataType: .float16),
-                  let labels = try? MLMultiArray(shape: [1, 1], dataType: .float16) else {
-                print("❌ Failed to create input arrays")
-                return nil
-            }
-            points[0] = centerX as NSNumber
-            points[1] = centerY as NSNumber
-            labels[0] = 1.0
+            let result = try fishExtractor.prediction(input_image: pixelBuffer)
 
-            // Run Image Encoder
-            let imageInput = try MLDictionaryFeatureProvider(dictionary: ["image": pixelBuffer])
-            let imageFeatures = try imageEncoder.prediction(from: imageInput)
-
-            // Run Prompt Encoder
-            let promptInput = try MLDictionaryFeatureProvider(dictionary: [
-                "points": points,
-                "labels": labels
-            ])
-            let promptFeatures = try promptEncoder.prediction(from: promptInput)
-
-            // Run Mask Decoder
-            let decoderInput = try MLDictionaryFeatureProvider(dictionary: [
-                "image_embedding": imageFeatures.featureValue(for: "image_embedding")!,
-                "sparse_embedding": promptFeatures.featureValue(for: "sparse_embeddings")!,
-                "dense_embedding": promptFeatures.featureValue(for: "dense_embeddings")!,
-                "feats_s0": imageFeatures.featureValue(for: "feats_s0")!,
-                "feats_s1": imageFeatures.featureValue(for: "feats_s1")!
-            ])
-            let maskOutput = try maskDecoder.prediction(from: decoderInput)
-            
-            // Log available outputs
-            for name in maskOutput.featureNames {
-                print("🧠 Decoder output available: \(name)")
-            }
-            
-            guard let maskArray = maskOutput.featureValue(for: "low_res_masks")?.multiArrayValue else {
-                print("❌ SAM decoder did not return 'low_res_masks' as MLMultiArray.")
+            guard let maskArray = result.featureValue(for: "var_520")?.multiArrayValue else {
+                print("❌ Could not extract MLMultiArray from result")
                 return nil
             }
             
-            let scores = maskOutput.featureValue(for: "scores")!.multiArrayValue!
-            print("Mask scores: \(scores)")
-            print("Mask size: \(maskArray.shape)")
-            
-            // Create new MLMultiArray [1,1,256,256]
-            let totalPixels = 256 * 256
-            // Extract first mask at index 0
-            let startIndex = 2*256*256 // [1, 3, 256, 256] — first mask
-            let sliceValues = (0..<totalPixels).map { i in
-                maskArray[startIndex + i].floatValue
-            }
-            
-            guard let singleMask = try? MLMultiArray(shape: [1, 1, NSNumber(value: 256), NSNumber(value: 256)], dataType: .float16) else {
-                print("❌ Could not create reshaped MLMultiArray")
-                return nil
-            }
-            
-            // Fill it with the first mask's data
-            for i in 0..<totalPixels {
-                singleMask[i] = NSNumber(value: sliceValues[i])
-            }
-            
-            // Convert to grayscale image
-            let maskImage = multiArrayToGrayscaleImage(singleMask)
+            let count = maskArray.count
+            let flatValues = (0..<count).map { maskArray[$0].floatValue }
 
-            // Resize the mask to match the original input image size
-            if let maskImage = maskImage {
-                let resizedMask = resizeImageForModel(maskImage, width: Int(inputImage.size.width), height: Int(inputImage.size.height))
-                return resizedMask
-            }
+            let minVal = flatValues.min() ?? 0
+            let maxVal = flatValues.max() ?? 0
+            let meanVal = flatValues.reduce(0, +) / Float(count)
 
+            if let maskImage = postprocessFishMask(from: maskArray, originalSize: inputImage.size) {
+                let originalSize = inputImage.size
+                if let resizedMask = resizeMaskToOriginal(maskImage: maskImage, targetSize: originalSize) {
+                    return resizedMask
+                }
+            }
+            
             return nil
 
         } catch {
@@ -226,6 +180,98 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return nil
         }
     }
+    
+//    func processSAMImage(from inputImage: UIImage) -> UIImage? {
+//        do {
+//            // Resize image to 256x256 (required by SAM2 Tiny)
+//            guard let resizedImage = resizeImageForModel(inputImage, width: 1024, height: 1024) ,
+//                  let pixelBuffer = pixelBuffer(from: resizedImage) else {
+//                print("❌ Failed to preprocess image.")
+//                return nil
+//            }
+//
+//            // Use center click (normalized coordinates)
+//            let centerX: Float = 512
+//            let centerY: Float = 512
+//            
+//            guard let points = try? MLMultiArray(shape: [1, 1, 2], dataType: .float16),
+//                  let labels = try? MLMultiArray(shape: [1, 1], dataType: .float16) else {
+//                print("❌ Failed to create input arrays")
+//                return nil
+//            }
+//            points[0] = centerX as NSNumber
+//            points[1] = centerY as NSNumber
+//            labels[0] = 1.0
+//
+//            // Run Image Encoder
+//            let imageInput = try MLDictionaryFeatureProvider(dictionary: ["image": pixelBuffer])
+//            let imageFeatures = try imageEncoder.prediction(from: imageInput)
+//
+//            // Run Prompt Encoder
+//            let promptInput = try MLDictionaryFeatureProvider(dictionary: [
+//                "points": points,
+//                "labels": labels
+//            ])
+//            let promptFeatures = try promptEncoder.prediction(from: promptInput)
+//
+//            // Run Mask Decoder
+//            let decoderInput = try MLDictionaryFeatureProvider(dictionary: [
+//                "image_embedding": imageFeatures.featureValue(for: "image_embedding")!,
+//                "sparse_embedding": promptFeatures.featureValue(for: "sparse_embeddings")!,
+//                "dense_embedding": promptFeatures.featureValue(for: "dense_embeddings")!,
+//                "feats_s0": imageFeatures.featureValue(for: "feats_s0")!,
+//                "feats_s1": imageFeatures.featureValue(for: "feats_s1")!
+//            ])
+//            let maskOutput = try maskDecoder.prediction(from: decoderInput)
+//            
+//            // Log available outputs
+//            for name in maskOutput.featureNames {
+//                print("🧠 Decoder output available: \(name)")
+//            }
+//            
+//            guard let maskArray = maskOutput.featureValue(for: "low_res_masks")?.multiArrayValue else {
+//                print("❌ SAM decoder did not return 'low_res_masks' as MLMultiArray.")
+//                return nil
+//            }
+//            
+//            let scores = maskOutput.featureValue(for: "scores")!.multiArrayValue!
+//            print("Mask scores: \(scores)")
+//            print("Mask size: \(maskArray.shape)")
+//            
+//            // Create new MLMultiArray [1,1,256,256]
+//            let totalPixels = 256 * 256
+//            // Extract first mask at index 0
+//            let startIndex = 2*256*256 // [1, 3, 256, 256] — first mask
+//            let sliceValues = (0..<totalPixels).map { i in
+//                maskArray[startIndex + i].floatValue
+//            }
+//            
+//            guard let singleMask = try? MLMultiArray(shape: [1, 1, NSNumber(value: 256), NSNumber(value: 256)], dataType: .float16) else {
+//                print("❌ Could not create reshaped MLMultiArray")
+//                return nil
+//            }
+//            
+//            // Fill it with the first mask's data
+//            for i in 0..<totalPixels {
+//                singleMask[i] = NSNumber(value: sliceValues[i])
+//            }
+//            
+//            // Convert to grayscale image
+//            let maskImage = multiArrayToGrayscaleImage(singleMask)
+//
+//            // Resize the mask to match the original input image size
+//            if let maskImage = maskImage {
+//                let resizedMask = resizeImageForModel(maskImage, width: Int(inputImage.size.width), height: Int(inputImage.size.height))
+//                return resizedMask
+//            }
+//
+//            return nil
+//
+//        } catch {
+//            print("❌ Failed to load SAM models: \(error)")
+//            return nil
+//        }
+//    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -262,11 +308,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         Task.detached(priority: .utility) {
-            _ = await self.imageEncoder  // Load 1st model
+            _ = await self.fishExtractor  // Load 1st model
 
-            _ = await self.promptEncoder // Load 2nd model (after 1st completes)
-
-            _ = await self.maskDecoder   // Load 3rd model (after 2nd completes)
+//            _ = await self.imageEncoder  // Load 1st model
+//            _ = await self.promptEncoder // Load 2nd model (after 1st completes)
+//            _ = await self.maskDecoder   // Load 3rd model (after 2nd completes)
 
             // Update UI once all done
             DispatchQueue.main.async {
@@ -295,20 +341,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 //                self.setupSubscribeButton()
 //                self.setupRestoreButton()
                 
-                if !self.subscriptionManager.isSubscribed {
-                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
-                        Task {
-                            if let product = self.subscriptionManager.products.first {
-                                await self.subscriptionManager.purchase(product)
-                            } else {
-                                self.view.showToast(message: "No subscription product available.")
-                            }
-                        }
-                    }))
-//                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
-                    self.present(alert, animated: true, completion: nil)
-                }
+//                if !self.subscriptionManager.isSubscribed {
+//                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
+//                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
+//                        Task {
+//                            if let product = self.subscriptionManager.products.first {
+//                                await self.subscriptionManager.purchase(product)
+//                            } else {
+//                                self.view.showToast(message: "No subscription product available.")
+//                            }
+//                        }
+//                    }))
+////                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
+//                    self.present(alert, animated: true, completion: nil)
+//                }
                 
                 // Start monitoring tilt changes
                 self.startMotionTracking()
@@ -451,10 +497,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
       }
     
     @objc func handleCameraButtonPress() {
-        guard subscriptionManager.isSubscribed else {
-            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
-            return
-        }
+//        guard subscriptionManager.isSubscribed else {
+//            self.showPopupMessage(title: "Subscription Required", message: "You need an active subscription to use this feature.")
+//            return
+//        }
         
         guard !isProcessingCameraPress else {
             print("⏳ Button press ignored: Please wait for processing to complete...")
@@ -499,13 +545,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self.lengthScale = 1.05
             self.widthScale = 1.05
             
-            guard let samImage = processSAMImage(from: image) else {
+//            guard let samImage = processSAMImage(from: image) else {
+//                print("❌ SAM model returned no mask output.")
+//                self.view.showToast(message: "SAM failed to return a mask.")
+//                return
+//            }
+            
+            guard let fishImage = extractFish(from: image) else {
                 print("❌ SAM model returned no mask output.")
                 self.view.showToast(message: "SAM failed to return a mask.")
                 return
             }
-            
-            mask = CIImage(image: samImage)
+            saveImageToGallery(fishImage)
+            mask = CIImage(image: fishImage)
         }
         
         guard let maskImage = mask else {
@@ -521,6 +573,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
             return
         }
+        saveImageToGallery(finalImage)
         
         guard let mlImage = resizeAndPadMaskImage(finalImage) else {
             print("❌ resizeAndPadMaskImage failed")
