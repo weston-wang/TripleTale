@@ -1117,3 +1117,123 @@
 //        }
 //    }
 //}
+
+
+//    private lazy var imageEncoder: MLModel = {
+//        do {
+//            let url = Bundle.main.url(forResource: "SAM2_1BasePlusImageEncoderFLOAT16", withExtension: "mlmodelc")!
+//            return try MLModel(contentsOf: url)
+//        } catch {
+//            fatalError("❌ Failed to load image encoder: \(error)")
+//        }
+//    }()
+//
+//    private lazy var promptEncoder: MLModel = {
+//        do {
+//            let url = Bundle.main.url(forResource: "SAM2_1BasePlusPromptEncoderFLOAT16", withExtension: "mlmodelc")!
+//            return try MLModel(contentsOf: url)
+//        } catch {
+//            fatalError("❌ Failed to load prompt encoder: \(error)")
+//        }
+//    }()
+//
+//    private lazy var maskDecoder: MLModel = {
+//        do {
+//            let url = Bundle.main.url(forResource: "SAM2_1BasePlusMaskDecoderFLOAT16", withExtension: "mlmodelc")!
+//            return try MLModel(contentsOf: url)
+//        } catch {
+//            fatalError("❌ Failed to load mask decoder: \(error)")
+//        }
+//    }()
+//
+//    func processSAMImage(from inputImage: UIImage) -> UIImage? {
+//        do {
+//            // Resize image to 256x256 (required by SAM2 Tiny)
+//            guard let resizedImage = resizeImageForModel(inputImage, width: 1024, height: 1024) ,
+//                  let pixelBuffer = pixelBuffer(from: resizedImage) else {
+//                print("❌ Failed to preprocess image.")
+//                return nil
+//            }
+//
+//            // Use center click (normalized coordinates)
+//            let centerX: Float = 512
+//            let centerY: Float = 512
+//
+//            guard let points = try? MLMultiArray(shape: [1, 1, 2], dataType: .float16),
+//                  let labels = try? MLMultiArray(shape: [1, 1], dataType: .float16) else {
+//                print("❌ Failed to create input arrays")
+//                return nil
+//            }
+//            points[0] = centerX as NSNumber
+//            points[1] = centerY as NSNumber
+//            labels[0] = 1.0
+//
+//            // Run Image Encoder
+//            let imageInput = try MLDictionaryFeatureProvider(dictionary: ["image": pixelBuffer])
+//            let imageFeatures = try imageEncoder.prediction(from: imageInput)
+//
+//            // Run Prompt Encoder
+//            let promptInput = try MLDictionaryFeatureProvider(dictionary: [
+//                "points": points,
+//                "labels": labels
+//            ])
+//            let promptFeatures = try promptEncoder.prediction(from: promptInput)
+//
+//            // Run Mask Decoder
+//            let decoderInput = try MLDictionaryFeatureProvider(dictionary: [
+//                "image_embedding": imageFeatures.featureValue(for: "image_embedding")!,
+//                "sparse_embedding": promptFeatures.featureValue(for: "sparse_embeddings")!,
+//                "dense_embedding": promptFeatures.featureValue(for: "dense_embeddings")!,
+//                "feats_s0": imageFeatures.featureValue(for: "feats_s0")!,
+//                "feats_s1": imageFeatures.featureValue(for: "feats_s1")!
+//            ])
+//            let maskOutput = try maskDecoder.prediction(from: decoderInput)
+//
+//            // Log available outputs
+//            for name in maskOutput.featureNames {
+//                print("🧠 Decoder output available: \(name)")
+//            }
+//
+//            guard let maskArray = maskOutput.featureValue(for: "low_res_masks")?.multiArrayValue else {
+//                print("❌ SAM decoder did not return 'low_res_masks' as MLMultiArray.")
+//                return nil
+//            }
+//
+//            let scores = maskOutput.featureValue(for: "scores")!.multiArrayValue!
+//            print("Mask scores: \(scores)")
+//            print("Mask size: \(maskArray.shape)")
+//
+//            // Create new MLMultiArray [1,1,256,256]
+//            let totalPixels = 256 * 256
+//            // Extract first mask at index 0
+//            let startIndex = 2*256*256 // [1, 3, 256, 256] — first mask
+//            let sliceValues = (0..<totalPixels).map { i in
+//                maskArray[startIndex + i].floatValue
+//            }
+//
+//            guard let singleMask = try? MLMultiArray(shape: [1, 1, NSNumber(value: 256), NSNumber(value: 256)], dataType: .float16) else {
+//                print("❌ Could not create reshaped MLMultiArray")
+//                return nil
+//            }
+//
+//            // Fill it with the first mask's data
+//            for i in 0..<totalPixels {
+//                singleMask[i] = NSNumber(value: sliceValues[i])
+//            }
+//
+//            // Convert to grayscale image
+//            let maskImage = multiArrayToGrayscaleImage(singleMask)
+//
+//            // Resize the mask to match the original input image size
+//            if let maskImage = maskImage {
+//                let resizedMask = resizeImageForModel(maskImage, width: Int(inputImage.size.width), height: Int(inputImage.size.height))
+//                return resizedMask
+//            }
+//
+//            return nil
+//
+//        } catch {
+//            print("❌ Failed to load SAM models: \(error)")
+//            return nil
+//        }
+//    }

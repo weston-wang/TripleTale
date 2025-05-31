@@ -848,7 +848,7 @@ func postprocessFishMask(from maskArray: MLMultiArray, originalSize: CGSize) -> 
     defer { buffer.deallocate() }
 
     for i in 0..<count {
-        buffer[i] = floatArray[i] > 0.5 ? 255 : 0
+        buffer[i] = floatArray[i] > 0.8 ? 255 : 0
     }
 
     let colorSpace = CGColorSpaceCreateDeviceGray()
