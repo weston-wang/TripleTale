@@ -17,6 +17,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
     var sceneView: ARSCNView!
     
+    private var isSessionStabilized = false
+    
     private var subscriptionManager = InAppPurchaseManager()
     
     private var bracketView: BracketView?
@@ -465,28 +467,15 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self.identifierString = identifier
             self.confidence = confidence
             
-            var normalizedVertices: [CGPoint]? = nil
             var verticesAnchors: [ARAnchor] = []
 
-            let userInwardPercent = self.inwardPercent
-            while self.inwardPercent <= 40.0 {
-                normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage, debug: self.debugMode)
-
-                if let vertices = normalizedVertices {
-                    verticesAnchors = getVertices(self.sceneView, vertices, image.size)
-                    if !self.isFacingForward || areAnchorHeightsWithinTolerance(verticesAnchors) {
-                        break
-                    }
-                }
-
-                self.inwardPercent += 5.0
+            if let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage, debug: self.debugMode) {
+                verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
+                
+                print("found \(verticesAnchors.count) vertices anchors")
             }
 
             if verticesAnchors.count < 4 {
-                
-                // reset scaling
-                self.inwardPercent = userInwardPercent
-
                 // Reset AR session to recover from potential raycast/tracking issues
                 self.startSession()
 
@@ -533,9 +522,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             } else {
                 self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
             }
-            
-            // reset scaling
-            self.inwardPercent = userInwardPercent
 
             DispatchQueue.main.async {
                 completion()
@@ -620,11 +606,22 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func startSession() {
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .camera // Ensures detected plane aligns with camera
-        configuration.planeDetection = .horizontal
+        configuration.planeDetection = [.horizontal, .vertical]
         configuration.isLightEstimationEnabled = true // Helps in low-light conditions
         configuration.isAutoFocusEnabled = true // Enable auto-focus for better tracking stability
 
+        // ✅ Enable scene depth if supported (LiDAR-only)
+        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+            configuration.frameSemantics.insert(.sceneDepth)
+        }
+        
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        
+        self.isSessionStabilized = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // 1 second stabilization
+            self.isSessionStabilized = true
+            self.updateCameraButtonState() // if button relies on tracking state too
+        }
     }
     
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
@@ -809,7 +806,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .camera
-        configuration.planeDetection = .horizontal
+        configuration.planeDetection = [.horizontal, .vertical]
         configuration.isLightEstimationEnabled = true
         configuration.isAutoFocusEnabled = true
         configuration.environmentTexturing = .automatic

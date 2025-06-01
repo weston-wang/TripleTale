@@ -28,8 +28,6 @@ func measureDistance(from start: SCNVector3, to end: SCNVector3) -> Float {
 func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool = false) -> ARAnchor? {
 //    let raycastMethod:ARRaycastQuery.Target = .existingPlaneInfinite
     let raycastMethod:ARRaycastQuery.Target = .estimatedPlane
-
-//    if projectToGround { raycastMethod = .estimatedPlane }
     
     // use estimatedPlane for dots on fish, existingPlaneInfinite for projection on ground
     if let raycastQuery = currentView.raycastQuery(from: point, allowing: raycastMethod, alignment: .any) {
@@ -42,9 +40,10 @@ func addAnchor(_ currentView: ARSCNView, _ point: CGPoint, projectToGround: Bool
         }
     }
     
+    print("Raycast failed: falling back to hitTest")
     // Fallback: Use feature point hit-test if raycasting fails
     // Confirmed: fallback uses .featurePoint as desired
-    let hitTestResults = currentView.hitTest(point, types: [.featurePoint])
+    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane, .estimatedVerticalPlane])
     
     if let result = hitTestResults.first {
         let anchor = ARAnchor(transform: result.worldTransform)
@@ -165,11 +164,7 @@ func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ ca
                 
         // Use raycasting to add an anchor at the screen position
         if let vertexAnchor = addAnchor(currentView, vertexOnScreen) {
-//        if let vertexAnchor = addAnchorClustered(currentView, vertexOnScreen) {
-//        if let vertexAnchor = addAnchorUsingSceneDepth(currentView, at: vertexOnScreen) {
-//        if let (vertexAnchor, vertexQuery) = addAnchorWithQuery(currentView, vertexOnScreen) {
             verticesAnchors.append(vertexAnchor)
-//            verticesQueries.append(vertexQuery)
         }
     }
     
