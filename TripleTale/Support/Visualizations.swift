@@ -309,6 +309,29 @@ func drawDotsAndLine(on image: UIImage, points: [CGPoint], dotSize: CGFloat = 20
     return renderedImage
 }
 
+func drawDot(on image: UIImage, point: CGPoint, dotSize: CGFloat = 20.0, dotColor: UIColor? = nil) -> UIImage? {
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = image.scale // Match the input image scale
+
+    let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+
+    let renderedImage = renderer.image { context in
+        // Draw the original image
+        image.draw(at: .zero)
+
+        // Set the drawing properties
+        let dotUIColor = dotColor ?? UIColor.red
+
+        context.cgContext.setFillColor(dotUIColor.cgColor)  // Dot color
+
+        // Draw dot
+        let rect = CGRect(x: point.x - dotSize / 2, y: point.y - dotSize / 2, width: dotSize, height: dotSize)
+        context.cgContext.fillEllipse(in: rect)
+    }
+
+    return renderedImage
+}
+
 func createGridTexture(size: Int, gridColor: UIColor, backgroundColor: UIColor = .clear) -> UIImage {
     let scale = UIScreen.main.scale
     let gridSize = CGFloat(size)

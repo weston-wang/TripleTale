@@ -413,32 +413,16 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
         let mask: CIImage?
         
-        if !isFacingForward {
-            print("FACING down")
-            self.lengthScale = 1.0
-            self.widthScale = 1.0
-            
-            mask = generateMaskImage(from: image, for: 1.0)
-        } else {
-            print("FACING forward")
-            self.lengthScale = 1.05
-            self.widthScale = 1.05
-            
-//            guard let samImage = processSAMImage(from: image) else {
-//                print("❌ SAM model returned no mask output.")
-//                self.view.showToast(message: "SAM failed to return a mask.")
-//                return
-//            }
-            
-            guard let fishImage = extractFish(from: image) else {
-                print("❌ SAM model returned no mask output.")
-                self.view.showToast(message: "SAM failed to return a mask.")
-                return
-            }
-            mask = CIImage(image: fishImage)
-        }
+        self.lengthScale = isFacingForward ? 1.05 : 1.0
+        self.widthScale = isFacingForward ? 1.05 : 1.0
         
-        guard let maskImage = mask else {
+        guard let fishImage = extractFish(from: image) else {
+            print("❌ Fish model returned no mask output.")
+            self.view.showToast(message: "SAM failed to return a mask.")
+            return
+        }
+                
+        guard let maskImage = CIImage(image: fishImage) else {
             print("❌ maskImage is nil")
             self.view.showToast(message: "Could not extract mask.")
 
@@ -466,18 +450,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         runTripleTaleModel(on: mlImage) { identifier, confidence, boundingBox in
             self.identifierString = identifier
             self.confidence = confidence
-            
+                            
             var verticesAnchors: [ARAnchor] = []
-
+                
             if let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage, debug: self.debugMode) {
                 verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
                 
                 print("found \(verticesAnchors.count) vertices anchors")
             }
-
+            
+            
             if verticesAnchors.count < 4 {
                 // Reset AR session to recover from potential raycast/tracking issues
-                self.startSession()
+                self.restartSession()
 
                 DispatchQueue.main.async {
                     self.showPopupMessage(title: "Error", message: "Could not find tips. Please try again.")
@@ -486,8 +471,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 return
             }
             
-    //        verticesAnchors = backProjectAnchorsToSameDepth(anchors: verticesAnchors, queries: verticesQueries)
-
             var (width, length) = measureVertices(verticesAnchors)
             let height: Float = 0.0
             
@@ -617,11 +600,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         
-        self.isSessionStabilized = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { // 1 second stabilization
-            self.isSessionStabilized = true
-            self.updateCameraButtonState() // if button relies on tracking state too
-        }
+        self.isSessionStabilized = true
+        self.updateCameraButtonState() // if button relies on tracking state too
+    
     }
     
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
