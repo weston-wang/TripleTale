@@ -124,35 +124,6 @@ func addAnchorWithQuery(
     return nil
 }
 
-//func addAnchor(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-//    let hitTestResults = currentView.hitTest(point, types: [.featurePoint, .estimatedHorizontalPlane])
-//
-//    guard let result = hitTestResults.first else { return nil }
-//
-//    // Create and add an anchor at the raycast result's position
-//    let anchor = ARAnchor(transform: result.worldTransform)
-//    currentView.session.add(anchor: anchor)
-//
-//    return anchor
-//}
-//
-//func addAnchorWithRaycast(_ currentView: ARSCNView, _ point: CGPoint) -> ARAnchor? {
-//    // Create a raycast query from the screen point
-//    guard let raycastQuery = currentView.raycastQuery(from: point, allowing: .estimatedPlane, alignment: .any) else { return nil }
-//
-//    // Perform the raycast
-//    let raycastResults = currentView.session.raycast(raycastQuery)
-//
-//    // Check if we have a valid result
-//    guard let result = raycastResults.first else { return nil }
-//
-//    // Create and add an anchor at the raycast result's position
-//    let anchor = ARAnchor(transform: result.worldTransform)
-//    currentView.session.add(anchor: anchor)
-//
-//    return anchor
-//}
-
 //func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> ([ARAnchor], [ARRaycastQuery]) {
 func getVertices(_ currentView: ARSCNView, _ normalizedVertices: [CGPoint], _ capturedImageSize: CGSize) -> [ARAnchor] {
     var verticesAnchors: [ARAnchor] = []
@@ -329,7 +300,12 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
         return nil
     }
 
+    if let depthImage = pixelBufferToUIImage(pixelBuffer: depthMap) {
+        saveImageToGallery(depthImage)
+    }
+    
     let viewSize = sceneView.bounds.size
+
     let depthWidth = CVPixelBufferGetWidth(depthMap)  // e.g., 256
     let depthHeight = CVPixelBufferGetHeight(depthMap) // e.g., 192
 
@@ -337,35 +313,32 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
     let baseAddress = CVPixelBufferGetBaseAddress(depthMap)!
     let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
     
-    print("about to get x,y")
-
-    guard let (x, y) = normalizedImagePointToDepthMapIndex(normalizedPoint: screenPoint,
+    guard let (x, y) = imagePointToDepthMapIndex(screenPoint: screenPoint,
         capturedImageSize: capturedImageSize,
         depthMapSize: CGSize(width: depthWidth, height: depthHeight)
     ) else {
         return nil
     }
 
-    print("depth (x,y): (\(x), \(y))")
-    
     let depthIndex = y * depthWidth + x
     let depthValue = floatBuffer[depthIndex]  // in meters
     
-    // Normalize screen coordinates and combine with depth to form a 3D point in view space
-    let normalizedX = Float(screenPoint.x / viewSize.width)
-    let normalizedY = Float(screenPoint.y / viewSize.height)
-    let viewSpacePoint = vector_float3(normalizedX, normalizedY, depthValue)
-
-    let worldPosition = sceneView.unprojectPoint(
-        SCNVector3(
-            x: Float(viewSpacePoint.x),
-            y: Float(viewSpacePoint.y),
-            z: Float(viewSpacePoint.z)
-        )
-    )
+    print("depth at (x,y): (\(x), \(y)): \(depthValue)")
     
+    // Perform a basic hitTest to get a 3D direction
+    let hitResults = sceneView.hitTest(screenPoint, types: [.featurePoint])
+    guard let result = hitResults.first else {
+        return nil
+    }
+
+    let origin = frame.camera.transform.columns.3
+    let direction = result.worldTransform.columns.3 - origin
+
+    let unitDir = simd_normalize(simd_float3(direction.x, direction.y, direction.z))
+    let worldPos = simd_float3(origin.x, origin.y, origin.z) + unitDir * depthValue
+
     var transform = matrix_identity_float4x4
-    transform.columns.3 = SIMD4<Float>(Float(worldPosition.x), Float(worldPosition.y), Float(worldPosition.z), 1.0)
+    transform.columns.3 = SIMD4<Float>(worldPos.x, worldPos.y, worldPos.z, 1.0)
 
     let anchor = ARAnchor(transform: transform)
     sceneView.session.add(anchor: anchor)
@@ -374,57 +347,16 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
 
 // Maps normalized (x, y) coordinates from captured image space to depth map pixel coordinates,
 // matching getScreenPosition's aspect correction and applying portrait-to-landscape rotation.
-func normalizedImagePointToDepthMapIndex(
-    normalizedPoint: CGPoint,
+func imagePointToDepthMapIndex(
+    screenPoint: CGPoint,
     capturedImageSize: CGSize,
     depthMapSize: CGSize
 ) -> (x: Int, y: Int)? {
-    let imageWidth = capturedImageSize.width
-    let imageHeight = capturedImageSize.height
-    let depthWidth = depthMapSize.width
-    let depthHeight = depthMapSize.height
-
-    let imageAspectRatio = imageWidth / imageHeight
-    let depthAspectRatio = depthWidth / depthHeight
-
-    var adjustedX = normalizedPoint.x
-    var adjustedY = normalizedPoint.y
-
-    print("🔍 imageAspectRatio: \(imageAspectRatio), depthAspectRatio: \(depthAspectRatio)")
-
-    if imageAspectRatio > depthAspectRatio {
-        // Captured image is wider — horizontal cropping in depth map
-        let scaleFactor = depthHeight / imageHeight
-        let scaledImageWidth = imageWidth * scaleFactor
-        let croppedWidth = (scaledImageWidth - depthWidth) / 2 / scaledImageWidth
-        print("📐 scaleFactor (wider): \(scaleFactor), scaledImageWidth: \(scaledImageWidth), croppedWidth: \(croppedWidth)")
-        adjustedX = (normalizedPoint.x - croppedWidth) / (1 - 2 * croppedWidth)
-    } else {
-        // Captured image is taller — vertical cropping in depth map
-        let scaleFactor = depthWidth / imageWidth
-        let scaledImageHeight = imageHeight * scaleFactor
-        let croppedHeight = (scaledImageHeight - depthHeight) / 2 / scaledImageHeight
-        print("📐 scaleFactor (taller): \(scaleFactor), scaledImageHeight: \(scaledImageHeight), croppedHeight: \(croppedHeight)")
-        adjustedY = (normalizedPoint.y - croppedHeight) / (1 - 2 * croppedHeight)
-    }
-
-    print("🎯 Adjusted normalizedX: \(adjustedX), normalizedY: \(adjustedY)")
-
+    let translated = convertImageAPointToImageB(xA: screenPoint.x, yA: screenPoint.y)
+    
     // Rotate portrait → landscape
-    let rotatedX = adjustedY
-    let rotatedY = 1.0 - adjustedX
+    let rotatedX = Int(translated.y)
+    let rotatedY = Int(translated.x)
 
-    print("🔁 Rotated to landscape: x: \(rotatedX), y: \(rotatedY)")
-
-    let x = Int(round(rotatedX * depthWidth))
-    let y = Int(round(rotatedY * depthHeight))
-
-    print("🧩 Depth map index: (\(x), \(y))")
-
-    guard x >= 0, x < Int(depthWidth), y >= 0, y < Int(depthHeight) else {
-        print("❌ Index out of bounds")
-        return nil
-    }
-
-    return (x, y)
+    return (rotatedX, rotatedY)
 }

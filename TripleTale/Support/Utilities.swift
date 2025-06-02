@@ -869,3 +869,30 @@ func postprocessFishMask(from maskArray: MLMultiArray, originalSize: CGSize) -> 
 
     return UIImage(cgImage: cgImage)
 }
+
+func convertImageAPointToImageB(
+    xA: CGFloat,
+    yA: CGFloat,
+    aSize: CGSize = CGSize(width: 1179, height: 2556),
+    bSize: CGSize = CGSize(width: 192, height: 256)
+) -> CGPoint {
+    let normX = xA / aSize.width
+    let normY = yA / aSize.height
+
+    var adjustedX = normX
+    let adjustedY = normY
+
+    // A is wider, so B is vertically cropped
+    let scale = aSize.height / bSize.height
+    let scaledWidth = bSize.width * scale
+    
+    let crop = (scaledWidth - aSize.width) / 2
+    adjustedX = xA + crop
+    
+    adjustedX = adjustedX / scaledWidth
+
+    let xB = adjustedX * bSize.width
+    let yB = adjustedY * bSize.height
+
+    return CGPoint(x: xB, y: yB)
+}
