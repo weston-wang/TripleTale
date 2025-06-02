@@ -364,3 +364,55 @@ func createGridTexture(size: Int, gridColor: UIColor, backgroundColor: UIColor =
 
     return image
 }
+
+// Draws a grayscale UIImage from the depth map, with (x, y) highlighted in red.
+func drawDepthMapPointOverlay(depthMap: CVPixelBuffer, x: Int, y: Int) -> UIImage? {
+    let width = CVPixelBufferGetWidth(depthMap)
+    let height = CVPixelBufferGetHeight(depthMap)
+
+    CVPixelBufferLockBaseAddress(depthMap, .readOnly)
+    defer { CVPixelBufferUnlockBaseAddress(depthMap, .readOnly) }
+
+    guard let baseAddress = CVPixelBufferGetBaseAddress(depthMap) else { return nil }
+    let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
+
+    // Normalize depth values to 0...1 range for grayscale image
+    var maxDepth: Float = 0
+    var minDepth: Float = .greatestFiniteMagnitude
+    for i in 0..<(width * height) {
+        let d = floatBuffer[i]
+        if d > 0 {
+            maxDepth = max(maxDepth, d)
+            minDepth = min(minDepth, d)
+        }
+    }
+
+    let scale = 255.0 / max(maxDepth - minDepth, 0.001)
+
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue)
+    guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                                  bytesPerRow: width * 4, space: colorSpace, bitmapInfo: bitmapInfo.rawValue) else {
+        return nil
+    }
+
+    guard let ctxData = context.data else { return nil }
+    let buffer = ctxData.bindMemory(to: UInt8.self, capacity: width * height * 4)
+    for row in 0..<height {
+        for col in 0..<width {
+            let index = row * width + col
+            let depth = floatBuffer[index]
+            let normalized = UInt8(max(0, min(255, (depth - minDepth) * scale)))
+            let isTarget = (col == x && row == y)
+            let pixelColor: (UInt8, UInt8, UInt8) = isTarget ? (0, 255, 0) : (normalized, normalized, normalized)
+            let offset = (row * width + col) * 4
+            buffer[offset] = pixelColor.0
+            buffer[offset+1] = pixelColor.1
+            buffer[offset+2] = pixelColor.2
+            buffer[offset+3] = 255
+        }
+    }
+
+    guard let cgImage = context.makeImage() else { return nil }
+    return UIImage(cgImage: cgImage)
+}

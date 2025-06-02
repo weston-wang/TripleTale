@@ -300,12 +300,6 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
         return nil
     }
 
-    if let depthImage = pixelBufferToUIImage(pixelBuffer: depthMap) {
-        saveImageToGallery(depthImage)
-    }
-    
-    let viewSize = sceneView.bounds.size
-
     let depthWidth = CVPixelBufferGetWidth(depthMap)  // e.g., 256
     let depthHeight = CVPixelBufferGetHeight(depthMap) // e.g., 192
 
@@ -313,17 +307,28 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
     let baseAddress = CVPixelBufferGetBaseAddress(depthMap)!
     let floatBuffer = baseAddress.assumingMemoryBound(to: Float32.self)
     
+    print("📱 sceneView size: \(sceneView.bounds.size)")
+    print("getting depth for \(screenPoint)")
+    
+
+    
     guard let (x, y) = imagePointToDepthMapIndex(screenPoint: screenPoint,
-        capturedImageSize: capturedImageSize,
+        capturedImageSize: sceneView.bounds.size,
         depthMapSize: CGSize(width: depthWidth, height: depthHeight)
     ) else {
         return nil
     }
 
+    print("depth map size: \(depthWidth) x \(depthHeight)")
     let depthIndex = y * depthWidth + x
     let depthValue = floatBuffer[depthIndex]  // in meters
     
     print("depth at (x,y): (\(x), \(y)): \(depthValue)")
+    
+    if let depthImage = drawDepthMapPointOverlay(depthMap: depthMap, x: x, y: y) {
+        saveImageToGallery(depthImage)
+    }
+    
     
     // Perform a basic hitTest to get a 3D direction
     let hitResults = sceneView.hitTest(screenPoint, types: [.featurePoint])
@@ -347,16 +352,14 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
 
 // Maps normalized (x, y) coordinates from captured image space to depth map pixel coordinates,
 // matching getScreenPosition's aspect correction and applying portrait-to-landscape rotation.
-func imagePointToDepthMapIndex(
-    screenPoint: CGPoint,
-    capturedImageSize: CGSize,
-    depthMapSize: CGSize
-) -> (x: Int, y: Int)? {
-    let translated = convertImageAPointToImageB(xA: screenPoint.x, yA: screenPoint.y)
+func imagePointToDepthMapIndex(screenPoint: CGPoint, capturedImageSize: CGSize, depthMapSize: CGSize) -> (x: Int, y: Int)? {
+    let translated = convertImageAPointToImageB(xScreen: screenPoint.x, yScreen: screenPoint.y, screenSize: capturedImageSize)
     
     // Rotate portrait → landscape
     let rotatedX = Int(translated.y)
-    let rotatedY = Int(translated.x)
+    let rotatedY = 192 - Int(translated.x)
 
+    
+    print("points before rotation: (\(translated))")
     return (rotatedX, rotatedY)
 }
