@@ -161,18 +161,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         sceneView.delegate = self
         view.addSubview(sceneView)
 
-        if !hasLiDAR {
-            DispatchQueue.main.async {
-                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires a LiDAR-enabled device. Non-LiDAR devices support will be enabled in future updates.", preferredStyle: .alert)
-
-                // Normal OK action (will exit if tapped once)
-                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
-                    exit(0)
-                }))
-                
-                self.present(alert, animated: true)
-            }
-        }
+//        if !hasLiDAR {
+//            DispatchQueue.main.async {
+//                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires a LiDAR-enabled device. Non-LiDAR devices support will be enabled in future updates.", preferredStyle: .alert)
+//
+//                // Normal OK action (will exit if tapped once)
+//                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+//                    exit(0)
+//                }))
+//                
+//                self.present(alert, animated: true)
+//            }
+//        }
 
         // Create splash/loading image view
         showLoadingOverlay()
