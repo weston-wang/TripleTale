@@ -292,11 +292,13 @@ func stretchVertices(_ anchors: [ARAnchor], verticalScaleFactor: Float, horizont
     return updatedVerticesAnchors
 }
 
-
 // Adds an anchor using scene depth information at the given screen point.
 func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _ capturedImageSize: CGSize) -> ARAnchor? {
-    guard let frame = sceneView.session.currentFrame,
-          let depthMap = frame.sceneDepth?.depthMap else {
+    guard let frame = sceneView.session.currentFrame else {
+        return nil
+    }
+
+    guard let depthMap = frame.sceneDepth?.depthMap ?? frame.smoothedSceneDepth?.depthMap else {
         return nil
     }
 
@@ -324,11 +326,7 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
     let depthValue = floatBuffer[depthIndex]  // in meters
     
     print("depth at (x,y): (\(x), \(y)): \(depthValue)")
-    
-    if let depthImage = drawDepthMapPointOverlay(depthMap: depthMap, x: x, y: y) {
-        saveImageToGallery(depthImage)
-    }
-    
+
     
     // Perform a basic hitTest to get a 3D direction
     let hitResults = sceneView.hitTest(screenPoint, types: [.featurePoint])
@@ -357,9 +355,8 @@ func imagePointToDepthMapIndex(screenPoint: CGPoint, capturedImageSize: CGSize, 
     
     // Rotate portrait → landscape
     let rotatedX = Int(translated.y)
-    let rotatedY = 192 - Int(translated.x)
+    let rotatedY = 192 - 1 - Int(translated.x)
 
-    
     print("points before rotation: (\(translated))")
     return (rotatedX, rotatedY)
 }

@@ -596,6 +596,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // ✅ Enable scene depth if supported (LiDAR-only)
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
             configuration.frameSemantics.insert(.sceneDepth)
+        } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+            configuration.frameSemantics.insert(.smoothedSceneDepth)
         }
         
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -793,9 +795,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         configuration.environmentTexturing = .automatic
 
         // ✅ Enable scene depth if supported (LiDAR-only)
-        if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-            configuration.frameSemantics.insert(.sceneDepth)
-        }
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+                configuration.frameSemantics.insert(.sceneDepth)
+            } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                configuration.frameSemantics.insert(.smoothedSceneDepth)
+            }
 
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
     }
