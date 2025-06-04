@@ -189,10 +189,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         Task.detached(priority: .utility) {
             _ = await self.fishExtractor  // Load 1st model
 
-//            _ = await self.imageEncoder  // Load 1st model
-//            _ = await self.promptEncoder // Load 2nd model (after 1st completes)
-//            _ = await self.maskDecoder   // Load 3rd model (after 2nd completes)
-
             // Update UI once all done
             DispatchQueue.main.async {
                 self.hideLoadingOverlay()
