@@ -22,6 +22,17 @@
 		4E4CB6EF2DEFF9E700E13697 /* DrawingUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6EE2DEFF9E600E13697 /* DrawingUtils.swift */; };
 		4E4CB6F12DEFF9F400E13697 /* DepthUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6F02DEFF9F200E13697 /* DepthUtils.swift */; };
 		4E4CB6F32DEFF9FF00E13697 /* MaskUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6F22DEFF9FE00E13697 /* MaskUtils.swift */; };
+		4E4CB6F62DF0CF1B00E13697 /* MLArrayConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6F52DF0CF1900E13697 /* MLArrayConverter.swift */; };
+		4E4CB6F82DF0CF2500E13697 /* PostprocessingUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6F72DF0CF2400E13697 /* PostprocessingUtils.swift */; };
+		4E4CB6FA2DF0CF2F00E13697 /* RaycastUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6F92DF0CF2E00E13697 /* RaycastUtils.swift */; };
+		4E4CB6FC2DF0CF3B00E13697 /* AnchorUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6FB2DF0CF3A00E13697 /* AnchorUtils.swift */; };
+		4E4CB6FE2DF0CF4400E13697 /* DepthMapUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6FD2DF0CF4300E13697 /* DepthMapUtils.swift */; };
+		4E4CB7002DF0CF4D00E13697 /* GalleryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6FF2DF0CF4B00E13697 /* GalleryManager.swift */; };
+		4E4CB7022DF0CF5500E13697 /* OrientationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7012DF0CF5400E13697 /* OrientationUtils.swift */; };
+		4E4CB7042DF0CF5C00E13697 /* DistanceUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7032DF0CF5B00E13697 /* DistanceUtils.swift */; };
+		4E4CB7062DF0CF6400E13697 /* PointUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7052DF0CF6200E13697 /* PointUtils.swift */; };
+		4E4CB7082DF0CF6C00E13697 /* DitherUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7072DF0CF6B00E13697 /* DitherUtils.swift */; };
+		4E4CB70A2DF0CF7400E13697 /* VNProcessingUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7092DF0CF7300E13697 /* VNProcessingUtils.swift */; };
 		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
 		4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
@@ -60,6 +71,17 @@
 		4E4CB6EE2DEFF9E600E13697 /* DrawingUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrawingUtils.swift; sourceTree = "<group>"; };
 		4E4CB6F02DEFF9F200E13697 /* DepthUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthUtils.swift; sourceTree = "<group>"; };
 		4E4CB6F22DEFF9FE00E13697 /* MaskUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskUtils.swift; sourceTree = "<group>"; };
+		4E4CB6F52DF0CF1900E13697 /* MLArrayConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLArrayConverter.swift; sourceTree = "<group>"; };
+		4E4CB6F72DF0CF2400E13697 /* PostprocessingUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostprocessingUtils.swift; sourceTree = "<group>"; };
+		4E4CB6F92DF0CF2E00E13697 /* RaycastUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaycastUtils.swift; sourceTree = "<group>"; };
+		4E4CB6FB2DF0CF3A00E13697 /* AnchorUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorUtils.swift; sourceTree = "<group>"; };
+		4E4CB6FD2DF0CF4300E13697 /* DepthMapUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepthMapUtils.swift; sourceTree = "<group>"; };
+		4E4CB6FF2DF0CF4B00E13697 /* GalleryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryManager.swift; sourceTree = "<group>"; };
+		4E4CB7012DF0CF5400E13697 /* OrientationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationUtils.swift; sourceTree = "<group>"; };
+		4E4CB7032DF0CF5B00E13697 /* DistanceUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceUtils.swift; sourceTree = "<group>"; };
+		4E4CB7052DF0CF6200E13697 /* PointUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointUtils.swift; sourceTree = "<group>"; };
+		4E4CB7072DF0CF6B00E13697 /* DitherUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DitherUtils.swift; sourceTree = "<group>"; };
+		4E4CB7092DF0CF7300E13697 /* VNProcessingUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VNProcessingUtils.swift; sourceTree = "<group>"; };
 		4E53AF062D70393200873F4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = FishSegmentation.mlpackage; sourceTree = "<group>"; };
@@ -145,6 +167,7 @@
 				4E4CB6E92DEFF9A900E13697 /* UI */,
 				4E4CB6EA2DEFF9AF00E13697 /* Geometry */,
 				4E4CB6EB2DEFF9B500E13697 /* Observations */,
+				4E28C9872C8B6C97007BE96D /* Body Mechanics */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -163,6 +186,8 @@
 		4E4CB6E72DEFF99B00E13697 /* ML */ = {
 			isa = PBXGroup;
 			children = (
+				4E4CB6F72DF0CF2400E13697 /* PostprocessingUtils.swift */,
+				4E4CB6F52DF0CF1900E13697 /* MLArrayConverter.swift */,
 			);
 			path = ML;
 			sourceTree = "<group>";
@@ -170,6 +195,9 @@
 		4E4CB6E82DEFF9A300E13697 /* ARKitHelpers */ = {
 			isa = PBXGroup;
 			children = (
+				4E4CB6FD2DF0CF4300E13697 /* DepthMapUtils.swift */,
+				4E4CB6FB2DF0CF3A00E13697 /* AnchorUtils.swift */,
+				4E4CB6F92DF0CF2E00E13697 /* RaycastUtils.swift */,
 			);
 			path = ARKitHelpers;
 			sourceTree = "<group>";
@@ -177,6 +205,8 @@
 		4E4CB6E92DEFF9A900E13697 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				4E4CB7012DF0CF5400E13697 /* OrientationUtils.swift */,
+				4E4CB6FF2DF0CF4B00E13697 /* GalleryManager.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -184,6 +214,9 @@
 		4E4CB6EA2DEFF9AF00E13697 /* Geometry */ = {
 			isa = PBXGroup;
 			children = (
+				4E4CB7072DF0CF6B00E13697 /* DitherUtils.swift */,
+				4E4CB7052DF0CF6200E13697 /* PointUtils.swift */,
+				4E4CB7032DF0CF5B00E13697 /* DistanceUtils.swift */,
 			);
 			path = Geometry;
 			sourceTree = "<group>";
@@ -191,6 +224,7 @@
 		4E4CB6EB2DEFF9B500E13697 /* Observations */ = {
 			isa = PBXGroup;
 			children = (
+				4E4CB7092DF0CF7300E13697 /* VNProcessingUtils.swift */,
 			);
 			path = Observations;
 			sourceTree = "<group>";
@@ -208,7 +242,7 @@
 		4EA49E2A2C74160F00CDA5C9 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				4EA91EA02C730A27001ACC69 /* AppDelegate.swift */,
+				4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */,
 				4EA91EB32C730CA1001ACC69 /* Utilities.swift */,
 				4EA91EB72C730D28001ACC69 /* BracketView.swift */,
 				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
@@ -251,12 +285,11 @@
 			isa = PBXGroup;
 			children = (
 				4E53AF062D70393200873F4D /* Info.plist */,
+				4EA91EA02C730A27001ACC69 /* AppDelegate.swift */,
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
 				4EEB66E32DAD70770093C719 /* StatusViewController.swift */,
-				4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */,
 				4EA49E292C74160900CDA5C9 /* Core */,
 				4EA49E2A2C74160F00CDA5C9 /* Support */,
-				4E28C9872C8B6C97007BE96D /* Body Mechanics */,
 				4E4CB6E52DEFF98100E13697 /* Utilities */,
 				4EBE288C2DEEA7F500180A0A /* Extensions */,
 				4EA49E2D2C74DCF000CDA5C9 /* Resources */,
@@ -347,14 +380,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EBE288B2DEEA19900180A0A /* TripleTaleV2.mlmodel in Sources */,
+				4E4CB6F62DF0CF1B00E13697 /* MLArrayConverter.swift in Sources */,
+				4E4CB6FE2DF0CF4400E13697 /* DepthMapUtils.swift in Sources */,
 				4EA91EB42C730CA1001ACC69 /* Utilities.swift in Sources */,
 				4E4CB6E12DEFF81400E13697 /* UIImage+Transform.swift in Sources */,
 				4E4CB6DF2DEFF7DF00E13697 /* CGImagePropertyOrientation+DeviceOrientation.swift in Sources */,
+				4E4CB70A2DF0CF7400E13697 /* VNProcessingUtils.swift in Sources */,
+				4E4CB7062DF0CF6400E13697 /* PointUtils.swift in Sources */,
 				4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */,
+				4E4CB6F82DF0CF2500E13697 /* PostprocessingUtils.swift in Sources */,
 				4E4CB6F12DEFF9F400E13697 /* DepthUtils.swift in Sources */,
 				4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */,
 				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
+				4E4CB6FC2DF0CF3B00E13697 /* AnchorUtils.swift in Sources */,
+				4E4CB7022DF0CF5500E13697 /* OrientationUtils.swift in Sources */,
 				4E4CB6D52DEFF6C700E13697 /* CIImage+Conversion.swift in Sources */,
+				4E4CB7002DF0CF4D00E13697 /* GalleryManager.swift in Sources */,
 				4EA91EB62C730CCB001ACC69 /* SceneManipulations.swift in Sources */,
 				4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */,
 				4E4CB6DB2DEFF75A00E13697 /* UIView+Toast.swift in Sources */,
@@ -371,11 +412,14 @@
 				4EBE288E2DEEA87D00180A0A /* UIImage+Masking.swift in Sources */,
 				4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */,
 				4E4CB6ED2DEFF9DD00E13697 /* ImageConverter.swift in Sources */,
+				4E4CB6FA2DF0CF2F00E13697 /* RaycastUtils.swift in Sources */,
 				4EBE28902DEEA92600180A0A /* UIImage+Crop.swift in Sources */,
 				4E4CB6D32DEFF5CE00E13697 /* UIImage+Drawing.swift in Sources */,
 				4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */,
 				4E4CB6F32DEFF9FF00E13697 /* MaskUtils.swift in Sources */,
 				4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */,
+				4E4CB7042DF0CF5C00E13697 /* DistanceUtils.swift in Sources */,
+				4E4CB7082DF0CF6C00E13697 /* DitherUtils.swift in Sources */,
 				4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -41,17 +41,6 @@ func saveImageToGallery(_ image: UIImage) {
     }
 }
 
-func pixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
-    let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-    
-    let rotation = CGAffineTransform(rotationAngle: -.pi / 2)
-    let rotatedCIImage = ciImage.transformed(by: rotation)
-
-    let context = CIContext(options: nil)
-    guard let cgImage = context.createCGImage(rotatedCIImage, from: rotatedCIImage.extent) else { return nil }
-    return UIImage(cgImage: cgImage)
-}
-
 func depthPixelBufferToUIImage(pixelBuffer: CVPixelBuffer) -> UIImage? {
     let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
 
@@ -138,17 +127,17 @@ func scalePoint(point: simd_float3, center: simd_float3, verticalScaleFactor: Fl
 func getDepthMap(from currentFrame: ARFrame) -> UIImage? {
     // First, try to get sceneDepth from LiDAR-equipped devices
     if let sceneDepth = currentFrame.sceneDepth {
-        return pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
+        return ImageConverter.pixelBufferToUIImage(pixelBuffer: sceneDepth.depthMap)
     }
     
     // If sceneDepth is not available, check for smoothedSceneDepth (better quality for non-LiDAR devices)
     if let smoothedSceneDepth = currentFrame.smoothedSceneDepth {
-        return pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
+        return ImageConverter.pixelBufferToUIImage(pixelBuffer: smoothedSceneDepth.depthMap)
     }
     
     // Fallback to estimatedDepthData if smoothedSceneDepth is not available
     if let estimatedDepthData = currentFrame.estimatedDepthData {
-        return pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
+        return ImageConverter.pixelBufferToUIImage(pixelBuffer: estimatedDepthData)
     }
     
     // If no depth data is available, return nil
