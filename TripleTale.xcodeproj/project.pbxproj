@@ -25,12 +25,12 @@
 		4E4CB7002DF0CF4D00E13697 /* GalleryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB6FF2DF0CF4B00E13697 /* GalleryManager.swift */; };
 		4E4CB7022DF0CF5500E13697 /* OrientationUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7012DF0CF5400E13697 /* OrientationUtils.swift */; };
 		4E4CB7062DF0CF6400E13697 /* PointUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB7052DF0CF6200E13697 /* PointUtils.swift */; };
+		4E4CB70E2DF0DEC300E13697 /* MeasurementUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB70D2DF0DEBF00E13697 /* MeasurementUtils.swift */; };
 		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
 		4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
 		4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */; };
 		4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */; };
-		4EA49E2F2C750BED00CDA5C9 /* Measurements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */; };
 		4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E302C750D1600CDA5C9 /* Visualizations.swift */; };
 		4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EA02C730A27001ACC69 /* AppDelegate.swift */; };
 		4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EA42C730A27001ACC69 /* MainViewController.swift */; };
@@ -65,13 +65,13 @@
 		4E4CB6FF2DF0CF4B00E13697 /* GalleryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryManager.swift; sourceTree = "<group>"; };
 		4E4CB7012DF0CF5400E13697 /* OrientationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationUtils.swift; sourceTree = "<group>"; };
 		4E4CB7052DF0CF6200E13697 /* PointUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointUtils.swift; sourceTree = "<group>"; };
+		4E4CB70D2DF0DEBF00E13697 /* MeasurementUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurementUtils.swift; sourceTree = "<group>"; };
 		4E53AF062D70393200873F4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = FishSegmentation.mlpackage; sourceTree = "<group>"; };
 		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
 		4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessing.swift; sourceTree = "<group>"; };
 		4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlow.swift; sourceTree = "<group>"; };
-		4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Measurements.swift; sourceTree = "<group>"; };
 		4EA49E302C750D1600CDA5C9 /* Visualizations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Visualizations.swift; sourceTree = "<group>"; };
 		4EA91E9D2C730A27001ACC69 /* TripleTale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripleTale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EA91EA02C730A27001ACC69 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -143,11 +143,13 @@
 		4E4CB6E52DEFF98100E13697 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				4E4CB70C2DF0DEB600E13697 /* Measurements */,
 				4E4CB6E62DEFF99300E13697 /* ImageProcessing */,
 				4E4CB6E72DEFF99B00E13697 /* ML */,
 				4E4CB6E82DEFF9A300E13697 /* ARKitHelpers */,
 				4E4CB6E92DEFF9A900E13697 /* UI */,
 				4E4CB6EA2DEFF9AF00E13697 /* Geometry */,
+				4E4CB70B2DF0DD1700E13697 /* Purchases */,
 				4E28C9872C8B6C97007BE96D /* Body Mechanics */,
 			);
 			path = Utilities;
@@ -181,6 +183,8 @@
 		4E4CB6E92DEFF9A900E13697 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				4EEB66E32DAD70770093C719 /* StatusViewController.swift */,
+				4EA91EB72C730D28001ACC69 /* BracketView.swift */,
 				4E4CB7012DF0CF5400E13697 /* OrientationUtils.swift */,
 				4E4CB6FF2DF0CF4B00E13697 /* GalleryManager.swift */,
 			);
@@ -193,6 +197,22 @@
 				4E4CB7052DF0CF6200E13697 /* PointUtils.swift */,
 			);
 			path = Geometry;
+			sourceTree = "<group>";
+		};
+		4E4CB70B2DF0DD1700E13697 /* Purchases */ = {
+			isa = PBXGroup;
+			children = (
+				4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */,
+			);
+			path = Purchases;
+			sourceTree = "<group>";
+		};
+		4E4CB70C2DF0DEB600E13697 /* Measurements */ = {
+			isa = PBXGroup;
+			children = (
+				4E4CB70D2DF0DEBF00E13697 /* MeasurementUtils.swift */,
+			);
+			path = Measurements;
 			sourceTree = "<group>";
 		};
 		4EA49E292C74160900CDA5C9 /* Core */ = {
@@ -208,10 +228,7 @@
 		4EA49E2A2C74160F00CDA5C9 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				4EAF3BAE2DBF020800462A77 /* InAppPurchaseManager.swift */,
-				4EA91EB72C730D28001ACC69 /* BracketView.swift */,
 				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
-				4EA49E2E2C750BED00CDA5C9 /* Measurements.swift */,
 				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
 			);
 			path = Support;
@@ -252,7 +269,6 @@
 				4E53AF062D70393200873F4D /* Info.plist */,
 				4EA91EA02C730A27001ACC69 /* AppDelegate.swift */,
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
-				4EEB66E32DAD70770093C719 /* StatusViewController.swift */,
 				4EA49E292C74160900CDA5C9 /* Core */,
 				4EA49E2A2C74160F00CDA5C9 /* Support */,
 				4E4CB6E52DEFF98100E13697 /* Utilities */,
@@ -344,6 +360,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4E4CB70E2DF0DEC300E13697 /* MeasurementUtils.swift in Sources */,
 				4EBE288B2DEEA19900180A0A /* TripleTaleV2.mlmodel in Sources */,
 				4E4CB6E12DEFF81400E13697 /* UIImage+Transform.swift in Sources */,
 				4E4CB6DF2DEFF7DF00E13697 /* CGImagePropertyOrientation+DeviceOrientation.swift in Sources */,
@@ -363,7 +380,6 @@
 				4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */,
 				4EAF3BAF2DBF020800462A77 /* InAppPurchaseManager.swift in Sources */,
 				4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */,
-				4EA49E2F2C750BED00CDA5C9 /* Measurements.swift in Sources */,
 				4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */,
 				4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */,
 				4E4CB6DD2DEFF79400E13697 /* UIViewController+Popups.swift in Sources */,

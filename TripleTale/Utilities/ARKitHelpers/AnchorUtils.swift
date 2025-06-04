@@ -7,8 +7,49 @@
 import ARKit
 
 struct AnchorUtils {
+    
+    static func calculateDistanceBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+        let position1 = SIMD3<Float>(anchor1.transform.columns.3.x, anchor1.transform.columns.3.y, anchor1.transform.columns.3.z)
+        let position2 = SIMD3<Float>(anchor2.transform.columns.3.x, anchor2.transform.columns.3.y, anchor2.transform.columns.3.z)
+        
+        return simd_distance(position1, position2)
+    }
+    
+    static func calculateDistanceToObject(_ inputAnchor: ARAnchor) -> Float? {
+        let distance = sqrt(inputAnchor.transform.columns.3.x*inputAnchor.transform.columns.3.x + inputAnchor.transform.columns.3.y*inputAnchor.transform.columns.3.y + inputAnchor.transform.columns.3.z*inputAnchor.transform.columns.3.z)
+        
+        return distance
+    }
+    
+    static func calculateHeightBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+        let position1 = anchor1.transform.columns.3
+        let position2 = anchor2.transform.columns.3
+        return abs(position1.y - position2.y)
+    }
+
+    static func calculateDepthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+        let position1 = anchor1.transform.columns.3
+        let position2 = anchor2.transform.columns.3
+        return abs(position1.z - position2.z)
+    }
+
+    static func calculateLengthBetweenAnchors(anchor1: ARAnchor, anchor2: ARAnchor) -> Float {
+        let position1 = anchor1.transform.columns.3
+        let position2 = anchor2.transform.columns.3
+        return abs(position1.x - position2.x)
+    }
+    
     static func position(from anchor: ARAnchor) -> SIMD3<Float> {
         return SIMD3<Float>(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
+    }
+    
+    static func measureHeight( _ cornersAnchors: [ARAnchor],
+                        _ aboveAnchor: ARAnchor,
+                        _ belowAnchor: ARAnchor ) -> Float {
+        let normVector = normalVector(from: cornersAnchors)
+        let height = distanceToPlane(from: aboveAnchor, planeAnchor: belowAnchor, normal: normVector!)
+        
+        return height
     }
     
     static func areAnchorHeightsWithinTolerance(_ anchors: [ARAnchor], tolerance: Float = 0.1) -> Bool {
@@ -74,5 +115,52 @@ struct AnchorUtils {
         }
 
         return newAnchors
+    }
+    
+    private static func normalVector(from anchors: [ARAnchor]) -> simd_float3? {
+        guard anchors.count >= 3 else {
+            return nil // You need at least three points to define a plane
+        }
+
+        // Get the positions of three of the anchors
+        let positionA = simd_float3(anchors[0].transform.columns.3.x, anchors[0].transform.columns.3.y, anchors[0].transform.columns.3.z)
+        let positionB = simd_float3(anchors[1].transform.columns.3.x, anchors[1].transform.columns.3.y, anchors[1].transform.columns.3.z)
+        let positionC = simd_float3(anchors[2].transform.columns.3.x, anchors[2].transform.columns.3.y, anchors[2].transform.columns.3.z)
+
+        // Create two vectors lying on the plane
+        let vectorAB = positionB - positionA
+        let vectorAC = positionC - positionA
+
+        // Calculate the cross product to get the normal vector
+        let normal = simd_cross(vectorAB, vectorAC)
+
+        // Normalize the normal vector to make it a unit vector
+        let normalizedNormal = simd_normalize(normal)
+
+        return normalizedNormal
+    }
+
+    private static func distanceToPlane(from newAnchor: ARAnchor, planeAnchor: ARAnchor, normal: simd_float3) -> Float {
+        // Get the positions of the new anchor and one of the plane's anchors
+        let pointP = simd_float3(newAnchor.transform.columns.3.x, newAnchor.transform.columns.3.y, newAnchor.transform.columns.3.z)
+        let pointA = simd_float3(planeAnchor.transform.columns.3.x, planeAnchor.transform.columns.3.y, planeAnchor.transform.columns.3.z)
+        
+        // Create a vector from point A (on the plane) to point P (the new anchor)
+        let vectorAP = pointP - pointA
+        
+        // Project vectorAP onto the normal vector to get the distance in the "up" direction
+        let distance = simd_dot(vectorAP, normal)
+        
+        return distance
+    }
+    
+    private static func distanceAlongNormalVector(from anchor: ARAnchor, normal: simd_float3) -> Float {
+        // Get the position of the anchor
+        let anchorPosition = simd_float3(anchor.transform.columns.3.x, anchor.transform.columns.3.y, anchor.transform.columns.3.z)
+        
+        // Project the anchor's position onto the normal vector
+        let distance = simd_dot(anchorPosition, normal)
+        
+        return distance
     }
 }

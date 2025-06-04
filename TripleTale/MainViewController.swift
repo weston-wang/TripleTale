@@ -467,7 +467,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 return
             }
             
-            var (width, length) = measureVertices(verticesAnchors)
+            var (width, length) = MeasurementUtils.measureVertices(verticesAnchors)
             let height: Float = 0.0
             
             print("measurements: width: \(width), height: \(length)")
@@ -488,7 +488,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let girth = width * Float(self.bodyRatio)
 
             let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
-                calculateWeight(width, length, height, girth, self.scaleFactor)
+            MeasurementUtils.calculateWeight(width, length, height, girth, self.scaleFactor)
 
             let imageOrientation = OrientationUtils.uiImageOrientation(from: self.deviceOrientation)
             let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
