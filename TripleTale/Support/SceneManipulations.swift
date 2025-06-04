@@ -232,10 +232,10 @@ func createCentroidAnchor(from cornerAnchors: [ARAnchor]) -> ARAnchor? {
     }
 
     // Get the positions of the anchors
-    var lTPos = position(from: cornerAnchors[0])
-    var rTPos = position(from: cornerAnchors[1])
-    var lBPos = position(from: cornerAnchors[2])
-    var rBPos = position(from: cornerAnchors[3])
+    var lTPos = AnchorUtils.position(from: cornerAnchors[0])
+    var rTPos = AnchorUtils.position(from: cornerAnchors[1])
+    var lBPos = AnchorUtils.position(from: cornerAnchors[2])
+    var rBPos = AnchorUtils.position(from: cornerAnchors[3])
     
     // Calculate the center of the rectangle
     let center = (lTPos + rTPos + lBPos + rBPos) / 4.0
@@ -276,7 +276,7 @@ func stretchVertices(_ anchors: [ARAnchor], verticalScaleFactor: Float, horizont
     // Update the anchors
     for i in 0..<anchors.count {
         var position = anchors[i].transform.columns.3
-        let scaledPosition = scalePoint(point: simd_float3(position.x, position.y, position.z), center: center, verticalScaleFactor: verticalScaleFactor, horizontalScaleFactor: horizontalScaleFactor)
+        let scaledPosition = PointUtils.scalePoint(point: simd_float3(position.x, position.y, position.z), center: center, verticalScaleFactor: verticalScaleFactor, horizontalScaleFactor: horizontalScaleFactor)
         position = simd_float4(scaledPosition.x, scaledPosition.y, scaledPosition.z, 1.0)
         
         // Create a new transform with the updated position
@@ -351,7 +351,7 @@ func addAnchorUsingSceneDepth(_ sceneView: ARSCNView, at screenPoint: CGPoint, _
 // Maps normalized (x, y) coordinates from captured image space to depth map pixel coordinates,
 // matching getScreenPosition's aspect correction and applying portrait-to-landscape rotation.
 func imagePointToDepthMapIndex(screenPoint: CGPoint, capturedImageSize: CGSize, depthMapSize: CGSize) -> (x: Int, y: Int)? {
-    let translated = convertImageAPointToImageB(xScreen: screenPoint.x, yScreen: screenPoint.y, screenSize: capturedImageSize)
+    let translated = DepthUtils.convertImageAPointToImageB(xScreen: screenPoint.x, yScreen: screenPoint.y, screenSize: capturedImageSize)
     
     // Rotate portrait → landscape
     let rotatedX = Int(translated.y)

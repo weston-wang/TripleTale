@@ -58,4 +58,24 @@ class InAppPurchaseManager: ObservableObject {
             print("Failed to restore: \(error)")
         }
     }
+    
+    static func printActiveEntitlements() {
+        Task {
+            print("📦 Checking active entitlements...")
+            for await result in Transaction.currentEntitlements {
+                switch result {
+                case .verified(let transaction):
+                    print("""
+                    ✅ Active Subscription:
+                    • Product ID: \(transaction.productID)
+                    • Purchase Date: \(transaction.purchaseDate)
+                    • Expiration Date: \(transaction.expirationDate?.description ?? "None")
+                    • Is Upgraded: \(transaction.isUpgraded)
+                    """)
+                case .unverified(let transaction, let error):
+                    print("❌ Unverified transaction: \(transaction.productID), error: \(error)")
+                }
+            }
+        }
+    }
 }

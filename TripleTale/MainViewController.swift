@@ -88,7 +88,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             // Instantiate the model from its generated Swift class.
             let model = try VNCoreMLModel(for: tripleTaleModel.model)
             let request = VNCoreMLRequest(model: model, completionHandler: { [weak self] request, error in
-                if let result = processObservations(for: request, error: error) {
+                if let result = MLUtils.processObservations(for: request, error: error) {
                     DispatchQueue.main.async {
                         self?.handleClassificationResult(identifier: result.identifierString, confidence: result.confidence, boundingBox: result.boundingBox)
                     }
@@ -121,8 +121,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func extractFish(from inputImage: UIImage) -> UIImage? {
         do {
             // Resize image to 256x256 (required by SAM2 Tiny)
-            guard let resizedImage = resizeImageForModel(inputImage, width: 416, height: 416) ,
-                  let pixelBuffer = pixelBuffer(from: resizedImage) else {
+            guard let resizedImage = MLUtils.resizeImageForModel(inputImage, width: 416, height: 416) ,
+                  let pixelBuffer = ImageConverter.pixelBuffer(from: resizedImage) else {
                 print("❌ Failed to preprocess image.")
                 return nil
             }
@@ -137,9 +137,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let count = maskArray.count
             let flatValues = (0..<count).map { maskArray[$0].floatValue }
 
-            if let maskImage = postprocessFishMask(from: maskArray, originalSize: inputImage.size) {
+            if let maskImage = MLUtils.postprocessFishMask(from: maskArray, originalSize: inputImage.size) {
                 let originalSize = inputImage.size
-                if let resizedMask = resizeMaskToOriginal(maskImage: maskImage, targetSize: originalSize) {
+                if let resizedMask = ImageConverter.resizeMaskToOriginal(maskImage: maskImage, targetSize: originalSize) {
                     return resizedMask
                 }
             }
@@ -182,7 +182,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             await subscriptionManager.updateSubscriptionStatus()
             
             DispatchQueue.main.async {
-                printActiveEntitlements()
+                InAppPurchaseManager.printActiveEntitlements()
             }
         }
         
@@ -432,7 +432,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
         
-        guard let mlImage = resizeAndPadMaskImage(finalImage) else {
+        guard let mlImage = ImageConverter.resizeAndPadMaskImage(finalImage) else {
             print("❌ resizeAndPadMaskImage failed")
             self.view.showToast(message: "Could not classify fish.")
 
@@ -440,7 +440,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         if self.debugMode {
-            saveImageToGallery(mlImage)
+            GalleryManager.saveImageToGallery(mlImage)
         }
         
         runTripleTaleModel(on: mlImage) { identifier, confidence, boundingBox in
@@ -490,14 +490,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             let (weightInLb, widthInInches, lengthInInches, heightInInches, girthInInches) =
                 calculateWeight(width, length, height, girth, self.scaleFactor)
 
-            let imageOrientation = uiImageOrientation(from: self.deviceOrientation)
+            let imageOrientation = OrientationUtils.uiImageOrientation(from: self.deviceOrientation)
             let displayImage = UIImage(cgImage: image.cgImage!, scale: image.scale, orientation: imageOrientation)
             
-            let popUpOrientation = popUpImageOrientation(from: self.deviceOrientation)
+            let popUpOrientation = OrientationUtils.popUpImageOrientation(from: self.deviceOrientation)
             if let combinedImage = generateResultImage(displayImage, nil, widthInInches, lengthInInches, heightInInches, girthInInches, weightInLb, self.identifierString, debug: self.debugMode) {
                 self.showImagePopup(combinedImage: combinedImage, orientation:popUpOrientation)
                 
-                saveImageToGallery(combinedImage)
+                GalleryManager.saveImageToGallery(combinedImage)
             } else {
                 self.view.showToast(message: "Could not isolate fish from scene, too much clutter!")
             }
@@ -870,7 +870,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         visionQueue.async {
             do {
                 let request = VNCoreMLRequest(model: try VNCoreMLModel(for: self.tripleTaleModel.model)) { request, error in
-                    if let result = processObservations(for: request, error: error) {
+                    if let result = MLUtils.processObservations(for: request, error: error) {
                         DispatchQueue.main.async {
                             completion(result.identifierString, result.confidence, result.boundingBox)
                         }

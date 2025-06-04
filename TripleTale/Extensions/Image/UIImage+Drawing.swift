@@ -366,7 +366,7 @@ extension UIImage {
         // Loop through each VNPoint and draw it
         for (_, vnPoint) in points {
             // Convert the normalized VNPoint.location to CGPoint in image coordinates
-            let pointInImage = convertNormalizedPointToCGPoint(vnPoint.location, imageSize: self.size)
+            let pointInImage = PointUtils.convertNormalizedPointToCGPoint(vnPoint.location, imageSize: self.size)
             
             // Draw a small circle at the point
             let circleRadius: CGFloat = 16.0
@@ -395,7 +395,7 @@ extension UIImage {
         context.setFillColor(UIColor.green.cgColor)
         
         // Convert the normalized VNPoint.location to CGPoint in image coordinates
-        let pointInImage = convertNormalizedPointToCGPoint(vnPoint.location, imageSize: self.size)
+        let pointInImage = PointUtils.convertNormalizedPointToCGPoint(vnPoint.location, imageSize: self.size)
         
         // Draw a small circle at the point
         let circleRadius: CGFloat = 16.0

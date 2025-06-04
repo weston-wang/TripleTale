@@ -26,7 +26,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
     // turn into gray scale pixel data
     let context = CIContext()
     guard let cgImage = context.createCGImage(maskImage, from: maskImage.extent) else { return nil }
-    guard let pixelData = convertCGImageToGrayscalePixelData(cgImage) else { return nil }
+    guard let pixelData = ImageConverter.convertCGImageToGrayscalePixelData(cgImage) else { return nil }
 
     // find all contours
     let width = cgImage.width
@@ -75,7 +75,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
 //        saveImageToGallery(image)
 //        saveImageToGallery(resultImage!)
 //        saveImageToGallery(dotsImage!)
-        saveImageToGallery(finalImage!)
+        GalleryManager.saveImageToGallery(finalImage!)
     }
 
 
@@ -86,66 +86,6 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
     return tipsNormalized
 
 }
-
-//func buildRealWorldVerticesAnchors(
-//    _ currentView: ARSCNView,
-//    _ normalizedVertices: [CGPoint],
-//    _ capturedImageSize: CGSize,
-//    _ planeAnchor: ARPlaneAnchor
-//) -> ([ARAnchor], ARAnchor?, ARAnchor?, [ARAnchor]) {
-//    
-//    let verticesAnchors = getVertices(currentView, normalizedVertices, capturedImageSize)
-//    
-//    // 🔄 Retry with small dithers until we get at least 4 anchors
-////    var attempt = 0
-////    while verticesAnchors.count < 4 && attempt < 5 {  // Limit retries to prevent infinite loops
-////        attempt += 1
-////        adjustedVertices = applySmallDither(to: adjustedVertices) // Slightly modify the points
-////        verticesAnchors = getVertices(currentView, adjustedVertices, capturedImageSize)
-////    }
-//
-//    if verticesAnchors.count < 4 {
-//        print("Error: Expected 4 vertex anchors, but got \(verticesAnchors.count).")
-//        return ([], nil, nil, []) // Return safe fallback values
-//    }
-//    
-//    // Attempt to get centroid anchor
-//    guard let centroidAboveAnchor = getVerticesCenter(currentView,
-//                                                      normalizedVertices,
-//                                                      capturedImageSize,
-//                                                      planeAnchor) else {
-//        print("Error: Failed to retrieve centroid above anchor.")
-//        return ([], nil, nil, []) // Return safe fallback values
-//    }
-//    
-//    let corners = calculateRectangleCorners(normalizedVertices, 0.0, 0.7) // First one is tall, second is wide
-//    let cornerAnchors = getAngledCorners(currentView, corners, capturedImageSize)
-//    
-//    if cornerAnchors.isEmpty {
-//        print("Error: Failed to retrieve corner anchors.")
-//        return ([], centroidAboveAnchor, nil, []) // At least return the above centroid
-//    }
-//    
-//    guard let centroidBelowAnchor = createCentroidAnchor(from: cornerAnchors) else {
-//        print("Error: Failed to create centroid below anchor.")
-//        return ([], centroidAboveAnchor, nil, cornerAnchors) // Return corner anchors at least
-//    }
-//
-//    // Attempt distance calculations safely
-////    guard let distanceToFish = calculateDistanceToObject(centroidAboveAnchor),
-////          let distanceToGround = calculateDistanceToObject(centroidBelowAnchor),
-////          distanceToGround != 0 else {
-////        print("Error: Invalid distances for scaling factor computation.")
-////        return ([], centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
-////    }
-//    
-////    let scalingFactor = distanceToFish / distanceToGround
-////    let outwardedScalingFactor = scalingFactor * 1.1
-//    
-////    verticesAnchors = stretchVertices(verticesAnchors, verticalScaleFactor: outwardedScalingFactor, horizontalScaleFactor: outwardedScalingFactor)
-//    
-//    return (verticesAnchors, centroidAboveAnchor, centroidBelowAnchor, cornerAnchors)
-//}
 
 func generateResultImage(_ inputImage: UIImage,
                          _ inputBoundingBox: CGRect? = nil,
@@ -170,14 +110,6 @@ func generateResultImage(_ inputImage: UIImage,
     let formattedHeight = String(format: "%.2f", heightInInches.value)
     let formattedCircumference = String(format: "%.2f", circumferenceInInches.value)
 
-//    let tempImage = inputImage.drawBoundingBox(inputBoundingBox!)
-//    let tempImage = drawBracketsOnImage(image: inputImage, boundingBox: boundingBox)
-//        self.anchorLabels[midpointAnchors[4].identifier] = "\(formattedWeight) lb, \(formattedLength) in "
-//    let imageWithBox = drawBracketsOnImage(image: inputImage, boundingBoxes: [boundingBox])
-//
-//    let imageWithBox = tempImage.imageWithText(fishName, atPoint: pt, fontSize: 36, textColor: UIColor.white)
-
-//    let weightTextImage = imageWithBox!.imageWithCenteredText("\(fishName) \n \(formattedWeight) lb", fontSize: 180, textColor: UIColor.white)
     let weightTextImage = inputImage.imageWithCenteredText("\(formattedWeight) lb", fontSize: 180, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 200)!)
     let lengthTextImage = weightTextImage!.imageWithCenteredText("\(formattedLength) in", fontSize: 120, textColor: UIColor.white, font: UIFont(name: "Futura-Bold", size: 150)!, verticalOffset: 200)
     
@@ -188,12 +120,7 @@ func generateResultImage(_ inputImage: UIImage,
     if debug {
         let point = CGPoint(x: 10, y: combinedImage!.size.height - 80)
         combinedImage = combinedImage?.imageWithText("L \(formattedLength) in x W \(formattedWidth) in x H \(formattedHeight) in, C \(formattedCircumference) in", atPoint: point, fontSize: 40, textColor: UIColor.white)
-        
-        //    let overlayImage = UIImage(named: "shimano_logo")!
-        //    let combinedImage = measurementTextImage!.addImageToBottomRightCorner(overlayImage: overlayImage)
     }
-    
-//    saveImageToGallery(combinedImage!)
 
     return combinedImage!
 }
@@ -205,7 +132,7 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
     var faceImage = drawBracketsOnImage(image: inputImage, boundingBox: faceBoundingBox)
 
     // step 2: add face distance text below
-    var pt = convertNormalizedPointToCGPoint(faceLocation.location, imageSize: inputImage.size)
+    var pt = PointUtils.convertNormalizedPointToCGPoint(faceLocation.location, imageSize: inputImage.size)
     pt.y = pt.y - 20
     pt.x = pt.x + 10
     
@@ -229,11 +156,11 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
     fishImage = fishImage!.imageWithText("\(String(format: "%.2f", fishLength)) px", atPoint: fishPt, fontSize: 36, textColor: UIColor.white)!
 
     // step 4: draw wrists
-    var leftPt = convertNormalizedPointToCGPoint(leftWristLocation.location, imageSize: inputImage.size)
+    var leftPt = PointUtils.convertNormalizedPointToCGPoint(leftWristLocation.location, imageSize: inputImage.size)
     leftPt.y = leftPt.y - 20
     leftPt.x = leftPt.x + 10
     
-    var rightPt = convertNormalizedPointToCGPoint(rightWristLocation.location, imageSize: inputImage.size)
+    var rightPt = PointUtils.convertNormalizedPointToCGPoint(rightWristLocation.location, imageSize: inputImage.size)
     rightPt.y = rightPt.y - 20
     rightPt.x = rightPt.x + 10
     
@@ -316,8 +243,8 @@ func findEllipseAxisIntersections(
     }
     
     // Compute extension distances
-    let majorDist = distanceBetween(majorIntersections[0], majorIntersections[1])
-    let minorDist = distanceBetween(minorIntersections[0], minorIntersections[1])
+    let majorDist = PointUtils.distanceBetween(majorIntersections[0], majorIntersections[1])
+    let minorDist = PointUtils.distanceBetween(minorIntersections[0], minorIntersections[1])
     
     let majorExtension = majorDist * extendPercentage / 100.0
     let minorExtension = minorDist * extendPercentage / 100.0
