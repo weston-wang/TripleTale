@@ -450,7 +450,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             var verticesAnchors: [ARAnchor] = []
                 
             if let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage, debug: self.debugMode) {
-                verticesAnchors = getVertices(self.sceneView, normalizedVertices, image.size)
+                verticesAnchors = AnchorUtils.getVertices(self.sceneView, normalizedVertices, image.size)
                 
                 print("found \(verticesAnchors.count) vertices anchors")
             }
