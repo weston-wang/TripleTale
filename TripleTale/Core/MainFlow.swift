@@ -59,18 +59,18 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
         let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
         let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
         
-        let ellipseImage = drawEllipse(on: image, ellipse: (center: ellipse.center, size: size, rotationInDegrees: ellipse.rotationInDegrees), tips: tips)
+        let ellipseImage = ImageOverlayRenderer.drawEllipse(on: image, ellipse: (center: ellipse.center, size: size, rotationInDegrees: ellipse.rotationInDegrees), tips: tips)
 
         let perimeter = marchingSquares(from: mergedContour)
-        let perimImage = drawPerimeterDots(on: ellipseImage!, perimeter: perimeter)
+        let perimImage = ImageOverlayRenderer.drawPerimeterDots(on: ellipseImage!, perimeter: perimeter)
 
         let pcaPoints = findFishTips(from: mergedContour)
-        let lineImage = drawDotsAndLine(on: perimImage!, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
+        let lineImage = ImageOverlayRenderer.drawDotsAndLine(on: perimImage!, points: [pcaPoints!.mouthTip, pcaPoints!.tailTip])
         
         let trueIntersections = findEllipseAxisIntersections(ellipse: ellipse, contour: mergedContour)
         
-        let vertImage = drawDotsAndLine(on: lineImage!, points: [trueIntersections![1], trueIntersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
-        let finalImage = drawDotsAndLine(on: vertImage!, points: [trueIntersections![0], trueIntersections![2]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        let vertImage = ImageOverlayRenderer.drawDotsAndLine(on: lineImage!, points: [trueIntersections![1], trueIntersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        let finalImage = ImageOverlayRenderer.drawDotsAndLine(on: vertImage!, points: [trueIntersections![0], trueIntersections![2]], dotColor:UIColor.yellow, lineColor: UIColor.black)
 
 //        saveImageToGallery(image)
 //        saveImageToGallery(resultImage!)
@@ -129,7 +129,7 @@ func generateResultImage(_ inputImage: UIImage,
 func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ faceLocation: VNPoint, _ faceDistance: CGFloat, _ leftWristLocation: VNPoint, _ leftWristDistance: CGFloat, _ rightWristLocation: VNPoint, _ rightWristDistance: CGFloat, _ closestContour: [CGPoint], _ ellipse: (center: CGPoint, size: CGSize, rotationInDegrees: CGFloat), _ tips: [CGPoint], _ fishLength: CGFloat) -> UIImage? {
 
     // step 1: draw face box
-    var faceImage = drawBracketsOnImage(image: inputImage, boundingBox: faceBoundingBox)
+    var faceImage = ImageOverlayRenderer.drawBracketsOnImage(image: inputImage, boundingBox: faceBoundingBox)
 
     // step 2: add face distance text below
     var pt = PointUtils.convertNormalizedPointToCGPoint(faceLocation.location, imageSize: inputImage.size)
@@ -146,8 +146,8 @@ func generateDebugImage(_ inputImage: UIImage, _ faceBoundingBox: CGRect, _ face
 
     // step 3: draw fish
     let perimeter = marchingSquares(from: closestContour)
-    var fishImage = drawPerimeterDots(on: faceImage, perimeter: perimeter)
-    fishImage = drawEllipse(on: fishImage!, ellipse: ellipse, tips: tips)
+    var fishImage = ImageOverlayRenderer.drawPerimeterDots(on: faceImage, perimeter: perimeter)
+    fishImage = ImageOverlayRenderer.drawEllipse(on: fishImage!, ellipse: ellipse, tips: tips)
     
     var fishPt = tips[1]
     fishPt.y = fishPt.y - 20

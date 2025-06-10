@@ -28,10 +28,10 @@
 		4E4CB70E2DF0DEC300E13697 /* MeasurementUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4CB70D2DF0DEBF00E13697 /* MeasurementUtils.swift */; };
 		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
 		4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */; };
+		4E6D78C22DF7B07100F7A62A /* ImageOverlayRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6D78C12DF7B06F00F7A62A /* ImageOverlayRenderer.swift */; };
 		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
 		4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */; };
 		4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */; };
-		4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E302C750D1600CDA5C9 /* Visualizations.swift */; };
 		4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EA02C730A27001ACC69 /* AppDelegate.swift */; };
 		4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EA42C730A27001ACC69 /* MainViewController.swift */; };
 		4EA91EA82C730A27001ACC69 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 4EA91EA72C730A27001ACC69 /* Base */; };
@@ -69,10 +69,10 @@
 		4E53AF062D70393200873F4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = FishSegmentation.mlpackage; sourceTree = "<group>"; };
+		4E6D78C12DF7B06F00F7A62A /* ImageOverlayRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageOverlayRenderer.swift; sourceTree = "<group>"; };
 		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
 		4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessing.swift; sourceTree = "<group>"; };
 		4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlow.swift; sourceTree = "<group>"; };
-		4EA49E302C750D1600CDA5C9 /* Visualizations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Visualizations.swift; sourceTree = "<group>"; };
 		4EA91E9D2C730A27001ACC69 /* TripleTale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripleTale.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EA91EA02C730A27001ACC69 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4EA91EA42C730A27001ACC69 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
@@ -158,6 +158,7 @@
 		4E4CB6E62DEFF99300E13697 /* ImageProcessing */ = {
 			isa = PBXGroup;
 			children = (
+				4E6D78C12DF7B06F00F7A62A /* ImageOverlayRenderer.swift */,
 				4E4CB6EC2DEFF9DC00E13697 /* ImageConverter.swift */,
 				4E4CB6F02DEFF9F200E13697 /* DepthUtils.swift */,
 			);
@@ -228,7 +229,6 @@
 		4EA49E2A2C74160F00CDA5C9 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				4EA49E302C750D1600CDA5C9 /* Visualizations.swift */,
 				4EA91EB52C730CCA001ACC69 /* SceneManipulations.swift */,
 			);
 			path = Support;
@@ -369,7 +369,6 @@
 				4E4CB6F82DF0CF2500E13697 /* MLUtils.swift in Sources */,
 				4E4CB6F12DEFF9F400E13697 /* DepthUtils.swift in Sources */,
 				4EA91EA52C730A27001ACC69 /* MainViewController.swift in Sources */,
-				4EA49E312C750D1600CDA5C9 /* Visualizations.swift in Sources */,
 				4E4CB6FC2DF0CF3B00E13697 /* AnchorUtils.swift in Sources */,
 				4E4CB7022DF0CF5500E13697 /* OrientationUtils.swift in Sources */,
 				4E4CB6D52DEFF6C700E13697 /* CIImage+Conversion.swift in Sources */,
@@ -381,6 +380,7 @@
 				4EAF3BAF2DBF020800462A77 /* InAppPurchaseManager.swift in Sources */,
 				4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */,
 				4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */,
+				4E6D78C22DF7B07100F7A62A /* ImageOverlayRenderer.swift in Sources */,
 				4E28C98F2C8B75E4007BE96D /* ArmPose3DDetector.swift in Sources */,
 				4E4CB6DD2DEFF79400E13697 /* UIViewController+Popups.swift in Sources */,
 				4E4CB6D72DEFF6F200E13697 /* VNPoint+Math.swift in Sources */,
