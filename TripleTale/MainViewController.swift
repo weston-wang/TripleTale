@@ -215,18 +215,19 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 // Subscribe button
 
                 if !self.subscriptionManager.isSubscribed {
-                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
-                        Task {
-                            if let product = self.subscriptionManager.products.first {
-                                await self.subscriptionManager.purchase(product)
-                            } else {
-                                self.view.showToast(message: "No subscription product available.")
-                            }
-                        }
-                    }))
+//                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
+//                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
+//                        Task {
+//                            if let product = self.subscriptionManager.products.first {
+//                                await self.subscriptionManager.purchase(product)
+//                            } else {
+//                                self.view.showToast(message: "No subscription product available.")
+//                            }
+//                        }
+//                    }))
 //                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
-                    self.present(alert, animated: true, completion: nil)
+//                    self.present(alert, animated: true, completion: nil)
+                    self.showSubscriptionOverlay()
                 }
                 
                 // Start monitoring tilt changes
@@ -808,6 +809,82 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         let rect = CGRect(origin: CGPoint(x: view.bounds.midX - width / 2, y: view.bounds.midY - height / 2), size: CGSize(width: width, height: height))
         bracketView.updateBracket(rect: rect)
+    }
+    
+    // MARK: - Subscription Overlay
+    private func showSubscriptionOverlay() {
+        let overlayView = UIView(frame: self.view.bounds)
+        overlayView.backgroundColor = UIColor(red: 0.0, green: 0.1, blue: 0.2, alpha: 1.0) // Dark navy
+        overlayView.tag = 9090 // Tag to identify the subscription overlay
+
+        let backgroundImage = UIImageView(frame: overlayView.bounds)
+        backgroundImage.contentMode = .scaleAspectFill
+        backgroundImage.image = UIImage(named: "subscription") // Replace with your actual image name
+        overlayView.addSubview(backgroundImage)
+
+        // Move messageLabel near the bottom of the screen
+        let messageLabel = UILabel(frame: CGRect(x: 50, y: self.view.bounds.height - 210, width: self.view.bounds.width - 100, height: 80))
+        messageLabel.textAlignment = .center
+        messageLabel.font = UIFont(name: "Futura-Bold", size: 16)
+        messageLabel.textColor = UIColor.white // Sea green
+        messageLabel.numberOfLines = 0
+        let text = "Subscribe to unlock\nfish classification, measurement, and weight estimation"
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: messageLabel.font as Any,
+            .foregroundColor: messageLabel.textColor as Any,
+            .strokeColor: UIColor.black,
+            .strokeWidth: -4
+        ]
+        messageLabel.attributedText = NSAttributedString(string: text, attributes: attributes)
+        overlayView.addSubview(messageLabel)
+
+        // Move subscribeButton near the bottom and restyle
+        let subscribeButton = UIButton(type: .system)
+        subscribeButton.setTitle("Subscribe for $9.99/month", for: .normal)
+        subscribeButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
+        subscribeButton.setTitleColor(UIColor(red: 0.0, green: 0.4, blue: 0.4, alpha: 1.0), for: .normal) // Deep teal
+        subscribeButton.backgroundColor = .white
+        subscribeButton.layer.borderColor = UIColor(red: 0.0, green: 0.2, blue: 0.3, alpha: 1.0).cgColor // Navy
+        subscribeButton.layer.borderWidth = 2
+        subscribeButton.layer.cornerRadius = 10
+        subscribeButton.frame = CGRect(x: 40, y: self.view.bounds.height - 120, width: self.view.bounds.width - 80, height: 50)
+        subscribeButton.addTarget(self, action: #selector(self.handleSubscribeButton), for: .touchUpInside)
+        overlayView.addSubview(subscribeButton)
+
+        // Add Privacy Policy and Terms of Use buttons at the bottom
+        let buttonHeight: CGFloat = 30
+        let buttonSpacing: CGFloat = 10
+        let buttonWidth = (self.view.bounds.width - 60) / 2
+
+        let privacyButton = UIButton(type: .system)
+        privacyButton.setTitle("Privacy Policy", for: .normal)
+        privacyButton.setTitleColor(.white, for: .normal)
+        privacyButton.titleLabel?.font = UIFont.systemFont(ofSize: 12)
+        privacyButton.frame = CGRect(x: 50, y: self.view.bounds.height - 50, width: buttonWidth, height: buttonHeight)
+        privacyButton.addTarget(self, action: #selector(openPrivacyPolicy), for: .touchUpInside)
+        overlayView.addSubview(privacyButton)
+
+        let termsButton = UIButton(type: .system)
+        termsButton.setTitle("Terms of Use", for: .normal)
+        termsButton.setTitleColor(.white, for: .normal)
+        termsButton.titleLabel?.font = UIFont.systemFont(ofSize: 12)
+        termsButton.frame = CGRect(x: self.view.bounds.width - buttonWidth - 50, y: self.view.bounds.height - 50, width: buttonWidth, height: buttonHeight)
+        termsButton.addTarget(self, action: #selector(openTermsOfUse), for: .touchUpInside)
+        overlayView.addSubview(termsButton)
+
+        self.view.addSubview(overlayView)
+    }
+
+    @objc private func openPrivacyPolicy() {
+        if let url = URL(string: "https://yourdomain.com/privacy") {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    @objc private func openTermsOfUse() {
+        if let url = URL(string: "https://yourdomain.com/terms") {
+            UIApplication.shared.open(url)
+        }
     }
     
     private func showLoadingOverlay() {
