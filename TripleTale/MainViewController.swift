@@ -825,17 +825,30 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Move messageLabel near the bottom of the screen
         let messageLabel = UILabel(frame: CGRect(x: 50, y: self.view.bounds.height - 210, width: self.view.bounds.width - 100, height: 80))
         messageLabel.textAlignment = .center
-        messageLabel.font = UIFont(name: "Futura-Bold", size: 16)
-        messageLabel.textColor = UIColor.white // Sea green
         messageLabel.numberOfLines = 0
-        let text = "Subscribe to unlock\nfish classification, measurement, and weight estimation"
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: messageLabel.font as Any,
-            .foregroundColor: messageLabel.textColor as Any,
-            .strokeColor: UIColor.black,
-            .strokeWidth: -4
-        ]
-        messageLabel.attributedText = NSAttributedString(string: text, attributes: attributes)
+        let title = "TripleTale Subscription:\n"
+        let description = "Unlock fish classification, measurement, and weight"
+
+        let attributedText = NSMutableAttributedString(
+            string: title,
+            attributes: [
+                .font: UIFont(name: "Futura-Bold", size: 20) as Any,
+                .foregroundColor: UIColor.white,
+                .strokeColor: UIColor.black,
+                .strokeWidth: -4
+            ])
+
+        let descriptionText = NSAttributedString(
+            string: description,
+            attributes: [
+                .font: UIFont(name: "Futura-Bold", size: 16) as Any,
+                .foregroundColor: UIColor.white,
+                .strokeColor: UIColor.black,
+                .strokeWidth: -3
+            ])
+
+        attributedText.append(descriptionText)
+        messageLabel.attributedText = attributedText
         overlayView.addSubview(messageLabel)
 
         // Move subscribeButton near the bottom and restyle
@@ -876,13 +889,13 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     @objc private func openPrivacyPolicy() {
-        if let url = URL(string: "https://yourdomain.com/privacy") {
+        if let url = URL(string: "https://www.tripletale.net/privacy-policy") {
             UIApplication.shared.open(url)
         }
     }
 
     @objc private func openTermsOfUse() {
-        if let url = URL(string: "https://yourdomain.com/terms") {
+        if let url = URL(string: "https://www.tripletale.net/terms-of-use") {
             UIApplication.shared.open(url)
         }
     }
