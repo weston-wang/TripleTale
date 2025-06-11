@@ -24,17 +24,23 @@ class InAppPurchaseManager: ObservableObject {
 
     func purchase(_ product: Product) async {
         do {
+            print("🛒 Attempting to purchase product: \(product.id)")
             let result = try await product.purchase()
+            print("📦 Purchase result received: \(result)")
             switch result {
             case .success(let verification):
+                print("✅ Purchase success with verification result: \(verification)")
                 if case .verified(_) = verification {
+                    print("🔒 Transaction verified. Updating subscription status...")
                     await updateSubscriptionStatus()
+                } else {
+                    print("⚠️ Transaction not verified.")
                 }
             default:
-                break
+                print("ℹ️ Purchase result not successful: \(result)")
             }
         } catch {
-            print("Purchase failed: \(error)")
+            print("❌ Purchase failed with error: \(error)")
         }
     }
 
