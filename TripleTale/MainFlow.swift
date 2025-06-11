@@ -31,7 +31,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
     // find all contours
     let width = cgImage.width
     let height = cgImage.height
-    let (contours, _) = extractContours(from: pixelData, width: width, height: height)
+    let (contours, _) = ContourExtractor.extractContours(from: pixelData, width: width, height: height)
     
     print("number of contours: \(contours.count)")
     
@@ -39,7 +39,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
     let mergedContour = mergeVerticalContours(contours: contours)
     
     // find center contour
-//    guard let closestContour = findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
+//    guard let closestContour = ContourExtractor.findContourClosestToCenter(contours: contours, imageWidth: width, imageHeight: height) else { return nil }
     
 //    print("closest contour size: \(closestContour.count), merged contour size: \(mergedContour.count)")
     

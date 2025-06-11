@@ -29,7 +29,8 @@
 		4E624EFD2D0CFEBC004142F8 /* Tutorial.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */; };
 		4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */; };
 		4E6D78C22DF7B07100F7A62A /* ImageOverlayRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6D78C12DF7B06F00F7A62A /* ImageOverlayRenderer.swift */; };
-		4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E252C74145300CDA5C9 /* ComputerVision.swift */; };
+		4E6D78C62DF7B4DF00F7A62A /* MaskProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6D78C52DF7B4DD00F7A62A /* MaskProcessor.swift */; };
+		4E6D78C82DF7B58000F7A62A /* ContourExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6D78C72DF7B57E00F7A62A /* ContourExtractor.swift */; };
 		4EA49E282C7415EB00CDA5C9 /* ImageProcessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */; };
 		4EA49E2C2C741DAA00CDA5C9 /* MainFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */; };
 		4EA91EA12C730A27001ACC69 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA91EA02C730A27001ACC69 /* AppDelegate.swift */; };
@@ -69,7 +70,8 @@
 		4E624EFC2D0CFEBC004142F8 /* Tutorial.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Tutorial.storyboard; sourceTree = "<group>"; };
 		4E6BB3992DEA364700018B77 /* FishSegmentation.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = FishSegmentation.mlpackage; sourceTree = "<group>"; };
 		4E6D78C12DF7B06F00F7A62A /* ImageOverlayRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageOverlayRenderer.swift; sourceTree = "<group>"; };
-		4EA49E252C74145300CDA5C9 /* ComputerVision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComputerVision.swift; sourceTree = "<group>"; };
+		4E6D78C52DF7B4DD00F7A62A /* MaskProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskProcessor.swift; sourceTree = "<group>"; };
+		4E6D78C72DF7B57E00F7A62A /* ContourExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContourExtractor.swift; sourceTree = "<group>"; };
 		4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessing.swift; sourceTree = "<group>"; };
 		4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlow.swift; sourceTree = "<group>"; };
 		4EA91E9D2C730A27001ACC69 /* TripleTale.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TripleTale.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -156,6 +158,8 @@
 		4E4CB6E62DEFF99300E13697 /* ImageProcessing */ = {
 			isa = PBXGroup;
 			children = (
+				4E6D78C72DF7B57E00F7A62A /* ContourExtractor.swift */,
+				4E6D78C52DF7B4DD00F7A62A /* MaskProcessor.swift */,
 				4E6D78C12DF7B06F00F7A62A /* ImageOverlayRenderer.swift */,
 				4E4CB6EC2DEFF9DC00E13697 /* ImageConverter.swift */,
 				4E4CB6F02DEFF9F200E13697 /* DepthUtils.swift */,
@@ -217,9 +221,7 @@
 		4EA49E292C74160900CDA5C9 /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */,
 				4EA49E272C7415EB00CDA5C9 /* ImageProcessing.swift */,
-				4EA49E252C74145300CDA5C9 /* ComputerVision.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -259,6 +261,7 @@
 				4E53AF062D70393200873F4D /* Info.plist */,
 				4EA91EA02C730A27001ACC69 /* AppDelegate.swift */,
 				4EA91EA42C730A27001ACC69 /* MainViewController.swift */,
+				4EA49E2B2C741DAA00CDA5C9 /* MainFlow.swift */,
 				4EA49E292C74160900CDA5C9 /* Core */,
 				4E4CB6E52DEFF98100E13697 /* Utilities */,
 				4EBE288C2DEEA7F500180A0A /* Extensions */,
@@ -364,6 +367,7 @@
 				4E4CB7002DF0CF4D00E13697 /* GalleryManager.swift in Sources */,
 				4E4C7FB32C8B6311003F3F96 /* FingerWidthDetector.swift in Sources */,
 				4E4CB6DB2DEFF75A00E13697 /* UIView+Toast.swift in Sources */,
+				4E6D78C82DF7B58000F7A62A /* ContourExtractor.swift in Sources */,
 				4E6BB39A2DEA364700018B77 /* FishSegmentation.mlpackage in Sources */,
 				4EAF3BAF2DBF020800462A77 /* InAppPurchaseManager.swift in Sources */,
 				4EEB66E42DAD70770093C719 /* StatusViewController.swift in Sources */,
@@ -378,7 +382,7 @@
 				4E4CB6ED2DEFF9DD00E13697 /* ImageConverter.swift in Sources */,
 				4EBE28902DEEA92600180A0A /* UIImage+Crop.swift in Sources */,
 				4E4CB6D32DEFF5CE00E13697 /* UIImage+Drawing.swift in Sources */,
-				4EA49E262C74145300CDA5C9 /* ComputerVision.swift in Sources */,
+				4E6D78C62DF7B4DF00F7A62A /* MaskProcessor.swift in Sources */,
 				4E4C7FB52C8B6493003F3F96 /* HandBoundingBoxDetector.swift in Sources */,
 				4EA91EB82C730D28001ACC69 /* BracketView.swift in Sources */,
 			);

@@ -260,7 +260,7 @@ struct MLUtils {
             return nil
         }
 
-        let uiImage = fillHolesInMask(cgImage)
+        let uiImage = MaskProcessor.fillHolesInMask(cgImage)
     //    let uiImage = UIImage(cgImage: cgImage)
         buffer.deallocate()
         return uiImage
