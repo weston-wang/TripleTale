@@ -161,18 +161,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         sceneView.delegate = self
         view.addSubview(sceneView)
 
-//        if !hasLiDAR {
-//            DispatchQueue.main.async {
-//                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires a LiDAR-enabled device. Non-LiDAR devices support will be enabled in future updates.", preferredStyle: .alert)
-//
-//                // Normal OK action (will exit if tapped once)
-//                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
-//                    exit(0)
-//                }))
-//                
-//                self.present(alert, animated: true)
-//            }
-//        }
+        if !hasLiDAR {
+            DispatchQueue.main.async {
+                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires an iPhone Pro device. Regular iPhone support will be enabled in future updates.", preferredStyle: .alert)
+
+                // Normal OK action (will exit if tapped once)
+                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
+                    exit(0)
+                }))
+                
+                self.present(alert, animated: true)
+            }
+        }
 
         // Create splash/loading image view
         showLoadingOverlay()
@@ -213,23 +213,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         //        setupClassifierLabel()
                 
                 // Subscribe button
-//                self.setupSubscribeButton()
-//                self.setupRestoreButton()
-                
-//                if !self.subscriptionManager.isSubscribed {
-//                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
-//                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
-//                        Task {
-//                            if let product = self.subscriptionManager.products.first {
-//                                await self.subscriptionManager.purchase(product)
-//                            } else {
-//                                self.view.showToast(message: "No subscription product available.")
-//                            }
-//                        }
-//                    }))
-////                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
-//                    self.present(alert, animated: true, completion: nil)
-//                }
+
+                if !self.subscriptionManager.isSubscribed {
+                    let alert = UIAlertController(title: "Subscribe to Unlock", message: "  fish classification \nfish length measurement \nfish weight calculation.\n\n$9.99 per month. Cancel anytime.", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Subscribe", style: .default, handler: { _ in
+                        Task {
+                            if let product = self.subscriptionManager.products.first {
+                                await self.subscriptionManager.purchase(product)
+                            } else {
+                                self.view.showToast(message: "No subscription product available.")
+                            }
+                        }
+                    }))
+//                    alert.addAction(UIAlertAction(title: "Later", style: .cancel, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
                 
                 // Start monitoring tilt changes
                 self.startMotionTracking()
