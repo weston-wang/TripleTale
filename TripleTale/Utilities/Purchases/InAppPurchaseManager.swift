@@ -30,9 +30,17 @@ class InAppPurchaseManager: ObservableObject {
             switch result {
             case .success(let verification):
                 print("✅ Purchase success with verification result: \(verification)")
-                if case .verified(_) = verification {
-                    print("🔒 Transaction verified. Updating subscription status...")
-                    await updateSubscriptionStatus()
+                if case .verified(let transaction) = verification {
+                    print("🔒 Transaction verified. Setting subscription status directly.")
+                    print("📦 productIDs: \(productIDs)")
+                    print("📦 transaction.productID: \(transaction.productID)")
+                    if productIDs.contains(transaction.productID) {
+                        isSubscribed = true
+                        print("✅ isSubscribed set to : \(isSubscribed)")
+
+                    } else {
+                        print("⚠️ Verified purchase is not in productIDs list.")
+                    }
                 } else {
                     print("⚠️ Transaction not verified.")
                 }

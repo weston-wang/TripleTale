@@ -177,16 +177,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         // Create splash/loading image view
         showLoadingOverlay()
         
-        Task {
-            await subscriptionManager.loadProducts()
-            await subscriptionManager.updateSubscriptionStatus()
+//        Task {
+//
+//        }
+        
+        Task { @MainActor in
+            await self.subscriptionManager.loadProducts()
+            await self.subscriptionManager.updateSubscriptionStatus()
             
             DispatchQueue.main.async {
                 InAppPurchaseManager.printActiveEntitlements()
             }
-        }
-        
-        Task.detached(priority: .utility) {
+            
             _ = await self.fishExtractor  // Load 1st model
 
             // Update UI once all done
@@ -268,6 +270,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         Task {
             if let product = subscriptionManager.products.first {
                 await subscriptionManager.purchase(product)
+
+                // Force re-check after purchase
+                print("🔁 Subscription status after purchase: \(subscriptionManager.isSubscribed)")
+
+
+                if subscriptionManager.isSubscribed {
+                    if let overlay = self.view.viewWithTag(9090) {
+                        overlay.removeFromSuperview()
+                    }
+                } else {
+                    self.view.showToast(message: "Subscription failed or was not verified.")
+                }
             } else {
                 self.view.showToast(message: "No subscription product available. Try again later.")
             }
