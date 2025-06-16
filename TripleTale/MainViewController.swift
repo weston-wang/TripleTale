@@ -163,7 +163,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         if !hasLiDAR {
             DispatchQueue.main.async {
-                let alert = UIAlertController(title: "LiDAR Required", message: "This app requires an iPhone Pro device. Regular iPhone support will be enabled in future updates.", preferredStyle: .alert)
+                let alert = UIAlertController(title: "iPhone Pro Required", message: "This app requires an iPhone Pro device. Regular iPhone support will be enabled in future updates.", preferredStyle: .alert)
 
                 // Normal OK action (will exit if tapped once)
                 alert.addAction(UIAlertAction(title: "OK", style: .default, handler: { _ in
@@ -189,7 +189,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 InAppPurchaseManager.printActiveEntitlements()
             }
             
-            _ = await self.fishExtractor  // Load 1st model
+            _ = self.fishExtractor  // Load 1st model
 
             // Update UI once all done
             DispatchQueue.main.async {
@@ -279,6 +279,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                     if let overlay = self.view.viewWithTag(9090) {
                         overlay.removeFromSuperview()
                     }
+                    if let restoreButton = self.view.viewWithTag(9191) {
+                        restoreButton.removeFromSuperview()
+                    }
                 } else {
                     self.view.showToast(message: "Subscription failed or was not verified.")
                 }
@@ -289,13 +292,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
     
     private func setupRestoreButton() {
-        let button = UIButton(frame: CGRect(x: view.bounds.width - 50, y: 30, width: 50, height: 50))
-        
-        let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
-        let image = UIImage(systemName: "arrow.counterclockwise.circle", withConfiguration: config)
-        button.setImage(image, for: .normal)
-        button.tintColor = .systemGray
-        button.backgroundColor = .clear
+        let button = UIButton(type: .system)
+        button.setTitle("Restore Purchase", for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 12)
+        button.backgroundColor = UIColor(red: 0.0, green: 0.2, blue: 0.3, alpha: 1.0)
+        button.layer.cornerRadius = 8
+        button.frame = CGRect(x: view.bounds.width - 140, y: 50, width: 120, height: 30)
+        button.tag = 9191
         button.addTarget(self, action: #selector(handleRestoreButton), for: .touchUpInside)
         view.addSubview(button)
     }
@@ -848,8 +852,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             attributes: [
                 .font: UIFont(name: "Futura-Bold", size: 20) as Any,
                 .foregroundColor: UIColor.white,
-                .strokeColor: UIColor.black,
-                .strokeWidth: -4
+                .strokeColor: UIColor(red: 0.0, green: 0.2, blue: 0.3, alpha: 1.0),
+                .strokeWidth: -6
             ])
 
         let descriptionText = NSAttributedString(
@@ -857,7 +861,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             attributes: [
                 .font: UIFont(name: "Futura-Bold", size: 16) as Any,
                 .foregroundColor: UIColor.white,
-                .strokeColor: UIColor.black,
+                .strokeColor: UIColor(red: 0.0, green: 0.2, blue: 0.3, alpha: 1.0),
                 .strokeWidth: -3
             ])
 
@@ -892,7 +896,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         overlayView.addSubview(privacyButton)
 
         let termsButton = UIButton(type: .system)
-        termsButton.setTitle("Terms of Use", for: .normal)
+        termsButton.setTitle("App EULA", for: .normal)
         termsButton.setTitleColor(.white, for: .normal)
         termsButton.titleLabel?.font = UIFont.systemFont(ofSize: 12)
         termsButton.frame = CGRect(x: self.view.bounds.width - buttonWidth - 50, y: self.view.bounds.height - 50, width: buttonWidth, height: buttonHeight)
@@ -900,6 +904,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         overlayView.addSubview(termsButton)
 
         self.view.addSubview(overlayView)
+        
+        self.setupRestoreButton()
     }
 
     @objc private func openPrivacyPolicy() {
