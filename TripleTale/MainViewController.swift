@@ -307,6 +307,11 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     @objc private func handleRestoreButton() {
         Task {
             await subscriptionManager.restorePurchases()
+            if subscriptionManager.isSubscribed {
+                self.view.showToast(message: "✅ Subscription restored!")
+            } else {
+                self.view.showToast(message: "No active subscription found.")
+            }
         }
     }
     

@@ -56,7 +56,8 @@ class InAppPurchaseManager: ObservableObject {
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result,
                productIDs.contains(transaction.productID),
-               transaction.revocationDate == nil {
+               transaction.revocationDate == nil,
+               (transaction.expirationDate ?? .distantFuture) > Date() {
                 isSubscribed = true
                 return
             }
@@ -66,10 +67,13 @@ class InAppPurchaseManager: ObservableObject {
 
     func restorePurchases() async {
         do {
+            print("🔁 Starting App Store sync for restore...")
             try await AppStore.sync()
+            print("🔁 Sync completed. Checking entitlements...")
             await updateSubscriptionStatus()
+            print("🔁 Finished restore. isSubscribed = \(isSubscribed)")
         } catch {
-            print("Failed to restore: \(error)")
+            print("❌ Failed to restore: \(error)")
         }
     }
     
