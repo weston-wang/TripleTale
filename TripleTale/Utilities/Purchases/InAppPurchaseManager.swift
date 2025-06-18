@@ -12,7 +12,7 @@ class InAppPurchaseManager: ObservableObject {
     @Published var products: [Product] = []
     @Published var isSubscribed = false
 
-    private let productIDs = ["com.tripletale.monthly"]
+    private let productIDs = ["com.monthly.tripletale"]
 
     func loadProducts() async {
         do {
