@@ -44,8 +44,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     
     var screenRatio: CGFloat = 0.95
     
-    var inwardPercent: Double = 20.0 // 5%
+    var inwardPercent: Double = 50.0 // 5%
     var heightNudge: Double = 1.0
+    
+    var fishMaskThreshold: Double = 0.8
     
     var lengthScale: Double = 1.05
     var widthScale: Double = 1.05
@@ -134,10 +136,10 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 return nil
             }
             
-            let count = maskArray.count
-            let flatValues = (0..<count).map { maskArray[$0].floatValue }
+//            let count = maskArray.count
+//            let flatValues = (0..<count).map { maskArray[$0].floatValue }
 
-            if let maskImage = MLUtils.postprocessFishMask(from: maskArray, originalSize: inputImage.size) {
+            if let maskImage = MLUtils.postprocessFishMask(from: maskArray, originalSize: inputImage.size, maskThreshold: fishMaskThreshold) {
                 let originalSize = inputImage.size
                 if let resizedMask = ImageConverter.resizeMaskToOriginal(maskImage: maskImage, targetSize: originalSize) {
                     return resizedMask
@@ -346,7 +348,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             showInputPopup(title: "Developer Mode", message: "Update Values Below", placeholders: [
                 "Weight Scale: \(self.scaleFactor)",
                 "Inward Nudge: \(self.inwardPercent) %",
-                "Body Ratio: \(self.bodyRatio)"
+                "Body Ratio: \(self.bodyRatio)",
+                "Fish Mask Threshold: \(self.fishMaskThreshold)"
             ]) { inputs in
                 // Handle the user inputs here
                 if let value1 = inputs[0] {
@@ -357,6 +360,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 }
                 if let value3 = inputs[2] {
                     self.bodyRatio = value3
+                }
+                if let value4 = inputs[3] {
+                    self.fishMaskThreshold = value4
                 }
             }
         }
@@ -466,7 +472,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
         
         runTripleTaleModel(on: mlImage) { identifier, confidence, boundingBox in
-            self.identifierString = identifier
+//            self.identifierString = identifier
+            self.identifierString = ""
             self.confidence = confidence
                             
             var verticesAnchors: [ARAnchor] = []
@@ -876,7 +883,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
 
         // Move subscribeButton near the bottom and restyle
         let subscribeButton = UIButton(type: .system)
-        subscribeButton.setTitle("Subscribe for $9.99/month", for: .normal)
+        subscribeButton.setTitle("Subscribe for $3.99/month", for: .normal)
         subscribeButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
         subscribeButton.setTitleColor(UIColor(red: 0.0, green: 0.4, blue: 0.4, alpha: 1.0), for: .normal) // Deep teal
         subscribeButton.backgroundColor = .white

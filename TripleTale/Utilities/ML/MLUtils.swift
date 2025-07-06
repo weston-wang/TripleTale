@@ -57,7 +57,7 @@ struct MLUtils {
         return (identifierString, confidence, boundingBox)
     }
 
-    static func postprocessFishMask(from maskArray: MLMultiArray, originalSize: CGSize) -> UIImage? {
+    static func postprocessFishMask(from maskArray: MLMultiArray, originalSize: CGSize, maskThreshold: Double = 0.8) -> UIImage? {
         let width = maskArray.shape[3].intValue
         let height = maskArray.shape[2].intValue
 
@@ -72,7 +72,7 @@ struct MLUtils {
         defer { buffer.deallocate() }
 
         for i in 0..<count {
-            buffer[i] = floatArray[i] > 0.8 ? 255 : 0
+            buffer[i] = floatArray[i] > Float(maskThreshold) ? 255 : 0
         }
 
         let colorSpace = CGColorSpaceCreateDeviceGray()
