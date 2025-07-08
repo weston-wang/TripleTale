@@ -9,7 +9,7 @@ import UIKit
 import Vision
 
 struct MaskProcessor {
-    static func generateMaskImage(from image: UIImage, for portion: CGFloat) -> CIImage? {
+    static func generateMaskImage(from image: UIImage, for portion: CGFloat = 1.0) -> CIImage? {
         guard let ciImage = CIImage(image: image) else { return nil }
 
         let request = VNGenerateForegroundInstanceMaskRequest()

@@ -121,9 +121,20 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }()
     
     func extractFish(from inputImage: UIImage) -> UIImage? {
+        guard let foregroundMask = MaskProcessor.generateMaskImage(from: inputImage) else {
+            print("❌ Failed to extract foreground image.")
+            return nil
+        }
+        guard let foregroundImage = inputImage.masked(with: foregroundMask) else {
+            print("❌ Failed to apply foreground mask.")
+            return nil
+        }
+        
+        GalleryManager.saveImageToGallery(foregroundImage)
+
         do {
             // Resize image to 256x256 (required by SAM2 Tiny)
-            guard let resizedImage = MLUtils.resizeImageForModel(inputImage, width: 416, height: 416) ,
+            guard let resizedImage = MLUtils.resizeImageForModel(foregroundImage, width: 416, height: 416) ,
                   let pixelBuffer = ImageConverter.pixelBuffer(from: resizedImage) else {
                 print("❌ Failed to preprocess image.")
                 return nil
