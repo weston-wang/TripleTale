@@ -79,6 +79,26 @@ extension UIImage {
         return UIImage(cgImage: croppedCG, scale: self.scale, orientation: self.imageOrientation)
     }
 
+    func maskedWithSameSize(with mask: CIImage) -> UIImage? {
+        guard let cgImage = self.cgImage else { return nil }
+
+        let inputCIImage = CIImage(cgImage: cgImage)
+
+        guard let filter = CIFilter(name: "CIBlendWithMask") else { return nil }
+        filter.setValue(inputCIImage, forKey: kCIInputImageKey)
+        filter.setValue(mask, forKey: kCIInputMaskImageKey)
+        filter.setValue(CIImage(color: .clear).cropped(to: inputCIImage.extent), forKey: kCIInputBackgroundImageKey)
+
+        guard let outputImage = filter.outputImage else { return nil }
+
+        let context = CIContext()
+        guard let fullSizeCG = context.createCGImage(outputImage, from: inputCIImage.extent) else {
+            return nil
+        }
+
+        return UIImage(cgImage: fullSizeCG, scale: self.scale, orientation: self.imageOrientation)
+    }
+
     func forceRGB() -> UIImage? {
         let width = Int(size.width)
         let height = Int(size.height)

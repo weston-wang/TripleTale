@@ -47,7 +47,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var inwardPercent: Double = 50.0 // 5%
     var heightNudge: Double = 1.0
     
-    var fishMaskThreshold: Double = 0.8
+    var fishMaskThreshold: Double = 0.95
     
     var lengthScale: Double = 1.05
     var widthScale: Double = 1.05
@@ -125,12 +125,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             print("❌ Failed to extract foreground image.")
             return nil
         }
-        guard let foregroundImage = inputImage.masked(with: foregroundMask) else {
+        guard let foregroundImage = inputImage.maskedWithSameSize(with: foregroundMask) else {
             print("❌ Failed to apply foreground mask.")
             return nil
         }
         
-        GalleryManager.saveImageToGallery(foregroundImage)
+        print("inputImage size: \(inputImage.size)")
+        print("foregroundMask size: \(foregroundMask.extent.width) x \(foregroundMask.extent.height)")
+        print("foregroundImage size: \(foregroundImage.size)")
 
         do {
             // Resize image to 256x256 (required by SAM2 Tiny)
@@ -446,8 +448,6 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     }
 
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
-        let mask: CIImage?
-        
         self.lengthScale = isFacingForward ? 1.05 : 1.0
         self.widthScale = isFacingForward ? 1.05 : 1.0
         
