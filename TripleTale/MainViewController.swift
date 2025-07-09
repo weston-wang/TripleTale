@@ -48,11 +48,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     var heightNudge: Double = 1.0
     
     var fishMaskThreshold: Double = 0.95
+    var fishDepthThreshold: Double = 0.2
     
     var lengthScale: Double = 1.05
     var widthScale: Double = 1.05
     
     var bodyRatio: Double = 2.75
+    
+    private var depthMap: UIImage?
     
     // Classification results
     private var identifierString = ""
@@ -346,7 +349,8 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 "Weight Scale: \(self.scaleFactor)",
                 "Inward Nudge: \(self.inwardPercent) %",
                 "Body Ratio: \(self.bodyRatio)",
-                "Fish Mask Threshold: \(self.fishMaskThreshold)"
+                "Fish Mask Threshold: \(self.fishMaskThreshold)",
+                "Fish Depth Threshold: \(self.fishDepthThreshold)"
             ]) { inputs in
                 // Handle the user inputs here
                 if let value1 = inputs[0] {
@@ -360,6 +364,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 }
                 if let value4 = inputs[3] {
                     self.fishMaskThreshold = value4
+                }
+                if let value5 = inputs[4] {
+                    self.fishDepthThreshold = value5
                 }
             }
         }
@@ -434,14 +441,41 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
         self.lengthScale = isFacingForward ? 1.05 : 1.0
         self.widthScale = isFacingForward ? 1.05 : 1.0
-        
+
         guard let fishImage = extractFish(from: image) else {
             print("❌ Fish model returned no mask output.")
-            self.view.showToast(message: "SAM failed to return a mask.")
+            self.view.showToast(message: "Fish AI failed to return a mask.")
             return
         }
-                
-        guard let maskImage = CIImage(image: fishImage) else {
+
+        // Ensure fishImage is not nil before accessing .size
+        let originalSize = fishImage.size
+
+        guard let croppedDepthMap = self.depthMap?.croppedToAspectRatio(size: image.size) else {
+            print("❌ Depth map is missing or could not be cropped.")
+            self.view.showToast(message: "Depth map unavailable.")
+            return
+        }
+
+        guard let resizedMask = fishImage.resized(to: fishImage.size) else {
+            print("❌ Failed to resize fish mask.")
+            self.view.showToast(message: "Failed to resize mask.")
+            return
+        }
+
+        guard let depthRefinedMask = DepthUtils.refineMaskWithDepth(fishMask: resizedMask, depthMap: croppedDepthMap, depthThreshold: fishDepthThreshold) else {
+            print("❌ Failed to refine mask with depth.")
+            self.view.showToast(message: "Depth refinement failed.")
+            return
+        }
+
+        guard let refinedFishImage = depthRefinedMask.resized(to: originalSize) else {
+            print("❌ Failed to resize refined mask.")
+            self.view.showToast(message: "Post-refinement resize failed.")
+            return
+        }
+        
+        guard let maskImage = CIImage(image: refinedFishImage) else {
             print("❌ maskImage is nil")
             self.view.showToast(message: "Could not extract mask.")
 
@@ -630,6 +664,9 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     func captureFrameAsUIImage(from arSCNView: ARSCNView) -> UIImage? {
         // Capture the current view as a UIImage
         let image = arSCNView.snapshot()
+        
+        depthMap = DepthUtils.getDepthMap(from: arSCNView.session.currentFrame!)
+
         return image
     }
     

@@ -108,4 +108,99 @@ struct DepthUtils {
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
         return UIImage(cgImage: cgImage)
     }
+    
+    static func refineMaskWithDepth(fishMask: UIImage, depthMap: UIImage, depthThreshold: CGFloat = 0.2) -> UIImage? {
+        guard let maskCI = CIImage(image: fishMask),
+              let depthCI = CIImage(image: depthMap) else {
+            print("❌ Failed to create CIImage from inputs")
+            return nil
+        }
+
+        let width = Int(maskCI.extent.width)
+        let height = Int(maskCI.extent.height)
+        let bytesPerRow = width
+
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let context = CIContext()
+
+        guard let maskCG = context.createCGImage(maskCI, from: maskCI.extent),
+              let depthCG = context.createCGImage(depthCI, from: depthCI.extent),
+              let maskBitmapContext = CGContext(data: nil,
+                                                width: width,
+                                                height: height,
+                                                bitsPerComponent: 8,
+                                                bytesPerRow: bytesPerRow,
+                                                space: colorSpace,
+                                                bitmapInfo: CGImageAlphaInfo.none.rawValue),
+              let depthBitmapContext = CGContext(data: nil,
+                                                 width: width,
+                                                 height: height,
+                                                 bitsPerComponent: 8,
+                                                 bytesPerRow: bytesPerRow,
+                                                 space: colorSpace,
+                                                 bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+            print("❌ Failed to create bitmap contexts")
+            return nil
+        }
+
+        maskBitmapContext.draw(maskCG, in: CGRect(x: 0, y: 0, width: width, height: height))
+        depthBitmapContext.draw(depthCG, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        guard let maskBuffer = maskBitmapContext.data,
+              let depthBuffer = depthBitmapContext.data else {
+            print("❌ Failed to get bitmap buffer data")
+            return nil
+        }
+
+        var foregroundDepths: [UInt8] = []
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = y * bytesPerRow + x
+                let maskValue = maskBuffer.load(fromByteOffset: offset, as: UInt8.self)
+                if maskValue > 128 {
+                    let depth = depthBuffer.load(fromByteOffset: offset, as: UInt8.self)
+                    foregroundDepths.append(depth)
+                }
+            }
+        }
+
+        guard !foregroundDepths.isEmpty else {
+            print("❌ No foreground pixels found in mask")
+            return nil
+        }
+
+        foregroundDepths.sort()
+        let medianDepth = foregroundDepths[foregroundDepths.count / 2]
+
+        let outputBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: width * height)
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = y * bytesPerRow + x
+                let maskValue = maskBuffer.load(fromByteOffset: offset, as: UInt8.self)
+                let depth = depthBuffer.load(fromByteOffset: offset, as: UInt8.self)
+                let depthDiff = abs(Int(depth) - Int(medianDepth))
+                let keep = maskValue > 128 && depthDiff < Int(depthThreshold * 255)
+                outputBuffer[offset] = keep ? 255 : 0
+            }
+        }
+
+        if let outputContext = CGContext(data: outputBuffer,
+                                         width: width,
+                                         height: height,
+                                         bitsPerComponent: 8,
+                                         bytesPerRow: bytesPerRow,
+                                         space: colorSpace,
+                                         bitmapInfo: CGImageAlphaInfo.none.rawValue),
+           let outputCGImage = outputContext.makeImage() {
+            let output = UIImage(cgImage: outputCGImage)
+            outputBuffer.deallocate()
+            return output
+        } else {
+            outputBuffer.deallocate()
+            print("❌ Failed to create refined output image")
+            return nil
+        }
+    }
 }
