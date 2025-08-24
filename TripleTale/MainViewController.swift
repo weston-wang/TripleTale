@@ -42,7 +42,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
     private var tapCounter = 0
     var scaleFactor: Double = 800.0
     
-    var screenRatio: CGFloat = 0.95
+    var screenRatio: CGFloat = 0.85
     
     var inwardPercent: Double = 50.0 // 5%
     var heightNudge: Double = 1.0
@@ -203,7 +203,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                 self.view.addSubview(self.bracketView!)
                 
                 // Initial bracket update
-//                self.updateBracketSize()
+                self.updateBracketSize()
                 
                 // Call the function to create and add the camera button
                 self.setupCameraButton()
@@ -438,10 +438,18 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         }
     }
 
-    func calculateAndDisplayWeight(with image: UIImage, completion: @escaping () -> Void) {
+    func calculateAndDisplayWeight(with inputImage: UIImage, completion: @escaping () -> Void) {
         self.lengthScale = isFacingForward ? 1.05 : 1.0
         self.widthScale = isFacingForward ? 1.05 : 1.0
+        
+        guard let image = inputImage.cropCenter(to: self.screenRatio) else {
+            print("❌ Problem saving image.")
+            self.view.showToast(message: "Problem processing image")
+            return
+        }
 
+        GalleryManager.saveImageToGallery(image)
+        
         guard let fishImage = extractFish(from: image) else {
             print("❌ Fish model returned no mask output.")
             self.view.showToast(message: "Fish AI failed to return a mask.")

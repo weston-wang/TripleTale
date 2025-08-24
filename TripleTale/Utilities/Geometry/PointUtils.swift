@@ -14,12 +14,6 @@ struct PointUtils {
         return sqrt(dx * dx + dy * dy)
     }
 
-    static func distanceBetweenPoints(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
-        let dx = p2.x - p1.x
-        let dy = p2.y - p1.y
-        return sqrt(dx * dx + dy * dy)
-    }
-
     /// Converts a normalized VNPoint.location to a CGPoint in the image coordinate system.
     /// - Parameters:
     ///   - point: The VNPoint to convert (assumed to be normalized between 0 and 1, with a lower-left origin).

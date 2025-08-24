@@ -51,13 +51,19 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
         return nil
     }
     
+    let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+
+    let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
+    
+    let correctedTips = [tips[0], intersections[1], tips[2], intersections[3]]
+
     // for debug display only
     if debug {
 //        let maskUiImage = maskImage.toUIImage()!
         
         // find ellipse tips to use for measurements
-        let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
-        let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
+//        let size = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+//        let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
         
         let ellipseImage = ImageOverlayRenderer.drawEllipse(on: image, ellipse: (center: ellipse.center, size: size, rotationInDegrees: ellipse.rotationInDegrees), tips: tips)
 
@@ -69,17 +75,22 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
         
         let trueIntersections = findEllipseAxisIntersections(ellipse: ellipse, contour: mergedContour)
         
-        let vertImage = ImageOverlayRenderer.drawDotsAndLine(on: lineImage!, points: [trueIntersections![1], trueIntersections![3]], dotColor:UIColor.yellow, lineColor: UIColor.black)
-        let finalImage = ImageOverlayRenderer.drawDotsAndLine(on: vertImage!, points: [trueIntersections![0], trueIntersections![2]], dotColor:UIColor.yellow, lineColor: UIColor.black)
+        let vertImage = ImageOverlayRenderer.drawDotsAndLine(on: lineImage!, points: [trueIntersections![1], trueIntersections![3]], dotColor:UIColor.cyan, lineColor: UIColor.black)
+        let horiImage = ImageOverlayRenderer.drawDotsAndLine(on: vertImage!, points: [trueIntersections![0], trueIntersections![2]], dotColor:UIColor.cyan, lineColor: UIColor.black)
+
+        let finalImage1 = ImageOverlayRenderer.drawDot(on: horiImage!, point: correctedTips[0], dotColor: UIColor.magenta)
+        let finalImage2 = ImageOverlayRenderer.drawDot(on: finalImage1!, point: correctedTips[1], dotColor: UIColor.magenta)
+        let finalImage3 = ImageOverlayRenderer.drawDot(on: finalImage2!, point: correctedTips[2], dotColor: UIColor.magenta)
+        let finalImage = ImageOverlayRenderer.drawDot(on: finalImage3!, point: correctedTips[3], dotColor: UIColor.magenta)
 
 //        saveImageToGallery(image)
 //        saveImageToGallery(resultImage!)
 //        saveImageToGallery(dotsImage!)
         GalleryManager.saveImageToGallery(finalImage!)
     }
+    
 
-
-    let tipsNormalized = intersections.map { point in
+    let tipsNormalized = correctedTips.map { point in
         CGPoint(x: point.x / CGFloat(width), y: (CGFloat(height) - point.y) / CGFloat(height))
     }
 
