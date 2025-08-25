@@ -55,7 +55,7 @@ func findEllipseVertices(from image: UIImage, for portion: CGFloat, inward inwar
 
     let tips = calculateEllipseTips(center: ellipse.center, size: size, rotation: ellipse.rotationInDegrees)
     
-    let correctedTips = [tips[0], intersections[1], tips[2], intersections[3]]
+    let correctedTips = intersections
 
     // for debug display only
     if debug {
@@ -237,7 +237,14 @@ func findEllipseAxisIntersections(
     
     // Find intersections for both major and minor axes
     var majorIntersections = findExtremeIntersections(direction: majorAxisDir)
-    var minorIntersections = findExtremeIntersections(direction: minorAxisDir)
+//    var minorIntersections = findExtremeIntersections(direction: minorAxisDir)
+    
+    
+    let ellipseSize = CGSize(width: ellipse.size.width, height: ellipse.size.height)
+    let tips = calculateEllipseTips(center: ellipse.center, size: ellipseSize, rotation: ellipse.rotationInDegrees)
+    var minorIntersections = [tips[2], tips[0]]
+
+    
     
     // Ensure exactly 4 intersections (2 per axis)
     guard majorIntersections.count == 2, minorIntersections.count == 2 else {
