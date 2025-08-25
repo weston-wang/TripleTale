@@ -455,7 +455,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             self.view.showToast(message: "Fish AI failed to return a mask.")
             return
         }
-
+        
         // Ensure fishImage is not nil before accessing .size
         let originalSize = fishImage.size
 
@@ -483,14 +483,21 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
             return
         }
         
-        guard let maskImage = CIImage(image: refinedFishImage) else {
+        var maskImage: CIImage?
+        
+        if self.isFacingForward {
+            maskImage = CIImage(image: refinedFishImage)
+        } else {
+            maskImage = MaskProcessor.generateMaskImage(from: image)
+        }
+        
+        guard let maskImageUnwrapped = maskImage else {
             print("❌ maskImage is nil")
             self.view.showToast(message: "Could not extract mask.")
-
             return
         }
         
-        guard let finalImage = image.masked(with: maskImage) else {
+        guard let finalImage = image.masked(with: maskImageUnwrapped) else {
             print("❌ image.masked(with:) failed")
             self.view.showToast(message: "Could not isolate fish with mask.")
 
@@ -515,7 +522,7 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
                             
             var verticesAnchors: [ARAnchor] = []
                 
-            if let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImage, debug: self.debugMode) {
+            if let normalizedVertices = findEllipseVertices(from: image, for: 1.0, inward: self.inwardPercent, maskImage: maskImageUnwrapped, debug: self.debugMode) {
                 verticesAnchors = AnchorUtils.getVertices(self.sceneView, normalizedVertices, image.size)
                 
                 print("found \(verticesAnchors.count) vertices anchors")
