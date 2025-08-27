@@ -442,12 +442,14 @@ class MainViewController: UIViewController, ARSCNViewDelegate, UIImagePickerCont
         self.lengthScale = isFacingForward ? 1.05 : 1.0
         self.widthScale = isFacingForward ? 1.05 : 1.0
         
-        guard let image = inputImage.cropCenter(to: self.screenRatio) else {
-            print("❌ Problem saving image.")
-            self.view.showToast(message: "Problem processing image")
-            return
-        }
+//        guard let image = inputImage.cropCenter(to: self.screenRatio) else {
+//            print("❌ Problem saving image.")
+//            self.view.showToast(message: "Problem processing image")
+//            return
+//        }
 
+        let image = inputImage
+        
         GalleryManager.saveImageToGallery(image)
         
         guard let fishImage = extractFish(from: image) else {
